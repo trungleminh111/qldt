@@ -1,4 +1,5 @@
 import os
+import mimetypes
 from flask import Flask, request
 import config
 from models.co_so_du_lieu import khoi_tao_co_so_du_lieu, kiem_tra_da_co_du_lieu
@@ -12,6 +13,9 @@ from controllers.ca_truc_controller import ca_truc_bp
 from controllers.cau_hinh_controller import cau_hinh_bp
 from controllers.bao_cao_controller import bao_cao_bp
 
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("application/javascript", ".js")
+
 def tao_ung_dung():
     templates_path = os.path.join(config.BASE_DIR, "templates")
     static_path = os.path.join(config.BASE_DIR, "static")
@@ -24,7 +28,11 @@ def tao_ung_dung():
         nap_du_lieu_mau()
 
     @app.after_request
-    def khong_luu_cache(phan_hoi):
+    def xu_ly_phan_hoi(phan_hoi):
+        if request.path.endswith(".css"):
+            phan_hoi.headers["Content-Type"] = "text/css; charset=utf-8"
+        elif request.path.endswith(".js"):
+            phan_hoi.headers["Content-Type"] = "application/javascript; charset=utf-8"
         if not request.path.startswith("/static/"):
             phan_hoi.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
             phan_hoi.headers["Pragma"] = "no-cache"

@@ -1,5 +1,9 @@
 import os
 import sys
+import mimetypes
+
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("application/javascript", ".js")
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -19,6 +23,11 @@ class VercelPathFixMiddleware:
         if matched.startswith("http://") or matched.startswith("https://"):
             from urllib.parse import urlparse
             matched = urlparse(matched).path
+        if "?" in matched:
+            path_part, query_part = matched.split("?", 1)
+            matched = path_part
+            if not environ.get("QUERY_STRING"):
+                environ["QUERY_STRING"] = query_part
         for prefix in ["/api/index.py", "api/index.py", "/api/index", "api/index"]:
             if matched.startswith(prefix):
                 matched = matched[len(prefix):]
