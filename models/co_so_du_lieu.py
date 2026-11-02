@@ -6,8 +6,8 @@ def lay_ket_noi():
     ket_noi = sqlite3.connect(config.DATABASE_PATH, timeout=30.0)
     ket_noi.row_factory = sqlite3.Row
     ket_noi.execute("PRAGMA foreign_keys = ON")
-    ket_noi.execute("PRAGMA journal_mode = WAL")
-    ket_noi.execute("PRAGMA synchronous = NORMAL")
+    ket_noi.execute("PRAGMA journal_mode = DELETE")
+    ket_noi.execute("PRAGMA synchronous = FULL")
     ket_noi.execute("PRAGMA busy_timeout = 30000")
     return ket_noi
 

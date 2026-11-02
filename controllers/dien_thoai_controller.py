@@ -244,6 +244,7 @@ def them_tu_moi():
             tien_to_ngan=tien_to_ngan
         )
         flash(f"Đã khởi tạo thành công {ten_tu} ({ma_tu}) gồm {so_ngan} ngăn bảo quản.", "thanh_cong")
+        return redirect(url_for("dien_thoai.so_do_tu", ma_tu=ma_tu))
     except Exception as e:
         flash(f"Lỗi khi thêm tủ mới (có thể mã tủ đã tồn tại): {str(e)}", "nguy_hiem")
 
@@ -252,21 +253,26 @@ def them_tu_moi():
 @dien_thoai_bp.route("/tu-dien-thoai/<ma_tu>")
 @yeu_cau_dang_nhap
 def so_do_tu(ma_tu):
+    ma_tu = (ma_tu or "").strip().upper()
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     cac_tu = lay_danh_sach_tu(khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
-    tu_hien_tai = next((t for t in cac_tu if t["ma_tu"] == ma_tu), None)
+    tu_hien_tai = next((t for t in cac_tu if t["ma_tu"].upper() == ma_tu), None)
     if not tu_hien_tai:
         flash("Đồng chí không có thẩm quyền truy cập tủ của đơn vị khác.", "canh_bao")
         return redirect(url_for("dien_thoai.danh_sach_tu"))
     ngan_list = lay_so_do_tu(ma_tu, khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
     goi_y_ngan = lay_goi_y_ngan_tiep_theo(tu_hien_tai["ma_tu_sinh"])
+    cac_don_vi = lay_danh_sach_don_vi(khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
+    goi_y_tu = lay_goi_y_tu_tiep_theo()
     return render_template(
         "dien_thoai/so_do_tu.html",
         tu_list=cac_tu,
         tu_hien_tai=tu_hien_tai,
         ngan_list=ngan_list,
         ma_tu_hien_tai=ma_tu,
-        goi_y_ngan=goi_y_ngan
+        goi_y_ngan=goi_y_ngan,
+        don_vi_list=cac_don_vi,
+        goi_y_tu=goi_y_tu
     )
 
 @dien_thoai_bp.route("/ngan-tu/them", methods=["POST"])

@@ -8,11 +8,18 @@ if os.environ.get("VERCEL"):
     DATABASE_PATH = "/tmp/qldt.db"
     UPLOAD_FOLDER = "/tmp/uploads"
     source_db = os.path.join(BASE_DIR, "qldt.db")
-    if not os.path.exists(DATABASE_PATH) and os.path.exists(source_db):
-        try:
-            shutil.copy2(source_db, DATABASE_PATH)
-        except Exception:
-            pass
+    if os.path.exists(source_db):
+        copy_needed = not os.path.exists(DATABASE_PATH)
+        if not copy_needed:
+            try:
+                copy_needed = os.path.getmtime(source_db) > os.path.getmtime(DATABASE_PATH)
+            except OSError:
+                copy_needed = False
+        if copy_needed:
+            try:
+                shutil.copy2(source_db, DATABASE_PATH)
+            except Exception:
+                pass
 else:
     DATABASE_PATH = os.path.join(BASE_DIR, "qldt.db")
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")

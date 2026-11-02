@@ -127,8 +127,8 @@ def lay_danh_sach_tu(khoa_don_vi_gioi_han=None):
     cau_lenh = """
         SELECT t.ma_tu_sinh, t.ma_tu, t.ten_tu, t.vi_tri, t.so_ngan, t.khoa_don_vi_quan_ly, dv.ten_don_vi,
                COUNT(ng.ma_tu_sinh) AS tong_ngan,
-               SUM(CASE WHEN ng.khoa_quan_nhan IS NOT NULL THEN 1 ELSE 0 END) AS so_ngan_co_chu,
-               SUM(CASE WHEN ng.khoa_quan_nhan IS NULL THEN 1 ELSE 0 END) AS so_ngan_trong
+               SUM(CASE WHEN ng.ma_tu_sinh IS NOT NULL AND ng.khoa_quan_nhan IS NOT NULL THEN 1 ELSE 0 END) AS so_ngan_co_chu,
+               SUM(CASE WHEN ng.ma_tu_sinh IS NOT NULL AND ng.khoa_quan_nhan IS NULL THEN 1 ELSE 0 END) AS so_ngan_trong
         FROM tu t
         LEFT JOIN don_vi dv ON t.khoa_don_vi_quan_ly = dv.ma_tu_sinh
         LEFT JOIN ngan ng ON ng.khoa_tu = t.ma_tu_sinh
