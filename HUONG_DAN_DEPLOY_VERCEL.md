@@ -22,8 +22,8 @@
 
 Trong thư mục dự án, tất cả các tệp cần thiết cho Vercel đã được tạo sẵn:
 
-1. **`vercel.json`**: Định tuyến toàn bộ yêu cầu web (bao gồm cả static files và routes) về hàm Serverless tại `api/index.py` theo cơ chế `rewrites` chuẩn của Vercel.
-2. **`api/index.py`**: Điểm vào (Entrypoint) khởi tạo ứng dụng Flask WSGI cho runtime của Vercel.
+1. **`vercel.json`**: Cấu hình đóng gói rõ ràng bao gồm cả `templates/**`, `static/**` và CSDL `qldt.db` thông qua `includeFiles`, định tuyến toàn bộ yêu cầu về hàm Serverless tại `api/index.py`.
+2. **`api/index.py`**: Điểm vào (Entrypoint) WSGI tích hợp `VercelPathFixMiddleware` giúp tự động chuẩn hóa đường dẫn URL (tránh lỗi 404 khi Vercel rewrite về `/api/index`).
 3. **`requirements.txt`**: Danh sách thư viện Python cần thiết (`Flask`, `Werkzeug`, `openpyxl`, `Jinja2`).
 4. **`.vercelignore`**: Loại trừ các tệp kiểm thử tự động, cache, nhật ký để quá trình build và tải lên diễn ra nhanh nhất.
 5. **`config.py`**: Tự động nhận diện biến môi trường `VERCEL` để trỏ đường dẫn CSDL và thư mục tải lên vào `/tmp`.
