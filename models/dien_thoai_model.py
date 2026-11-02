@@ -131,7 +131,7 @@ def lay_danh_sach_tu(khoa_don_vi_gioi_han=None):
                SUM(CASE WHEN ng.ma_tu_sinh IS NOT NULL AND ng.khoa_quan_nhan IS NULL THEN 1 ELSE 0 END) AS so_ngan_trong
         FROM tu t
         LEFT JOIN don_vi dv ON t.khoa_don_vi_quan_ly = dv.ma_tu_sinh
-        LEFT JOIN ngan ng ON ng.khoa_tu = t.ma_tu_sinh
+        LEFT JOIN ngan ng ON ng.khoa_tu = t.ma_tu_sinh AND ng.dang_dung = 1
         WHERE t.dang_dung = 1
     """
     tham_so = []
@@ -176,7 +176,7 @@ def lay_so_do_tu(ma_tu_code="T01", khoa_don_vi_gioi_han=None):
                 GROUP BY khoa_dien_thoai
             ) gn2 ON gn1.ma_tu_sinh = gn2.max_id
         ) gn ON gn.khoa_dien_thoai = dt.ma_tu_sinh
-        WHERE t.ma_tu = ?
+        WHERE t.ma_tu = ? AND t.dang_dung = 1 AND ng.dang_dung = 1
     """
     tham_so = [ma_tu_code]
     if khoa_don_vi_gioi_han:
@@ -209,7 +209,7 @@ def lay_tat_ca_ngan_trong(khoa_don_vi_gioi_han=None):
         SELECT ng.ma_tu_sinh, ng.ma_ngan, ng.ten_ngan, t.ma_tu, t.ten_tu
         FROM ngan ng
         JOIN tu t ON ng.khoa_tu = t.ma_tu_sinh
-        WHERE ng.khoa_quan_nhan IS NULL AND ng.dang_dung = 1
+        WHERE ng.khoa_quan_nhan IS NULL AND ng.dang_dung = 1 AND t.dang_dung = 1
     """
     tham_so = []
     if khoa_don_vi_gioi_han:
@@ -377,10 +377,98 @@ def them_ngan(khoa_tu, ten_ngan=None, ma_ngan=None, so_luong=1):
 
     con_tro.execute("""
         UPDATE tu
-        SET so_ngan = (SELECT COUNT(*) FROM ngan WHERE khoa_tu = ?)
+        SET so_ngan = (SELECT COUNT(*) FROM ngan WHERE khoa_tu = ? AND dang_dung = 1)
         WHERE ma_tu_sinh = ?
     """, (khoa_tu, khoa_tu))
 
     ket_noi.commit()
     ket_noi.close()
     return ids
+
+def xoa_tu(khoa_tu, khoa_don_vi_gioi_han=None):
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    if isinstance(khoa_tu, int) or (isinstance(khoa_tu, str) and str(khoa_tu).strip().isdigit()):
+        cau_lenh = "SELECT * FROM tu WHERE ma_tu_sinh = ? AND dang_dung = 1"
+        tham_so = [int(str(khoa_tu).strip())]
+    else:
+        cau_lenh = "SELECT * FROM tu WHERE ma_tu = ? AND dang_dung = 1"
+        tham_so = [str(khoa_tu).strip().upper()]
+
+    if khoa_don_vi_gioi_han:
+        dieu_kien, params = tao_dieu_kien_don_vi("khoa_don_vi_quan_ly", khoa_don_vi_gioi_han)
+        cau_lenh += dieu_kien
+        tham_so.extend(params)
+
+    con_tro.execute(cau_lenh, tham_so)
+    tu_row = con_tro.fetchone()
+    if not tu_row:
+        ket_noi.close()
+        raise ValueError("Tủ bảo quản không tồn tại hoặc đồng chí không có thẩm quyền.")
+
+    ma_tu_sinh = tu_row["ma_tu_sinh"]
+    ma_tu = tu_row["ma_tu"]
+    ten_tu = tu_row["ten_tu"]
+
+    con_tro.execute("""
+        SELECT COUNT(*) FROM ngan
+        WHERE khoa_tu = ? AND dang_dung = 1 AND khoa_quan_nhan IS NOT NULL
+    """, (ma_tu_sinh,))
+    so_ngan_co_chu = con_tro.fetchone()[0]
+    if so_ngan_co_chu > 0:
+        ket_noi.close()
+        raise ValueError(f"Không thể xóa {ten_tu} ({ma_tu}) vì đang có {so_ngan_co_chu} ngăn chứa thiết bị/quân nhân. Vui lòng chuyển hoặc hủy phân bổ các ngăn trước khi xóa.")
+
+    con_tro.execute("UPDATE ngan SET dang_dung = 0 WHERE khoa_tu = ?", (ma_tu_sinh,))
+    con_tro.execute("UPDATE tu SET dang_dung = 0 WHERE ma_tu_sinh = ?", (ma_tu_sinh,))
+    ket_noi.commit()
+    ket_noi.close()
+    return ma_tu
+
+def xoa_ngan(khoa_ngan, khoa_don_vi_gioi_han=None):
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    if isinstance(khoa_ngan, int) or (isinstance(khoa_ngan, str) and str(khoa_ngan).strip().isdigit()):
+        cau_lenh = """
+            SELECT ng.ma_tu_sinh, ng.ma_ngan, ng.ten_ngan, ng.khoa_tu, ng.khoa_quan_nhan,
+                   t.ma_tu, t.ten_tu, t.khoa_don_vi_quan_ly
+            FROM ngan ng
+            JOIN tu t ON ng.khoa_tu = t.ma_tu_sinh
+            WHERE ng.ma_tu_sinh = ? AND ng.dang_dung = 1 AND t.dang_dung = 1
+        """
+        tham_so = [int(str(khoa_ngan).strip())]
+    else:
+        cau_lenh = """
+            SELECT ng.ma_tu_sinh, ng.ma_ngan, ng.ten_ngan, ng.khoa_tu, ng.khoa_quan_nhan,
+                   t.ma_tu, t.ten_tu, t.khoa_don_vi_quan_ly
+            FROM ngan ng
+            JOIN tu t ON ng.khoa_tu = t.ma_tu_sinh
+            WHERE ng.ma_ngan = ? AND ng.dang_dung = 1 AND t.dang_dung = 1
+        """
+        tham_so = [str(khoa_ngan).strip()]
+
+    if khoa_don_vi_gioi_han:
+        dieu_kien, params = tao_dieu_kien_don_vi("t.khoa_don_vi_quan_ly", khoa_don_vi_gioi_han)
+        cau_lenh += dieu_kien
+        tham_so.extend(params)
+
+    con_tro.execute(cau_lenh, tham_so)
+    ngan_row = con_tro.fetchone()
+    if not ngan_row:
+        ket_noi.close()
+        raise ValueError("Ngăn tủ không tồn tại hoặc đồng chí không có thẩm quyền.")
+
+    if ngan_row["khoa_quan_nhan"] is not None:
+        ket_noi.close()
+        raise ValueError(f"Không thể xóa ngăn {ngan_row['ten_ngan']} vì ngăn đang được phân bổ thiết bị/quân nhân.")
+
+    ma_ngan_id = ngan_row["ma_tu_sinh"]
+    khoa_tu = ngan_row["khoa_tu"]
+    ma_tu = ngan_row["ma_tu"]
+    ten_ngan = ngan_row["ten_ngan"]
+
+    con_tro.execute("UPDATE ngan SET dang_dung = 0 WHERE ma_tu_sinh = ?", (ma_ngan_id,))
+    con_tro.execute("UPDATE tu SET so_ngan = MAX(0, so_ngan - 1) WHERE ma_tu_sinh = ?", (khoa_tu,))
+    ket_noi.commit()
+    ket_noi.close()
+    return {"khoa_tu": khoa_tu, "ma_tu": ma_tu, "ten_ngan": ten_ngan}

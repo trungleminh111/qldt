@@ -11,7 +11,9 @@ from models.dien_thoai_model import (
     lay_goi_y_ngan_tiep_theo,
     them_ngan,
     lay_danh_sach_tu,
-    lay_so_do_tu
+    lay_so_do_tu,
+    xoa_tu,
+    xoa_ngan
 )
 
 class TestThemTuNgan(unittest.TestCase):
@@ -227,4 +229,84 @@ class TestThemTuNgan(unittest.TestCase):
         html = res.data.decode("utf-8")
         self.assertNotIn("Đồng chí không có thẩm quyền truy cập tủ của đơn vị khác", html)
         self.assertIn("T02", html)
+    def test_xoa_tu_that_bai_khi_co_nguoi_va_thanh_cong_khi_rong(self):
+        with self.assertRaises(ValueError):
+            xoa_tu("T01")
+
+        khoa_tu = them_tu(
+            ma_tu="T99",
+            ten_tu="Tủ tạm thời",
+            vi_tri="Kho",
+            so_ngan=2,
+            khoa_don_vi_quan_ly=1,
+            tien_to_ngan="Z"
+        )
+        ma_xoa = xoa_tu("T99")
+        self.assertEqual(ma_xoa, "T99")
+
+        ds_tu = lay_danh_sach_tu()
+        self.assertFalse(any(t["ma_tu"] == "T99" for t in ds_tu))
+
+    def test_xoa_ngan_that_bai_khi_co_nguoi_va_thanh_cong_khi_rong(self):
+        so_do_t1 = lay_so_do_tu("T01")
+        ngan_co_chu = next(r for r in so_do_t1 if r.get("khoa_quan_nhan"))
+        with self.assertRaises(ValueError):
+            xoa_ngan(ngan_co_chu["ma_tu_sinh"])
+
+        khoa_tu = them_tu(
+            ma_tu="T98",
+            ten_tu="Tủ thử nghiệm xóa",
+            vi_tri="Kho",
+            so_ngan=2,
+            khoa_don_vi_quan_ly=1,
+            tien_to_ngan="Y"
+        )
+        so_do_t98 = lay_so_do_tu("T98")
+        self.assertEqual(len(so_do_t98), 2)
+        ngan_can_xoa = so_do_t98[0]
+
+        res = xoa_ngan(ngan_can_xoa["ma_tu_sinh"])
+        self.assertEqual(res["ma_tu"], "T98")
+
+        so_do_t98_sau = lay_so_do_tu("T98")
+        self.assertEqual(len(so_do_t98_sau), 1)
+
+    def test_controller_xoa_tu_va_xoa_ngan_route(self):
+        khoa_tu = them_tu(
+            ma_tu="T97",
+            ten_tu="Tủ kiểm tra controller",
+            vi_tri="Kho",
+            so_ngan=2,
+            khoa_don_vi_quan_ly=1,
+            tien_to_ngan="X"
+        )
+        so_do_t97 = lay_so_do_tu("T97")
+        ngan_xoa = so_do_t97[0]
+
+        with self.client.session_transaction() as sess:
+            sess["nguoi_dung"] = {
+                "ma_tu_sinh": 1,
+                "ten_dang_nhap": "admin",
+                "ho_ten": "Quản trị viên",
+                "ten_vai_tro": "Quản trị",
+                "ma_vai_tro": "QUAN_TRI",
+                "quyen": []
+            }
+
+        res_ngan = self.client.post("/ngan-tu/xoa", data={
+            "khoa_ngan": str(ngan_xoa["ma_tu_sinh"]),
+            "ma_tu": "T97"
+        }, follow_redirects=True)
+        self.assertEqual(res_ngan.status_code, 200)
+
+        so_do_sau = lay_so_do_tu("T97")
+        self.assertEqual(len(so_do_sau), 1)
+
+        res_tu = self.client.post("/tu-dien-thoai/xoa", data={
+            "ma_tu": "T97"
+        }, follow_redirects=True)
+        self.assertEqual(res_tu.status_code, 200)
+
+        ds_sau = lay_danh_sach_tu()
+        self.assertFalse(any(t["ma_tu"] == "T97" for t in ds_sau))
 

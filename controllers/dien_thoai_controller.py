@@ -11,7 +11,9 @@ from models.dien_thoai_model import (
     lay_goi_y_tu_tiep_theo,
     them_tu,
     lay_goi_y_ngan_tiep_theo,
-    them_ngan
+    them_ngan,
+    xoa_tu,
+    xoa_ngan
 )
 from models.quan_nhan_model import lay_tat_ca_quan_nhan, lay_chi_tiet_quan_nhan, lay_danh_sach_don_vi
 from models.giao_nhan_model import danh_sach_lich_su
@@ -319,4 +321,49 @@ def them_ngan_moi():
 
     if ma_tu:
         return redirect(url_for("dien_thoai.so_do_tu", ma_tu=ma_tu))
+    return redirect(url_for("dien_thoai.danh_sach_tu"))
+
+@dien_thoai_bp.route("/tu-dien-thoai/xoa", methods=["POST"])
+@yeu_cau_dang_nhap
+def xoa_tu_moi():
+    khoa_tu_raw = request.form.get("khoa_tu") or request.form.get("ma_tu")
+    khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
+    if not khoa_tu_raw:
+        flash("Không xác định được tủ cần xóa.", "canh_bao")
+        return redirect(url_for("dien_thoai.danh_sach_tu"))
+
+    try:
+        ma_tu_xoa = xoa_tu(khoa_tu_raw, khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
+        flash(f"Đã xóa tủ bảo quản {ma_tu_xoa} thành công.", "thanh_cong")
+    except ValueError as e:
+        flash(str(e), "canh_bao")
+    except Exception as e:
+        flash(f"Lỗi khi xóa tủ bảo quản: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("dien_thoai.danh_sach_tu"))
+
+@dien_thoai_bp.route("/ngan-tu/xoa", methods=["POST"])
+@yeu_cau_dang_nhap
+def xoa_ngan_moi():
+    khoa_ngan_raw = request.form.get("khoa_ngan") or request.form.get("ma_ngan")
+    ma_tu_redirect = request.form.get("ma_tu", "").strip().upper()
+    khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
+
+    if not khoa_ngan_raw:
+        flash("Không xác định được ngăn cần xóa.", "canh_bao")
+        if ma_tu_redirect:
+            return redirect(url_for("dien_thoai.so_do_tu", ma_tu=ma_tu_redirect))
+        return redirect(url_for("dien_thoai.danh_sach_tu"))
+
+    try:
+        thong_tin = xoa_ngan(khoa_ngan_raw, khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
+        flash(f"Đã xóa ngăn {thong_tin['ten_ngan']} khỏi tủ {thong_tin['ma_tu']} thành công.", "thanh_cong")
+        return redirect(url_for("dien_thoai.so_do_tu", ma_tu=thong_tin["ma_tu"]))
+    except ValueError as e:
+        flash(str(e), "canh_bao")
+    except Exception as e:
+        flash(f"Lỗi khi xóa ngăn tủ: {str(e)}", "nguy_hiem")
+
+    if ma_tu_redirect:
+        return redirect(url_for("dien_thoai.so_do_tu", ma_tu=ma_tu_redirect))
     return redirect(url_for("dien_thoai.danh_sach_tu"))

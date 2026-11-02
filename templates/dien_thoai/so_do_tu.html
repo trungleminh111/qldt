@@ -20,6 +20,13 @@
     <button type="button" class="btn-quan-doi btn-qd-primary" onclick="moModal('modalThemNgan')">
       ＋ Thêm ngăn vào tủ
     </button>
+    <form method="POST" action="{{ url_for('dien_thoai.xoa_tu_moi') }}" onsubmit="return confirm('Đồng chí có chắc chắn muốn xóa tủ {{ tu_hien_tai.ten_tu if tu_hien_tai else '' }} ({{ ma_tu_hien_tai }})? Tủ phải trống hoàn toàn mới có thể xóa.');" style="margin: 0;">
+      <input type="hidden" name="khoa_tu" value="{{ tu_hien_tai.ma_tu_sinh if tu_hien_tai else '' }}">
+      <input type="hidden" name="ma_tu" value="{{ ma_tu_hien_tai }}">
+      <button type="submit" class="btn-quan-doi btn-qd-danger" title="Xóa tủ {{ ma_tu_hien_tai }}">
+        🗑 Xóa tủ này
+      </button>
+    </form>
   </div>
 </div>
 
@@ -68,9 +75,12 @@
           <small style="color: #1b6843; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">{{ ng.ho_ten or '' }}</small>
         </div>
       {% else %}
-        <div class="locker-cell empty" data-ma-ngan="{{ ng.ma_ngan }}" data-ten-ngan="{{ ng.ten_ngan }}" title="Ngăn {{ ng.ten_ngan }} hiện đang trống" onclick="thongBaoNganTrong('{{ ng.ten_ngan }}', '{{ ng.ma_ngan }}')">
-          <small style="font-weight: 700;">{{ ng.ten_ngan }}</small>
-          <span style="color: #94a3b8; font-size: 11px;">Trống</span>
+        <div class="locker-cell empty" style="position: relative;" data-ma-ngan="{{ ng.ma_ngan }}" data-ten-ngan="{{ ng.ten_ngan }}" title="Ngăn {{ ng.ten_ngan }} hiện đang trống">
+          <button type="button" class="btn-quan-doi btn-qd-danger" onclick="event.stopPropagation(); xacNhanXoaNgan('{{ ng.ma_tu_sinh }}', '{{ ng.ten_ngan }}', '{{ ma_tu_hien_tai }}')" title="Xóa ngăn {{ ng.ten_ngan }}" style="position: absolute; top: 4px; right: 4px; border-radius: 6px; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; cursor: pointer; padding: 0; line-height: 1; min-width: 0;">✕</button>
+          <div onclick="thongBaoNganTrong('{{ ng.ten_ngan }}', '{{ ng.ma_ngan }}')" style="cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+            <small style="font-weight: 700;">{{ ng.ten_ngan }}</small>
+            <span style="color: #94a3b8; font-size: 11px;">Trống</span>
+          </div>
         </div>
       {% endif %}
     {% endfor %}
@@ -163,7 +173,19 @@
   </div>
 </div>
 
+<form id="formXoaNganAn" method="POST" action="{{ url_for('dien_thoai.xoa_ngan_moi') }}" style="display: none;">
+  <input type="hidden" name="khoa_ngan" id="inputXoaKhoaNgan" value="">
+  <input type="hidden" name="ma_tu" id="inputXoaMaTu" value="{{ ma_tu_hien_tai }}">
+</form>
+
 <script>
+function xacNhanXoaNgan(khoaNgan, tenNgan, maTu) {
+  if (confirm("Đồng chí có chắc chắn muốn xóa ngăn " + tenNgan + " khỏi tủ " + maTu + " không?")) {
+    document.getElementById("inputXoaKhoaNgan").value = khoaNgan;
+    document.getElementById("formXoaNganAn").submit();
+  }
+}
+
 function thongBaoNganTrong(tenNgan, maNgan) {
   if (confirm("Ngăn " + tenNgan + " (" + maNgan + ") hiện đang trống (chưa có điện thoại). Đồng chí có muốn chuyển tới trang Quản lý điện thoại để gán thiết bị vào ngăn này không?")) {
     window.location.href = "{{ url_for('dien_thoai.danh_sach') }}";

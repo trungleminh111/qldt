@@ -38,10 +38,17 @@
         </div>
       </div>
 
-      <div style="margin-top: 10px; border-top: 1px solid var(--border); padding-top: 14px;">
-        <a href="{{ url_for('dien_thoai.so_do_tu', ma_tu=t.ma_tu) }}" class="btn-quan-doi btn-qd-primary btn-qd-block">
+      <div style="margin-top: 10px; border-top: 1px solid var(--border); padding-top: 14px; display: flex; gap: 8px;">
+        <a href="{{ url_for('dien_thoai.so_do_tu', ma_tu=t.ma_tu) }}" class="btn-quan-doi btn-qd-primary" style="flex: 1; text-align: center;">
           ▤ Xem sơ đồ chi tiết tủ {{ t.ma_tu }}
         </a>
+        <form method="POST" action="{{ url_for('dien_thoai.xoa_tu_moi') }}" onsubmit="return confirm('Đồng chí có chắc chắn muốn xóa {{ t.ten_tu }} ({{ t.ma_tu }})? Lưu ý tủ phải không có thiết bị/quân nhân.');" style="margin: 0;">
+          <input type="hidden" name="khoa_tu" value="{{ t.ma_tu_sinh }}">
+          <input type="hidden" name="ma_tu" value="{{ t.ma_tu }}">
+          <button type="submit" class="btn-quan-doi btn-qd-danger" title="Xóa tủ {{ t.ma_tu }}" style="padding: 0 12px; height: 100%;">
+            🗑 Xóa
+          </button>
+        </form>
       </div>
     </div>
   {% endfor %}
