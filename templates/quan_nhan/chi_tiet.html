@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Hồ sơ {{ qn.ho_ten }} · Quản lý điện thoại đại đội{% endblock %}
+{% block page_title %}Chi tiết quân nhân{% endblock %}
+{% block page_subtitle %}Mã số: {{ qn.ma_quan_nhan }} · {{ qn.ho_ten }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="{{ url_for('quan_nhan.danh_sach') }}" class="btn-quan-doi btn-qd-secondary btn-qd-sm" style="margin-bottom: 12px;">
+      ← Quay lại danh sách quân nhân
+    </a>
+    <div style="display: flex; align-items: center; gap: 14px;">
+      <div class="user-avatar" style="width: 46px; height: 46px; font-size: 16px;">
+        {{ (qn.ho_ten.split()[-1][:2] if qn.ho_ten and qn.ho_ten.split() else "QN")|upper }}
+      </div>
+      <div>
+        <h1 style="margin: 0; font-size: 24px;">{{ qn.ho_ten }}</h1>
+        <p style="margin-top: 3px; font-size: 13px;">
+          <span class="badge badge-blue">{{ qn.ma_quan_nhan }}</span>
+          <b>{{ qn.ten_cap_bac }}</b> · {{ qn.ten_chuc_vu }} · {{ qn.ten_don_vi }}
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('giao_nhan.giao_nhan', ma_qn=qn.ma_tu_sinh) }}" class="btn-quan-doi btn-qd-primary">
+      ⇄ Giao nhận điện thoại
+    </a>
+    <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="moModal('modalSuaQuanNhan')">
+      ✎ Sửa thông tin
+    </button>
+  </div>
+</div>
+
+<div class="grid-3-2">
+  <div>
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Thông tin quân nhân</h2>
+        {% if qn.trang_thai_may == 'Đã lấy' %}
+          <span class="badge badge-amber"><span class="badge-dot"></span>Đang lấy sử dụng</span>
+        {% elif qn.trang_thai_may in ['Trong tủ', 'Đã nộp'] %}
+          <span class="badge badge-green"><span class="badge-dot"></span>Đang lưu trong tủ</span>
+        {% else %}
+          <span class="badge badge-gray"><span class="badge-dot"></span>Chưa có thiết bị</span>
+        {% endif %}
+      </div>
+
+      <div class="info-grid">
+        <div>
+          <span>Mã số quân nhân</span>
+          <b>{{ qn.ma_quan_nhan }}</b>
+        </div>
+        <div>
+          <span>Họ và tên</span>
+          <b>{{ qn.ho_ten }}</b>
+        </div>
+        <div>
+          <span>Cấp bậc</span>
+          <b>{{ qn.ten_cap_bac }}</b>
+        </div>
+        <div>
+          <span>Chức vụ</span>
+          <b>{{ qn.ten_chuc_vu }}</b>
+        </div>
+        <div>
+          <span>Đơn vị trực thuộc</span>
+          <b>{{ qn.ten_don_vi }}</b>
+        </div>
+        <div>
+          <span>Nhóm đối tượng áp dụng giờ</span>
+          <b style="color: #1d4ed8;">{{ qn.nhom_doi_tuong or 'Không giới hạn' }}</b>
+        </div>
+        <div>
+          <span>Ngày sinh</span>
+          <b>{{ qn.ngay_sinh or 'Chưa cập nhật' }}</b>
+        </div>
+        <div>
+          <span>Ngày nhập ngũ</span>
+          <b>{{ qn.ngay_nhap_ngu or 'Chưa cập nhật' }}</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Lịch sử giao nhận của quân nhân</h2>
+        <a href="{{ url_for('giao_nhan.lich_su', tu_khoa=qn.ma_quan_nhan) }}" class="btn-quan-doi btn-qd-ghost btn-qd-sm">
+          Xem toàn bộ
+        </a>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Thời gian</th>
+              <th>Thao tác</th>
+              <th>Kết quả</th>
+              <th>Tủ / Ngăn</th>
+              <th>Người thực hiện</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in lich_su %}
+              <tr>
+                <td><b>{{ h.thoi_gian }}</b></td>
+                <td>
+                  {% if h.loai == 'LAY_RA' %}
+                    <span class="badge badge-amber">Lấy ra</span>
+                  {% else %}
+                    <span class="badge badge-green">Nộp vào</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if h.ket_qua == 'DUNG_GIO' %}
+                    <span class="badge badge-green">Đúng giờ</span>
+                  {% else %}
+                    <span class="badge badge-amber">{{ h.ket_qua }}</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="slot-badge">
+                    <span class="cabinet-tag">{{ h.ma_tu or '-' }}</span> Ngăn {{ h.ma_ngan or '-' }}
+                  </span>
+                </td>
+                <td>{{ h.ten_nguoi_thuc_hien }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--muted); padding: 24px;">Chưa có lịch sử giao nhận nào.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Thiết bị & Vị trí tủ</h2>
+      </div>
+
+      {% if qn.ma_thiet_bi %}
+        <div class="device-hero-card">
+          <div class="device-hero-icon">📱</div>
+          <div>
+            <small style="color: var(--muted); font-size: 10.5px; font-weight: 700;">MÃ THIẾT BỊ: {{ qn.ma_thiet_bi }}</small>
+            <h3 style="font-size: 16px; color: var(--navy-900); margin: 2px 0;">{{ qn.ten_dien_thoai }}</h3>
+            <p style="color: var(--muted); font-size: 11.5px;">{{ qn.hang_san_xuat }} {{ qn.model or '' }}</p>
+            <p style="color: #64748b; font-size: 11px; margin-top: 2px;">IMEI: <code style="font-weight: 700;">{{ qn.so_imei or 'Chưa cập nhật' }}</code></p>
+          </div>
+        </div>
+
+        {% if qn.ma_tu and qn.ma_ngan %}
+          <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; margin-top: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <small style="display: block; color: #166534; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">VỊ TRÍ LƯU TỦ BẢO QUẢN</small>
+                <b style="font-size: 16px; color: #14532d; display: block; margin-top: 3px;">{{ qn.ten_tu or qn.ma_tu }} · Ngăn {{ qn.ten_ngan or qn.ma_ngan }}</b>
+                <span style="display: inline-block; font-size: 11.5px; color: #15803d; font-weight: 600; margin-top: 2px;">
+                  ✓ Trạng thái: {{ qn.trang_thai_may }}
+                </span>
+              </div>
+              <a href="{{ url_for('dien_thoai.so_do_tu', ma_tu=qn.ma_tu) }}" class="btn-quan-doi btn-qd-secondary btn-qd-sm">
+                Xem sơ đồ tủ
+              </a>
+            </div>
+          </div>
+        {% else %}
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 14px; margin-top: 14px;">
+            <small style="display: block; color: #92400e; font-size: 10px; font-weight: 700; text-transform: uppercase;">VỊ TRÍ LƯU TỦ</small>
+            <b style="color: #b45309; font-size: 13px;">Chưa phân ngăn tủ</b>
+            <p style="color: #78350f; font-size: 11px; margin-top: 4px;">Quân nhân chưa được gán ngăn trong tủ. Vui lòng cập nhật thông tin thiết bị để gán ngăn.</p>
+          </div>
+        {% endif %}
+      {% else %}
+        <div style="text-align: center; padding: 24px; background: #f8fafc; border-radius: 8px; border: 1px dashed var(--border);">
+          <p style="color: var(--muted); font-size: 12px; margin-bottom: 12px;">Quân nhân chưa được gán thiết bị điện thoại nào.</p>
+          <a href="{{ url_for('dien_thoai.danh_sach') }}" class="btn-quan-doi btn-qd-primary btn-qd-sm">
+            ＋ Thêm thiết bị cho quân nhân
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h3 style="color: var(--red);">Khu vực quản lý hồ sơ</h3>
+      </div>
+      <p style="font-size: 11.5px; color: var(--muted); margin-bottom: 14px;">
+        Xóa quân nhân sẽ giải phóng ngăn tủ và lưu trữ hồ sơ theo diện đã xuất ngũ hoặc chuyển đơn vị.
+      </p>
+      <form method="POST" action="{{ url_for('quan_nhan.xoa', id=qn.ma_tu_sinh) }}" onsubmit="return confirm('Đồng chí có chắc chắn muốn xóa quân nhân này khỏi danh sách đơn vị?');">
+        <button type="submit" class="btn-quan-doi btn-qd-danger btn-qd-block">
+          Xóa quân nhân khỏi đơn vị
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalSuaQuanNhan">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Chỉnh sửa hồ sơ quân nhân</h2>
+      <button class="modal-close" onclick="dongModal('modalSuaQuanNhan')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('quan_nhan.sua', id=qn.ma_tu_sinh) }}">
+      <label>Mã quân nhân</label>
+      <input type="text" value="{{ qn.ma_quan_nhan }}" disabled style="background: #f1f5f9; color: #64748b;">
+
+      <label for="edit_ho_ten">Họ và tên *</label>
+      <input type="text" id="edit_ho_ten" name="ho_ten" value="{{ qn.ho_ten }}" required>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label for="edit_cap_bac">Cấp bậc *</label>
+          <select id="edit_cap_bac" name="khoa_cap_bac" required>
+            {% for cb in cap_bac_list %}
+              <option value="{{ cb.ma_tu_sinh }}" {% if cb.ma_tu_sinh == qn.khoa_cap_bac %}selected{% endif %}>{{ cb.ten_cap_bac }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="edit_chuc_vu">Chức vụ *</label>
+          <select id="edit_chuc_vu" name="khoa_chuc_vu" required>
+            {% for cv in chuc_vu_list %}
+              <option value="{{ cv.ma_tu_sinh }}" {% if cv.ma_tu_sinh == qn.khoa_chuc_vu %}selected{% endif %}>{{ cv.ten_chuc_vu }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <label for="edit_don_vi">Đơn vị trực thuộc *</label>
+      <select id="edit_don_vi" name="khoa_don_vi" required>
+        {% for dv in don_vi_list %}
+          <option value="{{ dv.ma_tu_sinh }}" {% if dv.ma_tu_sinh == qn.khoa_don_vi %}selected{% endif %}>{{ dv.ten_don_vi }}</option>
+        {% endfor %}
+      </select>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label for="edit_ngay_sinh">Ngày sinh</label>
+          <input type="date" id="edit_ngay_sinh" name="ngay_sinh" value="{{ qn.ngay_sinh or '' }}">
+        </div>
+        <div>
+          <label for="edit_ngay_nhap_ngu">Ngày nhập ngũ</label>
+          <input type="date" id="edit_ngay_nhap_ngu" name="ngay_nhap_ngu" value="{{ qn.ngay_nhap_ngu or '' }}">
+        </div>
+      </div>
+
+      <label for="edit_ghi_chu">Ghi chú</label>
+      <input type="text" id="edit_ghi_chu" name="ghi_chu" value="{{ qn.ghi_chu or '' }}">
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalSuaQuanNhan')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

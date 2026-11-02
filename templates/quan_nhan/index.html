@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Hồ sơ quân nhân · Quản lý điện thoại đại đội{% endblock %}
+{% block page_title %}Quản lý quân nhân{% endblock %}
+{% block page_subtitle %}Danh sách hồ sơ quân nhân, cấp bậc, chức vụ và thiết bị được quản lý{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Hồ sơ quân nhân đại đội</h1>
+    <p>Quản lý toàn bộ danh sách quân nhân trong đại đội và theo dõi thiết bị được cấp phát/đăng ký.</p>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('quan_nhan.tai_mau_excel') }}" class="btn-quan-doi btn-qd-secondary">↓ Tải mẫu Excel</a>
+    <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="moModal('modalImport')">↑ Import Excel</button>
+    <button type="button" class="btn-quan-doi btn-qd-primary" onclick="moModal('modalThemQuanNhan')">＋ Thêm quân nhân</button>
+  </div>
+</div>
+
+<div class="panel">
+  <form method="GET" action="{{ url_for('quan_nhan.danh_sach') }}" class="toolbar">
+    <input type="text" name="tu_khoa" placeholder="Tìm theo tên, mã quân nhân..." value="{{ tu_khoa }}">
+    <select name="don_vi" onchange="this.form.submit()">
+      <option value="TAT_CA" {% if don_vi_hien_tai == 'TAT_CA' %}selected{% endif %}>Tất cả đơn vị</option>
+      {% for dv in don_vi_list %}
+        <option value="{{ dv.ma_don_vi }}" {% if don_vi_hien_tai == dv.ma_don_vi %}selected{% endif %}>{{ dv.ten_don_vi }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn-quan-doi btn-qd-secondary">Tìm kiếm</button>
+    {% if tu_khoa or don_vi_hien_tai != 'TAT_CA' %}
+      <a href="{{ url_for('quan_nhan.danh_sach') }}" class="btn-quan-doi btn-qd-ghost">Xóa lọc</a>
+    {% endif %}
+
+    <div style="margin-left: auto; display: flex; gap: 8px;">
+      <span class="badge badge-blue">Tổng số: {{ tong_so }}</span>
+      <span class="badge badge-green">Trong tủ: {{ so_da_nop }}</span>
+      <span class="badge badge-amber">Đã lấy: {{ so_da_lay }}</span>
+    </div>
+  </form>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Mã QN</th>
+          <th>Họ và tên</th>
+          <th>Cấp bậc</th>
+          <th>Chức vụ</th>
+          <th>Đơn vị</th>
+          <th>Điện thoại</th>
+          <th>Vị trí tủ / Ngăn</th>
+          <th>Trạng thái máy</th>
+          <th style="text-align: right;">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for qn in danh_sach %}
+          <tr>
+            <td><code style="font-weight: 700; color: #1e293b;">{{ qn.ma_quan_nhan }}</code></td>
+            <td>
+              <div class="person-cell">
+                <div class="person-avatar">{{ qn.ho_ten.split()[-1][:2]|upper }}</div>
+                <div>
+                  <a href="{{ url_for('quan_nhan.chi_tiet', id=qn.ma_tu_sinh) }}" style="color: #1d4ed8; text-decoration: none; font-weight: 700; font-size: 13px;">
+                    {{ qn.ho_ten }}
+                  </a>
+                </div>
+              </div>
+            </td>
+            <td><b>{{ qn.ten_cap_bac }}</b></td>
+            <td>{{ qn.ten_chuc_vu }}</td>
+            <td>{{ qn.ten_don_vi }}</td>
+            <td>
+              {% if qn.ten_dien_thoai %}
+                <span style="display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
+                  📱 {{ qn.ten_dien_thoai }}
+                </span>
+              {% else %}
+                <span style="color: var(--muted);">Chưa có máy</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if qn.ma_tu and qn.ma_ngan %}
+                <span class="slot-badge">
+                  <span class="cabinet-tag">{{ qn.ma_tu }}</span> Ngăn {{ qn.ten_ngan or qn.ma_ngan }}
+                </span>
+              {% else %}
+                <span class="badge badge-gray">Chưa phân ngăn</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if qn.trang_thai_may == 'Đã lấy' %}
+                <span class="badge badge-amber"><span class="badge-dot"></span>Đã lấy</span>
+              {% elif qn.trang_thai_may in ['Trong tủ', 'Đã nộp'] %}
+                <span class="badge badge-green"><span class="badge-dot"></span>Trong tủ</span>
+              {% else %}
+                <span class="badge badge-gray"><span class="badge-dot"></span>Chưa có máy</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <a href="{{ url_for('giao_nhan.giao_nhan', ma_qn=qn.ma_tu_sinh) }}" class="btn-quan-doi btn-qd-secondary btn-qd-sm">
+                ⇄ Giao nhận
+              </a>
+              <a href="{{ url_for('quan_nhan.chi_tiet', id=qn.ma_tu_sinh) }}" class="btn-quan-doi btn-qd-ghost btn-qd-sm">
+                Chi tiết
+              </a>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="9" style="text-align: center; color: var(--muted); padding: 36px;">
+              Không tìm thấy quân nhân nào phù hợp.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalThemQuanNhan">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Thêm quân nhân mới</h2>
+      <button class="modal-close" onclick="dongModal('modalThemQuanNhan')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('quan_nhan.them') }}">
+      <label for="new_ma_qn">Mã quân nhân *</label>
+      <input type="text" id="new_ma_qn" name="ma_quan_nhan" placeholder="VD: QN020" required>
+
+      <label for="new_ho_ten">Họ và tên *</label>
+      <input type="text" id="new_ho_ten" name="ho_ten" placeholder="Nhập họ và tên đầy đủ" required>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label for="new_cap_bac">Cấp bậc *</label>
+          <select id="new_cap_bac" name="khoa_cap_bac" required>
+            {% for cb in cap_bac_list %}
+              <option value="{{ cb.ma_tu_sinh }}">{{ cb.ten_cap_bac }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="new_chuc_vu">Chức vụ *</label>
+          <select id="new_chuc_vu" name="khoa_chuc_vu" required>
+            {% for cv in chuc_vu_list %}
+              <option value="{{ cv.ma_tu_sinh }}">{{ cv.ten_chuc_vu }} ({{ cv.ten_cau_hinh or 'Không giới hạn' }})</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <label for="new_don_vi">Đơn vị *</label>
+      <select id="new_don_vi" name="khoa_don_vi" required>
+        {% for dv in don_vi_list %}
+          <option value="{{ dv.ma_tu_sinh }}">{{ dv.ten_don_vi }}</option>
+        {% endfor %}
+      </select>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label for="new_ngay_sinh">Ngày sinh</label>
+          <input type="date" id="new_ngay_sinh" name="ngay_sinh">
+        </div>
+        <div>
+          <label for="new_ngay_nhap_ngu">Ngày nhập ngũ</label>
+          <input type="date" id="new_ngay_nhap_ngu" name="ngay_nhap_ngu">
+        </div>
+      </div>
+
+      <label for="new_ghi_chu">Ghi chú</label>
+      <input type="text" id="new_ghi_chu" name="ghi_chu" placeholder="Ghi chú thêm (không bắt buộc)">
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalThemQuanNhan')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Lưu hồ sơ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalImport">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Import danh sách quân nhân từ Excel</h2>
+      <button class="modal-close" onclick="dongModal('modalImport')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('quan_nhan.import_excel') }}" enctype="multipart/form-data">
+      <p style="font-size: 12px; color: var(--muted); margin-bottom: 14px;">
+        Chọn tệp tin Excel (.xlsx) theo biểu mẫu chuẩn gồm 5 cột: Mã quân nhân, Họ và tên, Cấp bậc, Chức vụ, Đơn vị.
+      </p>
+
+      <input type="file" name="file_excel" accept=".xlsx" required style="padding: 10px;">
+
+      <div style="margin-top: 14px;">
+        <a href="{{ url_for('quan_nhan.tai_mau_excel') }}" style="color: var(--blue-600); font-size: 11px; text-decoration: none; font-weight: 600;">
+          ↓ Nhấn vào đây để tải file mẫu Excel (.xlsx)
+        </a>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalImport')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Bắt đầu Import</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

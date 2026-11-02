@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Tài khoản & Phân quyền · Quản lý điện thoại đại đội{% endblock %}
+{% block page_title %}Tài khoản & Phân quyền cán bộ{% endblock %}
+{% block page_subtitle %}Quản lý tài khoản cán bộ, gán vai trò quân sự và cấu hình thẩm quyền thao tác{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Quản lý tài khoản & Phân quyền cán bộ</h1>
+    <p>Thiết lập tài khoản đăng nhập, gán vai trò trách nhiệm và phân quyền thao tác linh hoạt theo chức năng của từng cán bộ.</p>
+  </div>
+  <div class="header-actions">
+    <button type="button" class="btn-quan-doi btn-qd-primary" onclick="moModal('modalThemTaiKhoan')">＋ Thêm tài khoản cán bộ</button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Danh sách tài khoản cán bộ quản lý</h2>
+  </div>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Họ và tên</th>
+          <th>Tên đăng nhập</th>
+          <th>Vai trò đảm nhiệm</th>
+          <th>Phạm vi quản lý</th>
+          <th>Đăng nhập gần nhất</th>
+          <th>Trạng thái</th>
+          <th style="text-align: right;">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for tk in tai_khoan_list %}
+          <tr>
+            <td><b>{{ tk.ho_ten }}</b></td>
+            <td><span style="font-weight: 700; color: var(--navy);">{{ tk.ten_dang_nhap }}</span></td>
+            <td><span class="badge badge-blue">{{ tk.ten_vai_tro or 'Chưa gán' }}</span></td>
+            <td>
+              {% if tk.pham_vi_loai == 'TOAN_BO' %}
+                Toàn đại đội
+              {% elif tk.pham_vi_loai == 'DON_VI' %}
+                Theo trung đội
+              {% elif tk.pham_vi_loai == 'TU' %}
+                Theo tủ quản lý
+              {% else %}
+                {{ tk.pham_vi_loai }}
+              {% endif %}
+            </td>
+            <td>{{ tk.dang_nhap_cuoi or 'Chưa đăng nhập' }}</td>
+            <td>
+              {% if tk.dang_dung == 1 %}
+                <span class="badge badge-green">Hoạt động</span>
+              {% else %}
+                <span class="badge badge-gray">Tạm khóa</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+              {% if tk.ten_dang_nhap != 'admin' or session.get('nguoi_dung', {}).get('ten_dang_nhap') == 'admin' %}
+              <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" style="margin-right: 4px;"
+                onclick="moModalSuaTK('{{ tk.ma_tu_sinh }}', '{{ tk.ho_ten }}', '{{ tk.khoa_vai_tro or '' }}', '{{ tk.pham_vi_loai }}', '{{ tk.dang_dung }}')">
+                ✎ Sửa
+              </button>
+              {% endif %}
+              {% if tk.ten_dang_nhap != 'admin' %}
+                <form method="POST" action="{{ url_for('cau_hinh.xoa_tk', id=tk.ma_tu_sinh) }}" style="display: inline-block;" onsubmit="return confirm('Đồng chí có chắc chắn muốn xóa tài khoản này?');">
+                  <button type="submit" class="btn-quan-doi btn-qd-danger btn-qd-sm">
+                    Xóa
+                  </button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Phân quyền thẩm quyền theo vai trò quân sự</h2>
+  </div>
+  <p style="color: var(--muted); font-size: 12px; margin-bottom: 20px;">
+    Đánh dấu chọn các chức năng cho phép từng vai trò được quyền thực hiện trong quá trình quản lý và bàn giao ca.
+  </p>
+
+  <div style="display: flex; flex-direction: column; gap: 24px;">
+    {% for vt in vai_tro_list %}
+      <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
+          <div>
+            <b style="font-size: 15px; color: var(--navy);">{{ vt.ten_vai_tro }}</b>
+            <span class="badge badge-blue" style="margin-left: 8px;">{{ vt.ma_vai_tro }}</span>
+            <small style="display: block; color: var(--muted); margin-top: 2px;">{{ vt.mo_ta or 'Quy định thẩm quyền nghiệp vụ' }}</small>
+          </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('cau_hinh.cap_nhat_quyen', id=vt.ma_tu_sinh) }}">
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 16px;">
+            {% for q in quyen_list %}
+              <label style="display: flex; align-items: flex-start; gap: 10px; background: #fff; padding: 10px 14px; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer; margin: 0;">
+                <input type="checkbox" name="quyen_ids" value="{{ q.ma_tu_sinh }}" {% if q.ma_tu_sinh in vt.cac_quyen_ids %}checked{% endif %} style="width: auto; margin-top: 3px;">
+                <div>
+                  <b style="font-size: 12.5px; color: #1e293b; display: block;">{{ q.ten_quyen }}</b>
+                  <span style="font-size: 11px; color: var(--muted); line-height: 1.4; display: block;">{{ q.mo_ta }}</span>
+                </div>
+              </label>
+            {% endfor %}
+          </div>
+
+          <div style="text-align: right;">
+            <button type="submit" class="btn-quan-doi btn-qd-primary btn-qd-sm">
+              Lưu phân quyền vai trò {{ vt.ten_vai_tro }}
+            </button>
+          </div>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalThemTaiKhoan">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Thêm tài khoản cán bộ mới</h2>
+      <button class="modal-close" onclick="dongModal('modalThemTaiKhoan')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('cau_hinh.them_tk') }}">
+      <label for="tk_tendn">Tên đăng nhập *</label>
+      <input type="text" id="tk_tendn" name="ten_dang_nhap" placeholder="VD: vanhung" required>
+
+      <label for="tk_matkhau">Mật khẩu khởi tạo *</label>
+      <input type="password" id="tk_matkhau" name="mat_khau" value="12345678" required>
+
+      <label for="tk_hoten">Họ và tên cán bộ *</label>
+      <input type="text" id="tk_hoten" name="ho_ten" placeholder="Nhập họ và tên cán bộ" required>
+
+      <label for="tk_vaitro">Vai trò đảm nhiệm *</label>
+      <select id="tk_vaitro" name="khoa_vai_tro" required>
+        {% for vt in vai_tro_list %}
+          <option value="{{ vt.ma_tu_sinh }}">{{ vt.ten_vai_tro }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="tk_phamvi">Phạm vi quản lý</label>
+      <select id="tk_phamvi" name="pham_vi_loai">
+        <option value="TOAN_BO">Toàn đại đội</option>
+        <option value="DON_VI">Theo trung đội trực thuộc</option>
+        <option value="TU">Theo tủ quản lý</option>
+      </select>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalThemTaiKhoan')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Lưu tài khoản</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalSuaTaiKhoan">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Chỉnh sửa thông tin tài khoản</h2>
+      <button class="modal-close" onclick="dongModal('modalSuaTaiKhoan')">✕</button>
+    </div>
+    <form id="formSuaTK" method="POST" action="">
+      <label for="sua_tk_hoten">Họ và tên cán bộ *</label>
+      <input type="text" id="sua_tk_hoten" name="ho_ten" required>
+
+      <label for="sua_tk_matkhau">Đổi mật khẩu mới (để trống nếu không đổi)</label>
+      <input type="password" id="sua_tk_matkhau" name="mat_khau_moi" placeholder="Để trống nếu giữ nguyên mật khẩu cũ">
+
+      <label for="sua_tk_vaitro">Vai trò đảm nhiệm *</label>
+      <select id="sua_tk_vaitro" name="khoa_vai_tro" required>
+        {% for vt in vai_tro_list %}
+          <option value="{{ vt.ma_tu_sinh }}">{{ vt.ten_vai_tro }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="sua_tk_phamvi">Phạm vi quản lý</label>
+      <select id="sua_tk_phamvi" name="pham_vi_loai">
+        <option value="TOAN_BO">Toàn đại đội</option>
+        <option value="DON_VI">Theo trung đội trực thuộc</option>
+        <option value="TU">Theo tủ quản lý</option>
+      </select>
+
+      <label for="sua_tk_trangthai">Trạng thái tài khoản</label>
+      <select id="sua_tk_trangthai" name="dang_dung">
+        <option value="1">Hoạt động bình thường</option>
+        <option value="0">Tạm khóa tài khoản</option>
+      </select>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalSuaTaiKhoan')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function moModalSuaTK(id, hoTen, khoaVaiTro, phamVi, dangDung) {
+  document.getElementById("formSuaTK").action = `/tai-khoan/sua/${id}`;
+  document.getElementById("sua_tk_hoten").value = hoTen;
+  document.getElementById("sua_tk_matkhau").value = "";
+  if (khoaVaiTro) {
+    document.getElementById("sua_tk_vaitro").value = khoaVaiTro;
+  }
+  document.getElementById("sua_tk_phamvi").value = phamVi || "TOAN_BO";
+  document.getElementById("sua_tk_trangthai").value = dangDung;
+  moModal("modalSuaTaiKhoan");
+}
+</script>
+{% endblock %}

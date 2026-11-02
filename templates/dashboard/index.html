@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Bảng điều khiển · Quản lý điện thoại đại đội{% endblock %}
+{% block page_title %}Bảng điều khiển{% endblock %}
+{% block page_subtitle %}Tổng quan tình hình quản lý và lưu trữ điện thoại toàn đại đội{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Tổng quan tình hình đơn vị</h1>
+    <p>Theo dõi tình hình thiết bị, tỷ lệ lưu tủ và lượt giao nhận hôm nay.</p>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('giao_nhan.giao_nhan') }}" class="btn-quan-doi btn-qd-primary">＋ Giao nhận điện thoại</a>
+    <a href="{{ url_for('ca_truc.ban_giao') }}" class="btn-quan-doi btn-qd-secondary">⇋ Bàn giao ca</a>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <span>Tổng số điện thoại</span>
+      <b>{{ thong_ke.tong_dien_thoai }}</b>
+      <small>Quân số: {{ thong_ke.tong_quan_nhan }} đồng chí</small>
+    </div>
+    <div class="stat-icon blue">📱</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <span>Đang lưu trong tủ</span>
+      <b>{{ thong_ke.dang_trong_tu }}</b>
+      <small>Thiết bị an toàn trong tủ</small>
+    </div>
+    <div class="stat-icon green">▤</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <span>Đã lấy sử dụng</span>
+      <b>{{ thong_ke.da_lay }}</b>
+      <small>Đang trong thời gian dùng</small>
+    </div>
+    <div class="stat-icon amber">⇄</div>
+  </div>
+
+  <a href="{{ url_for('giao_nhan.chua_nop') }}" class="stat-card" style="text-decoration: none; color: inherit; display: flex;">
+    <div class="stat-card-info">
+      <span>Chưa nộp / Quá hạn</span>
+      <b style="color: var(--red);">{{ thong_ke.chua_nop }}</b>
+      <small style="color: #b91c1c; font-weight: 600;">➔ Xem danh sách chi tiết</small>
+    </div>
+    <div class="stat-icon red">⚠</div>
+  </a>
+</div>
+
+<div class="grid-two">
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Tình hình thiết bị theo đơn vị</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      {% for u in thong_ke.thong_ke_don_vi %}
+        <div>
+          <div style="display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 6px; font-size: 12.5px;">
+            <span>{{ u.ten_don_vi }}</span>
+            <span style="color: #475569;">{{ u.so_may }} máy (Trong tủ: <b style="color: var(--green);">{{ u.trong_tu }}</b> · Đã lấy: <b style="color: var(--amber);">{{ u.da_lay }}</b>)</span>
+          </div>
+          <div style="height: 10px; background: #e2e8f0; border-radius: 6px; overflow: hidden; display: flex;">
+            {% if u.so_may > 0 %}
+              {% set ty_le = (u.trong_tu / u.so_may * 100) %}
+              <div style="width: {{ ty_le }}%; background: linear-gradient(90deg, #22c55e, #16a34a);"></div>
+              <div style="width: {{ 100 - ty_le }}%; background: linear-gradient(90deg, #f59e0b, #d97706);"></div>
+            {% else %}
+              <div style="width: 100%; background: #e2e8f0;"></div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Cơ cấu điện thoại theo hãng sản xuất</h2>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      {% for h in thong_ke.co_cau_hang %}
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f8fafc; border: 1px solid var(--border-subtle); border-radius: 8px;">
+          <b style="font-size: 13px; color: var(--navy-900);">{{ h.hang_san_xuat or 'Khác' }}</b>
+          <span class="badge badge-blue">{{ h.so_luong }} thiết bị</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom: 24px; border: 1px solid #fecaca; padding: 0; overflow: hidden;">
+  <div class="panel-header" style="background: #fff5f5; border-bottom: 1px solid #fee2e2; padding: 16px 24px; margin-bottom: 0;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="color: #dc2626; font-size: 16px;">⚠</span>
+      <h2 style="color: #991b1b; font-size: 14px; text-transform: uppercase;">Quân nhân chưa nộp điện thoại / Quá hạn</h2>
+    </div>
+    <a href="{{ url_for('giao_nhan.chua_nop') }}" class="btn-quan-doi btn-qd-secondary btn-qd-sm">Xem tất cả</a>
+  </div>
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Quân nhân</th>
+          <th>Cấp bậc / Đơn vị</th>
+          <th>Thiết bị</th>
+          <th>Tủ / Ngăn</th>
+          <th>Thời gian lấy</th>
+          <th>Tình trạng</th>
+          <th style="text-align: right;">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cn in chua_nop %}
+          <tr>
+            <td>
+              <div class="person-cell">
+                <div class="person-avatar" style="width: 26px; height: 26px; font-size: 10px; background: #fee2e2; color: #991b1b;">{{ cn.ho_ten.split()[-1][:2]|upper }}</div>
+                <div>
+                  <b style="color: var(--navy-900); font-size: 13px;">{{ cn.ho_ten }}</b>
+                  <small style="display: block; color: var(--muted);">{{ cn.ma_quan_nhan }}</small>
+                </div>
+              </div>
+            </td>
+            <td>{{ cn.ten_cap_bac }} · {{ cn.ten_don_vi }}</td>
+            <td>{{ cn.ten_dien_thoai }} ({{ cn.ma_thiet_bi }})</td>
+            <td>
+              {% if cn.ma_tu and (cn.ten_ngan or cn.ma_ngan) %}
+                <span class="slot-badge">
+                  <span class="cabinet-tag">{{ cn.ma_tu }}</span> Ngăn {{ cn.ten_ngan or cn.ma_ngan }}
+                </span>
+              {% else %}
+                <span class="badge badge-gray">Chưa phân ngăn</span>
+              {% endif %}
+            </td>
+            <td><b>{{ cn.gio_lay }}</b></td>
+            <td>
+              {% if cn.muc_do == 'QUA_HAN' %}
+                <span class="badge badge-red"><span class="badge-dot"></span>{{ cn.nhan_trang_thai }}</span>
+              {% elif cn.muc_do == 'SAP_DEN_HAN' %}
+                <span class="badge badge-amber"><span class="badge-dot"></span>{{ cn.nhan_trang_thai }}</span>
+              {% else %}
+                <span class="badge badge-amber"><span class="badge-dot"></span>Chưa nộp</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <form method="POST" action="{{ url_for('giao_nhan.nop_may') }}" style="display: inline-block;">
+                <input type="hidden" name="khoa_quan_nhan" value="{{ cn.qn_id }}">
+                <input type="hidden" name="url_chuyen_huong" value="{{ url_for('dashboard.tong_quan') }}">
+                <button type="submit" class="btn-quan-doi btn-qd-success btn-qd-sm">
+                  ✓ Thu hồi
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--green); padding: 22px; font-weight: 600;">
+              ✓ Hiện không có trường hợp quân nhân nào giữ điện thoại quá hạn chưa nộp.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Lịch sử giao nhận gần nhất</h2>
+    <a href="{{ url_for('giao_nhan.lich_su') }}" class="btn-quan-doi btn-qd-secondary btn-qd-sm">Xem toàn bộ</a>
+  </div>
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Thời gian</th>
+          <th>Quân nhân</th>
+          <th>Cấp bậc / Đơn vị</th>
+          <th>Thiết bị</th>
+          <th>Tủ / Ngăn</th>
+          <th>Thao tác</th>
+          <th>Kết quả</th>
+          <th>Người thực hiện</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in hoat_dong %}
+          <tr>
+            <td><b>{{ h.thoi_gian }}</b></td>
+            <td>
+              <div class="person-cell">
+                <div class="person-avatar" style="width: 26px; height: 26px; font-size: 10px;">{{ h.ho_ten.split()[-1][:2]|upper }}</div>
+                <b>{{ h.ho_ten }}</b>
+              </div>
+            </td>
+            <td>{{ h.ten_cap_bac }} · {{ h.ten_don_vi }}</td>
+            <td>{{ h.ten_dien_thoai }} ({{ h.ma_thiet_bi }})</td>
+            <td>
+              {% if h.ma_tu and h.ma_ngan %}
+                <span class="slot-badge">
+                  <span class="cabinet-tag">{{ h.ma_tu }}</span> Ngăn {{ h.ma_ngan }}
+                </span>
+              {% else %}
+                <span class="badge badge-gray">Chưa phân ngăn</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if h.loai == 'LAY_RA' %}
+                <span class="badge badge-amber"><span class="badge-dot"></span>Lấy ra</span>
+              {% else %}
+                <span class="badge badge-green"><span class="badge-dot"></span>Nộp vào</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if h.ket_qua == 'DUNG_GIO' %}
+                <span class="badge badge-green">Đúng giờ</span>
+              {% elif h.ket_qua == 'NGOAI_LE' %}
+                <span class="badge badge-amber">Ngoại lệ</span>
+              {% else %}
+                <span class="badge badge-red">{{ h.ket_qua }}</span>
+              {% endif %}
+            </td>
+            <td>{{ h.ten_nguoi_thuc_hien }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--muted); padding: 28px;">Chưa có lượt giao nhận nào.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

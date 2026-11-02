@@ -1,0 +1,315 @@
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from controllers import yeu_cau_dang_nhap, yeu_cau_quyen
+from models.cau_hinh_model import (
+    lay_tat_ca_cau_hinh_gio,
+    lay_khung_gio_theo_cau_hinh,
+    them_khung_gio,
+    sua_khung_gio,
+    xoa_khung_gio,
+    them_cau_hinh_gio,
+    lay_danh_sach_ngay_dac_biet,
+    them_ngay_dac_biet,
+    sua_ngay_dac_biet,
+    xoa_ngay_dac_biet
+)
+from models.phan_quyen_model import (
+    lay_tat_ca_tai_khoan,
+    lay_chi_tiet_tai_khoan,
+    lay_danh_sach_vai_tro,
+    lay_danh_sach_quyen,
+    them_tai_khoan,
+    sua_tai_khoan,
+    xoa_tai_khoan,
+    cap_nhat_quyen_vai_tro,
+    BAC_VAI_TRO
+)
+from models.quan_nhan_model import lay_tat_ca_quan_nhan
+
+cau_hinh_bp = Blueprint("cau_hinh", __name__)
+
+@cau_hinh_bp.route("/cau-hinh-gio")
+@yeu_cau_quyen("CAUHINH.GIO")
+def khung_gio():
+    cau_hinh_list = lay_tat_ca_cau_hinh_gio()
+    khung_gio_list = lay_khung_gio_theo_cau_hinh()
+    ngay_dac_biet_list = lay_danh_sach_ngay_dac_biet()
+
+    return render_template(
+        "cau_hinh/khung_gio.html",
+        cau_hinh_list=cau_hinh_list,
+        khung_gio_list=khung_gio_list,
+        ngay_dac_biet_list=ngay_dac_biet_list
+    )
+
+@cau_hinh_bp.route("/cau-hinh-gio/them", methods=["POST"])
+@yeu_cau_quyen("CAUHINH.GIO")
+def them_khung():
+    khoa_ch = request.form.get("khoa_cau_hinh_gio")
+    thu = int(request.form.get("thu_trong_tuan", 2))
+    bat_dau = request.form.get("gio_bat_dau")
+    ket_thuc = request.form.get("gio_ket_thuc")
+    ghi_chu = request.form.get("ghi_chu", "")
+
+    if not bat_dau or not ket_thuc or bat_dau >= ket_thuc:
+        flash("Khung giờ không hợp lệ (Giờ bắt đầu phải nhỏ hơn giờ kết thúc).", "canh_bao")
+        return redirect(url_for("cau_hinh.khung_gio"))
+
+    try:
+        them_khung_gio(khoa_ch, thu, bat_dau, ket_thuc, ghi_chu)
+        flash("Đã thêm khung giờ mới thành công.", "thanh_cong")
+    except Exception as e:
+        flash(f"Lỗi thêm khung giờ: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.khung_gio"))
+
+@cau_hinh_bp.route("/cau-hinh-gio/sua/<int:id>", methods=["POST"])
+@yeu_cau_quyen("CAUHINH.GIO")
+def sua_khung(id):
+    khoa_ch = request.form.get("khoa_cau_hinh_gio")
+    thu = int(request.form.get("thu_trong_tuan", 2))
+    bat_dau = request.form.get("gio_bat_dau")
+    ket_thuc = request.form.get("gio_ket_thuc")
+    ghi_chu = request.form.get("ghi_chu", "")
+
+    if not bat_dau or not ket_thuc or bat_dau >= ket_thuc:
+        flash("Khung giờ không hợp lệ (Giờ bắt đầu phải nhỏ hơn giờ kết thúc).", "canh_bao")
+        return redirect(url_for("cau_hinh.khung_gio"))
+
+    try:
+        sua_khung_gio(id, khoa_ch, thu, bat_dau, ket_thuc, ghi_chu)
+        flash("Đã cập nhật khung giờ thành công.", "thanh_cong")
+    except Exception as e:
+        flash(f"Lỗi cập nhật: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.khung_gio"))
+
+@cau_hinh_bp.route("/cau-hinh-gio/xoa/<int:id>", methods=["POST"])
+@yeu_cau_quyen("CAUHINH.GIO")
+def xoa_khung(id):
+    try:
+        xoa_khung_gio(id)
+        flash("Đã xóa khung giờ thành công.", "thanh_cong")
+    except Exception as e:
+        flash(f"Lỗi khi xóa: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.khung_gio"))
+
+@cau_hinh_bp.route("/ngay-dac-biet/them", methods=["POST"])
+@yeu_cau_quyen("CAUHINH.GIO")
+def them_ngay():
+    ngay = request.form.get("ngay")
+    ly_do = request.form.get("ly_do")
+    cam_su_dung = 1 if request.form.get("cam_su_dung") == "1" else 0
+    khoa_ghi_de = request.form.get("khoa_cau_hinh_ghi_de") or None
+
+    if not ngay or not ly_do:
+        flash("Vui lòng nhập ngày và lý do áp dụng.", "canh_bao")
+        return redirect(url_for("cau_hinh.khung_gio"))
+
+    try:
+        them_ngay_dac_biet(ngay, ly_do, cam_su_dung, khoa_ghi_de)
+        flash("Đã cấu hình ngày đặc biệt thành công.", "thanh_cong")
+    except Exception as e:
+        flash(f"Lỗi cấu hình: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.khung_gio"))
+
+@cau_hinh_bp.route("/ngay-dac-biet/sua/<int:id>", methods=["POST"])
+@yeu_cau_quyen("CAUHINH.GIO")
+def sua_ngay(id):
+    ngay = request.form.get("ngay")
+    ly_do = request.form.get("ly_do")
+    cam_su_dung = 1 if request.form.get("cam_su_dung") == "1" else 0
+    khoa_ghi_de = request.form.get("khoa_cau_hinh_ghi_de") or None
+
+    if not ngay or not ly_do:
+        flash("Vui lòng nhập ngày và lý do áp dụng.", "canh_bao")
+        return redirect(url_for("cau_hinh.khung_gio"))
+
+    try:
+        sua_ngay_dac_biet(id, ngay, ly_do, cam_su_dung, khoa_ghi_de)
+        flash("Đã cập nhật ngày đặc biệt thành công.", "thanh_cong")
+    except Exception as e:
+        flash(f"Lỗi cập nhật: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.khung_gio"))
+
+@cau_hinh_bp.route("/ngay-dac-biet/xoa/<int:id>", methods=["POST"])
+@yeu_cau_quyen("CAUHINH.GIO")
+def xoa_ngay(id):
+    try:
+        xoa_ngay_dac_biet(id)
+        flash("Đã xóa ngày đặc biệt.", "thanh_cong")
+    except Exception as e:
+        flash(f"Lỗi xóa: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.khung_gio"))
+
+@cau_hinh_bp.route("/tai-khoan-phan-quyen")
+@yeu_cau_quyen("QUANTRI.TAIKHOAN")
+def phan_quyen():
+    user = session.get("nguoi_dung", {})
+    user_ten_dn = user.get("ten_dang_nhap")
+    user_bac = 100 if user_ten_dn == "admin" else BAC_VAI_TRO.get(user.get("ma_vai_tro"), 10)
+
+    tai_khoan_list = lay_tat_ca_tai_khoan(bac_nguoi_xem=user_bac)
+    vai_tro_list_tat_ca = lay_danh_sach_vai_tro()
+    if user_ten_dn == "admin":
+        vai_tro_list = vai_tro_list_tat_ca
+    else:
+        vai_tro_list = [vt for vt in vai_tro_list_tat_ca if BAC_VAI_TRO.get(vt["ma_vai_tro"], 10) <= user_bac]
+
+    quyen_list = lay_danh_sach_quyen()
+    quan_nhan_list = lay_tat_ca_quan_nhan()
+
+    return render_template(
+        "cau_hinh/phan_quyen.html",
+        tai_khoan_list=tai_khoan_list,
+        vai_tro_list=vai_tro_list,
+        quyen_list=quyen_list,
+        quan_nhan_list=quan_nhan_list
+    )
+
+@cau_hinh_bp.route("/tai-khoan/them", methods=["POST"])
+@yeu_cau_quyen("QUANTRI.TAIKHOAN")
+def them_tk():
+    user = session.get("nguoi_dung", {})
+    user_ten_dn = user.get("ten_dang_nhap")
+    user_bac = 100 if user_ten_dn == "admin" else BAC_VAI_TRO.get(user.get("ma_vai_tro"), 10)
+
+    ten_dang_nhap = request.form.get("ten_dang_nhap", "").strip()
+    mat_khau = request.form.get("mat_khau", "").strip()
+    ho_ten = request.form.get("ho_ten", "").strip()
+    khoa_vt = request.form.get("khoa_vai_tro")
+    khoa_qn = request.form.get("khoa_quan_nhan") or None
+    pham_vi = request.form.get("pham_vi_loai", "TOAN_BO")
+
+    if not ten_dang_nhap or not mat_khau or not ho_ten or not khoa_vt:
+        flash("Vui lòng điền đầy đủ các thông tin tài khoản bắt buộc.", "canh_bao")
+        return redirect(url_for("cau_hinh.phan_quyen"))
+
+    if user_ten_dn != "admin":
+        vai_tro_list = lay_danh_sach_vai_tro()
+        target_role = next((vt for vt in vai_tro_list if str(vt["ma_tu_sinh"]) == str(khoa_vt)), None)
+        if target_role and BAC_VAI_TRO.get(target_role["ma_vai_tro"], 10) > user_bac:
+            flash("Đồng chí không thể gán vai trò cao hơn cấp bậc của mình.", "nguy_hiem")
+            return redirect(url_for("cau_hinh.phan_quyen"))
+
+    try:
+        them_tai_khoan(ten_dang_nhap, mat_khau, ho_ten, khoa_vt, khoa_qn, pham_vi)
+        flash(f"Đã tạo tài khoản {ten_dang_nhap} thành công.", "thanh_cong")
+    except Exception as e:
+        flash(f"Lỗi tạo tài khoản (có thể tên đăng nhập đã tồn tại): {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.phan_quyen"))
+
+@cau_hinh_bp.route("/tai-khoan/sua/<int:id>", methods=["POST"])
+@yeu_cau_quyen("QUANTRI.TAIKHOAN")
+def sua_tk(id):
+    user = session.get("nguoi_dung", {})
+    user_ten_dn = user.get("ten_dang_nhap")
+    user_bac = 100 if user_ten_dn == "admin" else BAC_VAI_TRO.get(user.get("ma_vai_tro"), 10)
+
+    target_user = lay_chi_tiet_tai_khoan(id)
+    if not target_user:
+        flash("Tài khoản không tồn tại.", "nguy_hiem")
+        return redirect(url_for("cau_hinh.phan_quyen"))
+
+    target_ten_dn = target_user.get("ten_dang_nhap")
+    target_bac = 100 if target_ten_dn == "admin" else BAC_VAI_TRO.get(target_user.get("ma_vai_tro"), 10)
+
+    if target_ten_dn == "admin" and user_ten_dn != "admin":
+        flash("Chỉ quản trị viên tối cao (admin) mới có quyền chỉnh sửa tài khoản admin.", "nguy_hiem")
+        return redirect(url_for("cau_hinh.phan_quyen"))
+
+    if user_ten_dn != "admin" and target_bac > user_bac:
+        flash("Đồng chí không có thẩm quyền chỉnh sửa tài khoản cấp trên.", "nguy_hiem")
+        return redirect(url_for("cau_hinh.phan_quyen"))
+
+    ho_ten = request.form.get("ho_ten", "").strip()
+    mat_khau_moi = request.form.get("mat_khau_moi", "").strip()
+    khoa_vt = request.form.get("khoa_vai_tro")
+    pham_vi = request.form.get("pham_vi_loai", "TOAN_BO")
+    dang_dung = 1 if request.form.get("dang_dung") == "1" else 0
+
+    if not ho_ten or not khoa_vt:
+        flash("Vui lòng điền đủ họ tên và vai trò cán bộ.", "canh_bao")
+        return redirect(url_for("cau_hinh.phan_quyen"))
+
+    if user_ten_dn != "admin":
+        vai_tro_list = lay_danh_sach_vai_tro()
+        target_role = next((vt for vt in vai_tro_list if str(vt["ma_tu_sinh"]) == str(khoa_vt)), None)
+        if target_role and BAC_VAI_TRO.get(target_role["ma_vai_tro"], 10) > user_bac:
+            flash("Đồng chí không thể gán vai trò cao hơn cấp bậc của mình.", "nguy_hiem")
+            return redirect(url_for("cau_hinh.phan_quyen"))
+
+    try:
+        sua_tai_khoan(id, ho_ten, mat_khau_moi, khoa_vt, pham_vi, dang_dung, nguoi_thuc_hien=user_ten_dn)
+        flash("Đã cập nhật thông tin tài khoản thành công.", "thanh_cong")
+    except Exception as e:
+        flash(f"Lỗi cập nhật tài khoản: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.phan_quyen"))
+
+@cau_hinh_bp.route("/tai-khoan/xoa/<int:id>", methods=["POST"])
+@yeu_cau_quyen("QUANTRI.TAIKHOAN")
+def xoa_tk(id):
+    user = session.get("nguoi_dung", {})
+    user_ten_dn = user.get("ten_dang_nhap")
+    user_bac = 100 if user_ten_dn == "admin" else BAC_VAI_TRO.get(user.get("ma_vai_tro"), 10)
+
+    target_user = lay_chi_tiet_tai_khoan(id)
+    if not target_user:
+        flash("Tài khoản không tồn tại.", "nguy_hiem")
+        return redirect(url_for("cau_hinh.phan_quyen"))
+
+    target_ten_dn = target_user.get("ten_dang_nhap")
+    if target_ten_dn == "admin" or id == 1:
+        flash("Tuyệt đối không được phép xóa tài khoản quản trị tối cao (admin).", "nguy_hiem")
+        return redirect(url_for("cau_hinh.phan_quyen"))
+
+    target_bac = BAC_VAI_TRO.get(target_user.get("ma_vai_tro"), 10)
+    if user_ten_dn != "admin" and target_bac > user_bac:
+        flash("Đồng chí không có thẩm quyền xóa tài khoản cấp trên.", "nguy_hiem")
+        return redirect(url_for("cau_hinh.phan_quyen"))
+
+    try:
+        xoa_tai_khoan(id)
+        flash("Đã xóa tài khoản cán bộ.", "thanh_cong")
+    except Exception as e:
+        flash(f"Lỗi khi xóa tài khoản: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.phan_quyen"))
+
+@cau_hinh_bp.route("/vai-tro/cap-nhat-quyen/<int:id>", methods=["POST"])
+@yeu_cau_quyen("QUANTRI.TAIKHOAN")
+def cap_nhat_quyen(id):
+    user = session.get("nguoi_dung", {})
+    user_ten_dn = user.get("ten_dang_nhap")
+    user_bac = 100 if user_ten_dn == "admin" else BAC_VAI_TRO.get(user.get("ma_vai_tro"), 10)
+
+    vai_tro_list = lay_danh_sach_vai_tro()
+    target_role = next((vt for vt in vai_tro_list if vt["ma_tu_sinh"] == id), None)
+    if not target_role:
+        flash("Không tìm thấy vai trò chỉ định.", "nguy_hiem")
+        return redirect(url_for("cau_hinh.phan_quyen"))
+
+    target_role_bac = BAC_VAI_TRO.get(target_role["ma_vai_tro"], 10)
+    if user_ten_dn != "admin" and target_role_bac > user_bac:
+        flash("Đồng chí không có thẩm quyền điều chỉnh quyền của vai trò cấp trên.", "nguy_hiem")
+        return redirect(url_for("cau_hinh.phan_quyen"))
+
+    if target_role["ma_vai_tro"] == "QUAN_TRI" and user_ten_dn != "admin":
+        flash("Chỉ quản trị viên tối cao mới có quyền cấu hình vai trò Quản trị hệ thống.", "nguy_hiem")
+        return redirect(url_for("cau_hinh.phan_quyen"))
+
+    danh_sach_quyen = request.form.getlist("quyen_ids")
+    danh_sach_khoa = [int(q) for q in danh_sach_quyen if q.isdigit()]
+
+    try:
+        cap_nhat_quyen_vai_tro(id, danh_sach_khoa)
+        flash("Đã cập nhật phân quyền cho vai trò thành công.", "thanh_cong")
+    except Exception as e:
+        flash(f"Lỗi cập nhật quyền: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.phan_quyen"))

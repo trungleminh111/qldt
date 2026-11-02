@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Quân nhân chưa nộp · Quản lý điện thoại đại đội{% endblock %}
+{% block page_title %}Quân nhân chưa nộp{% endblock %}
+{% block page_subtitle %}Theo dõi các trường hợp đang giữ điện thoại và đôn đốc thu hồi về tủ bảo quản{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Danh sách điện thoại chưa nộp</h1>
+    <p>Theo dõi thời gian sử dụng thực tế và cảnh báo các trường hợp quá hạn.</p>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('bao_cao.in_a4') }}" class="btn-quan-doi btn-qd-secondary">⎙ In danh sách A4</a>
+  </div>
+</div>
+
+{% if danh_sach %}
+  <div class="alert alert-canh_bao" style="display: flex; align-items: center; justify-content: space-between;">
+    <div>
+      <b>Có {{ danh_sach|length }} trường hợp quân nhân đang giữ điện thoại chưa nộp về tủ</b>
+      <p style="margin-top: 2px; font-size: 11px;">Vui lòng kiểm tra và yêu cầu các đồng chí nộp lại đúng giờ quy định của đơn vị.</p>
+    </div>
+  </div>
+{% endif %}
+
+<div class="panel">
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Quân nhân</th>
+          <th>Cấp bậc / Chức vụ</th>
+          <th>Đơn vị</th>
+          <th>Thiết bị</th>
+          <th>Vị trí tủ / Ngăn</th>
+          <th>Giờ lấy</th>
+          <th>Trạng thái</th>
+          <th style="text-align: right;">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in danh_sach %}
+          <tr>
+            <td>
+              <div class="person-cell">
+                <div class="person-avatar">{{ r.ho_ten.split()[-1][:2]|upper }}</div>
+                <div>
+                  <b style="font-size: 13px; color: var(--navy-900);">{{ r.ho_ten }}</b>
+                  <small style="display: block; color: var(--muted);">{{ r.ma_quan_nhan }}</small>
+                </div>
+              </div>
+            </td>
+            <td><b>{{ r.ten_cap_bac }}</b> · {{ r.ten_chuc_vu }}</td>
+            <td>{{ r.ten_don_vi }}</td>
+            <td>{{ r.ten_dien_thoai }} ({{ r.ma_thiet_bi }})</td>
+            <td>
+              {% if r.ma_tu and (r.ten_ngan or r.ma_ngan) %}
+                <span class="slot-badge">
+                  <span class="cabinet-tag">{{ r.ma_tu }}</span> Ngăn {{ r.ten_ngan or r.ma_ngan }}
+                </span>
+              {% else %}
+                <span class="badge badge-gray">Chưa phân ngăn</span>
+              {% endif %}
+            </td>
+            <td>
+              <b>{{ r.gio_lay }}</b>
+            </td>
+            <td>
+              {% if r.muc_do == 'QUA_HAN' %}
+                <span class="badge badge-red"><span class="badge-dot"></span>{{ r.nhan_trang_thai }}</span>
+              {% elif r.muc_do == 'SAP_DEN_HAN' %}
+                <span class="badge badge-amber"><span class="badge-dot"></span>{{ r.nhan_trang_thai }}</span>
+              {% else %}
+                <span class="badge badge-blue"><span class="badge-dot"></span>{{ r.nhan_trang_thai }}</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <form method="POST" action="{{ url_for('giao_nhan.nop_may') }}" style="display: inline-block;">
+                <input type="hidden" name="khoa_quan_nhan" value="{{ r.qn_id }}">
+                <input type="hidden" name="url_chuyen_huong" value="{{ url_for('giao_nhan.chua_nop') }}">
+                <button type="submit" class="btn-quan-doi btn-qd-success btn-qd-sm">
+                  ✓ Xác nhận nộp
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--muted); padding: 40px;">
+              ✓ Tất cả điện thoại trong đơn vị đã được nộp đầy đủ về tủ bảo quản.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

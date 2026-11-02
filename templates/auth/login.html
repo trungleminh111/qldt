@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đăng nhập · Quản lý điện thoại đại đội</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="login-shell">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-logo">📱</div>
+        <h1>QUẢN LÝ ĐIỆN THOẠI</h1>
+        <small>QUẢN LÝ NỘI BỘ ĐẠI ĐỘI</small>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-messages" style="margin-bottom: 14px;">
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('auth.dang_nhap') }}">
+        <label for="ten_dang_nhap">Tên đăng nhập</label>
+        <input type="text" id="ten_dang_nhap" name="ten_dang_nhap" value="admin" required autofocus>
+
+        <label for="mat_khau">Mật khẩu</label>
+        <input type="password" id="mat_khau" name="mat_khau" value="admin123" required>
+
+        <button type="submit" class="btn-quan-doi btn-qd-primary btn-qd-lg btn-qd-block" style="margin-top: 20px;">
+          Đăng nhập làm việc
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; text-align: center; line-height: 1.6;">
+        Tài khoản quản lý: <b>admin</b> / Mật khẩu: <b>admin123</b><br>
+        Tài khoản trực ban: <b>tuananh</b> / Mật khẩu: <b>12345678</b>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Quản lý điện thoại đại đội{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebarMenu">
+      <div class="sidebar-brand">
+        <div class="brand-icon">📱</div>
+        <div class="brand-text">
+          <b>QUẢN LÝ ĐIỆN THOẠI</b>
+          <small>QUẢN LÝ NỘI BỘ</small>
+        </div>
+        <button type="button" class="btn-sidebar-close" id="btnCloseSidebar" aria-label="Đóng menu">✕</button>
+      </div>
+
+      <div class="sidebar-unit-card">
+        <div class="unit-symbol">C</div>
+        <div class="unit-meta">
+          <small>ĐƠN VỊ QUẢN LÝ</small>
+          <b>Đại đội 1</b>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-group-title">TỔNG QUAN</div>
+        <a href="{{ url_for('dashboard.tong_quan') }}" class="nav-link {% if request.endpoint == 'dashboard.tong_quan' %}active{% endif %}">
+          <span class="nav-icon">▦</span> Bảng điều khiển
+        </a>
+
+        <div class="nav-group-title">GIAO NHẬN</div>
+        <a href="{{ url_for('giao_nhan.giao_nhan') }}" class="nav-link {% if request.endpoint == 'giao_nhan.giao_nhan' %}active{% endif %}">
+          <span class="nav-icon">⇄</span> Giao nhận điện thoại
+        </a>
+        <a href="{{ url_for('giao_nhan.chua_nop') }}" class="nav-link {% if request.endpoint == 'giao_nhan.chua_nop' %}active{% endif %}">
+          <span class="nav-icon">⚠</span> Quân nhân chưa nộp
+        </a>
+        <a href="{{ url_for('giao_nhan.lich_su') }}" class="nav-link {% if request.endpoint == 'giao_nhan.lich_su' %}active{% endif %}">
+          <span class="nav-icon">◴</span> Lịch sử hoạt động
+        </a>
+        <a href="{{ url_for('ca_truc.ban_giao') }}" class="nav-link {% if request.endpoint == 'ca_truc.ban_giao' %}active{% endif %}">
+          <span class="nav-icon">⇋</span> Bàn giao ca trực
+        </a>
+
+        <div class="nav-group-title">QUẢN LÝ QUÂN SỰ</div>
+        <a href="{{ url_for('quan_nhan.danh_sach') }}" class="nav-link {% if request.endpoint.startswith('quan_nhan.') %}active{% endif %}">
+          <span class="nav-icon">♙</span> Hồ sơ quân nhân
+        </a>
+        <a href="{{ url_for('dien_thoai.danh_sach') }}" class="nav-link {% if request.endpoint.startswith('dien_thoai.') and request.endpoint not in ['dien_thoai.danh_sach_tu', 'dien_thoai.so_do_tu'] %}active{% endif %}">
+          <span class="nav-icon">▣</span> Quản lý điện thoại
+        </a>
+        <a href="{{ url_for('dien_thoai.danh_sach_tu') }}" class="nav-link {% if request.endpoint in ['dien_thoai.danh_sach_tu', 'dien_thoai.so_do_tu'] %}active{% endif %}">
+          <span class="nav-icon">▤</span> Tủ & Sơ đồ 24 ngăn
+        </a>
+
+        <div class="nav-group-title">CẤU HÌNH & BÁO CÁO</div>
+        {% set ds_quyen = session.get('nguoi_dung', {}).get('cac_quyen', []) or session.get('nguoi_dung', {}).get('danh_sach_quyen', []) %}
+        {% set la_admin = (session.get('nguoi_dung', {}).get('ten_dang_nhap') == 'admin') or (session.get('nguoi_dung', {}).get('ma_vai_tro') == 'QUAN_TRI') %}
+        {% if la_admin or ('CAUHINH.GIO' in ds_quyen) or ('CAUHINH.THOIGIAN' in ds_quyen) %}
+        <a href="{{ url_for('cau_hinh.khung_gio') }}" class="nav-link {% if request.endpoint == 'cau_hinh.khung_gio' %}active{% endif %}">
+          <span class="nav-icon">◷</span> Cấu hình khung giờ
+        </a>
+        {% endif %}
+        {% if la_admin or ('QUANTRI.TAIKHOAN' in ds_quyen) %}
+        <a href="{{ url_for('cau_hinh.phan_quyen') }}" class="nav-link {% if request.endpoint == 'cau_hinh.phan_quyen' %}active{% endif %}">
+          <span class="nav-icon">🛡</span> Tài khoản & Vai trò
+        </a>
+        {% endif %}
+        <a href="{{ url_for('bao_cao.index') }}" class="nav-link {% if request.endpoint == 'bao_cao.index' %}active{% endif %}">
+          <span class="nav-icon">📊</span> Báo cáo & Thống kê
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="user-avatar">{{ session.get('nguoi_dung', {}).get('ho_ten', 'CB')[:2]|upper }}</div>
+          <div style="flex: 1; min-width: 0;">
+            <b style="display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ session.get('nguoi_dung', {}).get('ho_ten', 'Cán bộ quản lý') }}</b>
+            <small style="color: #9cb8d1; font-size: 10px;">{{ session.get('nguoi_dung', {}).get('ten_vai_tro', 'Trực ca') }}</small>
+          </div>
+          <a href="{{ url_for('auth.dang_xuat') }}" class="btn-user-logout" title="Đăng xuất" aria-label="Đăng xuất" style="font-size: 14px; color: #94a3b8; text-decoration: none; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">↪</a>
+        </div>
+        <div style="margin-top: 10px; text-align: center; color: #526a84; font-size: 10px; font-weight: 600;">
+          QLĐT Đại đội 1 · Phiên bản 2.0.0
+        </div>
+      </div>
+    </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div class="main-content">
+      <header class="topbar">
+        <button type="button" class="btn-sidebar-toggle" id="btnToggleSidebar" aria-label="Mở menu">☰</button>
+        <div class="breadcrumb">
+          <span>QUẢN LÝ ĐIỆN THOẠI</span>
+          <span style="color: #cbd5e1;">›</span>
+          <b>{% block page_title %}Bảng điều khiển{% endblock %}</b>
+        </div>
+        <div class="topbar-meta">
+          <div class="time-badge" id="liveTime">Đang cập nhật...</div>
+          <a href="{{ url_for('auth.dang_xuat') }}" class="btn-quan-doi btn-qd-secondary btn-qd-sm">Đăng xuất</a>
+        </div>
+      </header>
+
+      <main class="content-body">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-messages">
+              {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

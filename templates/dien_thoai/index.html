@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý điện thoại · Quản lý điện thoại đại đội{% endblock %}
+{% block page_title %}Quản lý điện thoại{% endblock %}
+{% block page_subtitle %}Danh mục thiết bị điện thoại di động trong đơn vị đại đội{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Danh sách điện thoại quản lý</h1>
+    <p>Theo dõi thông tin thiết bị, số IMEI, chủ sở hữu và vị trí lưu trữ trong tủ bảo quản.</p>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('dien_thoai.danh_sach_tu') }}" class="btn-quan-doi btn-qd-secondary">▤ Xem sơ đồ tủ</a>
+    <button type="button" class="btn-quan-doi btn-qd-primary" onclick="moModal('modalThemDienThoai')">＋ Thêm thiết bị</button>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <span>Tổng số điện thoại</span>
+      <b>{{ tong_so }}</b>
+      <small>100% đã định danh</small>
+    </div>
+    <div class="stat-icon blue">📱</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <span>Apple (iPhone)</span>
+      <b>{{ so_apple }}</b>
+      <small>Thiết bị iOS</small>
+    </div>
+    <div class="stat-icon green"></div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <span>Samsung</span>
+      <b>{{ so_samsung }}</b>
+      <small>Thiết bị Galaxy</small>
+    </div>
+    <div class="stat-icon amber">S</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <span>Hãng khác</span>
+      <b>{{ so_khac }}</b>
+      <small>OPPO, Xiaomi, Vivo...</small>
+    </div>
+    <div class="stat-icon red">▦</div>
+  </div>
+</div>
+
+<div class="panel">
+  <form method="GET" action="{{ url_for('dien_thoai.danh_sach') }}" class="toolbar">
+    <input type="text" name="tu_khoa" placeholder="Tìm theo mã máy, tên máy, họ tên..." value="{{ tu_khoa }}">
+    <select name="don_vi" onchange="this.form.submit()">
+      <option value="TAT_CA" {% if don_vi_hien_tai == 'TAT_CA' %}selected{% endif %}>Tất cả đơn vị</option>
+      {% for dv in don_vi_list %}
+        <option value="{{ dv.ma_don_vi }}" {% if don_vi_hien_tai == dv.ma_don_vi %}selected{% endif %}>{{ dv.ten_don_vi }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn-quan-doi btn-qd-secondary">Tìm kiếm</button>
+    {% if tu_khoa or don_vi_hien_tai != 'TAT_CA' %}
+      <a href="{{ url_for('dien_thoai.danh_sach') }}" class="btn-quan-doi btn-qd-ghost">Xóa lọc</a>
+    {% endif %}
+  </form>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Mã thiết bị</th>
+          <th>Tên máy / Model</th>
+          <th>Hãng SX</th>
+          <th>Số IMEI</th>
+          <th>Quân nhân sử dụng</th>
+          <th>Đơn vị</th>
+          <th>Vị trí tủ / Ngăn</th>
+          <th>Trạng thái</th>
+          <th style="text-align: right;">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for dt in danh_sach %}
+          <tr>
+            <td><code style="font-weight: 700; color: #1e293b;">{{ dt.ma_thiet_bi }}</code></td>
+            <td>
+              <a href="{{ url_for('dien_thoai.chi_tiet', id=dt.ma_tu_sinh) }}" style="color: #1d4ed8; text-decoration: none; font-weight: 700; font-size: 13px;">
+                {{ dt.ten_dien_thoai }}
+              </a>
+            </td>
+            <td><b>{{ dt.hang_san_xuat }}</b></td>
+            <td><code style="font-size: 11px;">{{ dt.so_imei or '-' }}</code></td>
+            <td>
+              <div class="person-cell">
+                <div class="person-avatar" style="width: 26px; height: 26px; font-size: 10px;">{{ dt.ten_quan_nhan.split()[-1][:2]|upper }}</div>
+                <b>{{ dt.ten_quan_nhan }}</b>
+              </div>
+            </td>
+            <td>{{ dt.ten_don_vi }}</td>
+            <td>
+              {% if dt.ma_tu and dt.ma_ngan %}
+                <span class="slot-badge">
+                  <span class="cabinet-tag">{{ dt.ma_tu }}</span> Ngăn {{ dt.ten_ngan or dt.ma_ngan }}
+                </span>
+              {% else %}
+                <span class="badge badge-gray">Chưa phân ngăn</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if dt.trang_thai_hien_tai == 'Đã lấy' %}
+                <span class="badge badge-amber"><span class="badge-dot"></span>Đã lấy</span>
+              {% else %}
+                <span class="badge badge-green"><span class="badge-dot"></span>Trong tủ</span>
+              {% endif %}
+            </td>
+            <td style="text-align: right;">
+              <a href="{{ url_for('dien_thoai.chi_tiet', id=dt.ma_tu_sinh) }}" class="btn-quan-doi btn-qd-ghost btn-qd-sm">
+                Chi tiết
+              </a>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="9" style="text-align: center; color: var(--muted); padding: 36px;">
+              Chưa có thiết bị điện thoại nào phù hợp.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalThemDienThoai">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Đăng ký thiết bị điện thoại mới</h2>
+      <button class="modal-close" onclick="dongModal('modalThemDienThoai')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('dien_thoai.them') }}">
+      <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px;">
+        <div>
+          <label for="dt_ma">Mã thiết bị *</label>
+          <input type="text" id="dt_ma" name="ma_thiet_bi" placeholder="VD: DT015" required>
+        </div>
+        <div>
+          <label for="dt_ten">Tên máy / Model *</label>
+          <input type="text" id="dt_ten" name="ten_dien_thoai" placeholder="VD: iPhone 13 128GB" required>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label for="dt_hang">Hãng sản xuất</label>
+          <input type="text" id="dt_hang" name="hang_san_xuat" placeholder="Apple, Samsung, OPPO...">
+        </div>
+        <div>
+          <label for="dt_model">Đời máy / Phiên bản</label>
+          <input type="text" id="dt_model" name="model" placeholder="VD: Galaxy A54 5G">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;">
+        <div>
+          <label for="dt_imei">Số IMEI</label>
+          <input type="text" id="dt_imei" name="so_imei" placeholder="15 chữ số IMEI">
+        </div>
+        <div>
+          <label for="dt_sdt">Số điện thoại</label>
+          <input type="text" id="dt_sdt" name="so_dien_thoai" placeholder="Số SIM gắn kèm">
+        </div>
+      </div>
+
+      <label for="dt_qn">Quân nhân sở hữu *</label>
+      <select id="dt_qn" name="khoa_quan_nhan" required>
+        {% for qn in quan_nhan_list %}
+          <option value="{{ qn.ma_tu_sinh }}">{{ qn.ho_ten }} ({{ qn.ma_quan_nhan }}) - {{ qn.ten_don_vi }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="dt_ngan">Gán vị trí ngăn tủ</label>
+      <select id="dt_ngan" name="ma_ngan">
+        <option value="">-- Chưa gán ngăn --</option>
+        {% for ng in ngan_trong_list %}
+          <option value="{{ ng.ma_ngan }}">{{ ng.ma_tu }} - {{ ng.ten_ngan }} ({{ ng.ma_ngan }})</option>
+        {% endfor %}
+      </select>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalThemDienThoai')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Lưu thiết bị</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

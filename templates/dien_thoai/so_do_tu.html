@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Sơ đồ tủ {{ ma_tu_hien_tai }} · Quản lý điện thoại đại đội{% endblock %}
+{% block page_title %}Sơ đồ tủ {{ ma_tu_hien_tai }}{% endblock %}
+{% block page_subtitle %}{{ tu_hien_tai.ten_tu if tu_hien_tai else '' }} · 24 ngăn lưu trữ{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="{{ url_for('dien_thoai.danh_sach_tu') }}" class="btn-quan-doi btn-qd-secondary btn-qd-sm" style="margin-bottom: 10px;">
+      ← Quay lại danh sách tủ
+    </a>
+    <h1>Sơ đồ tủ điện thoại {{ ma_tu_hien_tai }}</h1>
+    <p>{{ tu_hien_tai.ten_tu if tu_hien_tai else '' }} · Theo dõi vị trí từng ngăn trong tủ bảo quản.</p>
+  </div>
+</div>
+
+<div style="display: flex; gap: 8px; margin-bottom: 20px;">
+  {% for t in tu_list %}
+    <a href="{{ url_for('dien_thoai.so_do_tu', ma_tu=t.ma_tu) }}" class="btn-quan-doi {% if t.ma_tu == ma_tu_hien_tai %}btn-qd-primary{% else %}btn-qd-secondary{% endif %}">
+      Tủ {{ t.ma_tu }} ({{ t.ten_tu }})
+    </a>
+  {% endfor %}
+</div>
+
+<div class="panel">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <div style="display: flex; gap: 14px; font-size: 11px; font-weight: 600;">
+      <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 10px; height: 10px; border-radius: 50%; background: var(--green); display: inline-block;"></i> Đang lưu trong tủ</span>
+      <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 10px; height: 10px; border-radius: 50%; background: var(--amber); display: inline-block;"></i> Đã lấy sử dụng</span>
+      <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 10px; height: 10px; border-radius: 50%; background: #b91c1c; display: inline-block;"></i> Quá hạn chưa nộp</span>
+      <span style="display: flex; align-items: center; gap: 5px;"><i style="width: 10px; height: 10px; border-radius: 50%; background: #94a3b8; display: inline-block;"></i> Ngăn trống</span>
+    </div>
+  </div>
+
+  <div class="locker-grid">
+    {% for ng in ngan_list %}
+      <div class="locker-cell {% if ng.trang_thai_ngan == 'QUA_HAN' or ng.qua_han or ng.muc_do == 'QUA_HAN' %}overdue{% elif ng.trang_thai_ngan == 'DANG_LUU' %}stored{% elif ng.trang_thai_ngan == 'DA_LAY' %}away{% else %}empty{% endif %}" data-ma-ngan="{{ ng.ma_ngan }}" data-ten-ngan="{{ ng.ten_ngan }}">
+        <small style="font-weight: 700;">{{ ng.ten_ngan }}</small>
+        {% if ng.trang_thai_ngan == 'QUA_HAN' or ng.qua_han or ng.muc_do == 'QUA_HAN' %}
+          <div style="font-size: 16px;">⚠</div>
+          <b style="color: #b91c1c;">Quá hạn</b>
+          <small style="color: #991b1b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">{{ ng.ho_ten or '' }}</small>
+        {% elif ng.trang_thai_ngan == 'DANG_LUU' %}
+          <div style="font-size: 16px;">📱</div>
+          <b>{{ ng.ma_thiet_bi or 'Có máy' }}</b>
+          <small style="color: #1b6843; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">{{ ng.ho_ten or '' }}</small>
+        {% elif ng.trang_thai_ngan == 'DA_LAY' %}
+          <div style="font-size: 16px;">⇄</div>
+          <b style="color: var(--amber);">Đã lấy</b>
+          <small style="color: #8c5d1b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">{{ ng.ho_ten or '' }}</small>
+        {% else %}
+          <span style="color: #94a3b8; font-size: 11px;">Trống</span>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

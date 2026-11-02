@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Biên bản bàn giao ca trực · Quản lý điện thoại đại đội</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Times New Roman", Times, serif; }
+    body { background: #525659; color: #000; font-size: 12pt; line-height: 1.4; padding: 20px 0; }
+    .page-a4 {
+      background: #ffffff;
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 20mm 20mm 20mm 25mm;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    }
+    .header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .header-left { text-align: center; }
+    .header-left b { font-size: 11pt; text-transform: uppercase; display: block; }
+    .header-left small { font-size: 10pt; display: block; margin-top: 2px; }
+    .header-right { text-align: center; }
+    .header-right b { font-size: 11pt; display: block; }
+    .line { width: 140px; height: 1px; background: #000; margin: 4px auto 0; }
+    .title { text-align: center; margin: 24px 0 18px; }
+    .title h1 { font-size: 15pt; text-transform: uppercase; margin-bottom: 4px; }
+    .title p { font-style: italic; font-size: 11.5pt; }
+    .meta-box { margin-bottom: 14px; font-size: 11.5pt; }
+    .meta-box p { margin: 4px 0; }
+    .sec-title { font-weight: bold; text-transform: uppercase; font-size: 11.5pt; margin: 16px 0 6px; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 10.5pt; }
+    th, td { border: 1px solid #000; padding: 6px 8px; vertical-align: middle; }
+    th { background: #f2f2f2; font-weight: bold; text-align: center; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .signatures {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.2fr;
+      gap: 15px;
+      text-align: center;
+      margin-top: 30px;
+      page-break-inside: avoid;
+    }
+    .sig-block b { display: block; text-transform: uppercase; font-size: 11pt; }
+    .sig-block small { display: block; font-style: italic; margin-top: 2px; font-size: 9.5pt; }
+    .sig-space { height: 75px; }
+    .sig-name { font-weight: bold; font-size: 11pt; }
+    .print-toolbar {
+      width: 210mm;
+      margin: 0 auto 15px auto;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 10px 16px;
+      background: #1e293b;
+      border-radius: 6px;
+    }
+    .btn-in {
+      background: #2563eb;
+      color: #ffffff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 4px;
+      font-size: 11pt;
+      font-weight: bold;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-in:hover { background: #1d4ed8; }
+    .btn-dong {
+      background: #475569;
+      color: #ffffff;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-size: 11pt;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-dong:hover { background: #334155; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .no-print { display: none !important; }
+      .page-a4 {
+        width: 100%;
+        min-height: auto;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+      }
+      @page { size: A4 portrait; margin: 15mm 15mm 15mm 20mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-toolbar no-print">
+    <button type="button" class="btn-in" onclick="window.print()">
+      ⎙ In biên bản
+    </button>
+    <a href="{{ url_for('ca_truc.ban_giao') }}" class="btn-dong">
+      ⮜ Quay lại ca trực
+    </a>
+  </div>
+
+  <div class="page-a4">
+    <div class="header">
+      <div class="header-left">
+        <b>QUÂN ĐỘI NHÂN DÂN VIỆT NAM</b>
+        <b>ĐẠI ĐỘI BỘ BINH 1 - TIỂU ĐOÀN 1</b>
+        <small>Số: BB-{{ ban_giao.ma_tu_sinh }}/BG-CT</small>
+        <div class="line"></div>
+      </div>
+      <div class="header-right">
+        <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b>
+        <b>Độc lập - Tự do - Hạnh phúc</b>
+        <div class="line"></div>
+        <p style="font-style: italic; font-size: 10pt; margin-top: 5px;">Hà Nội, ngày {{ ban_giao.thoi_gian_ban_giao[:10] }}</p>
+      </div>
+    </div>
+
+    <div class="title">
+      <h1>BIÊN BẢN BÀN GIAO CA TRỰC QUẢN LÝ TỦ ĐIỆN THOẠI</h1>
+      <p>Ca trực: <b>{{ ban_giao.ten_ca }}</b> (Từ {{ ban_giao.gio_bat_dau }} đến {{ ban_giao.gio_ket_thuc }}) — Ngày trực: {{ ban_giao.ngay_truc }}</p>
+    </div>
+
+    <div class="meta-box">
+      <p>Hôm nay, vào hồi <b>{{ ban_giao.thoi_gian_ban_giao[11:16] }}</b> ngày <b>{{ ban_giao.thoi_gian_ban_giao[:10] }}</b>, tại Phòng trực ban Đại đội bộ binh 1, chúng tôi gồm có:</p>
+      <p><b>1. Bên bàn giao (Ca trực trước):</b> Đồng chí <b>{{ ban_giao.ten_nguoi_ban_giao }}</b>.</p>
+      <p><b>2. Bên tiếp nhận (Ca trực sau):</b> Đồng chí <b>{{ ban_giao.ten_nguoi_nhan }}</b>.</p>
+      <p>Cùng tiến hành kiểm đếm trang bị, đối chiếu tình trạng quản lý điện thoại và bàn giao chìa khóa tủ với các nội dung sau:</p>
+    </div>
+
+    <div class="sec-title">I. Số liệu kiểm đếm thực tế trang thiết bị trong tủ</div>
+    <table>
+      <thead>
+        <tr>
+          <th>STT</th>
+          <th>Hạng mục kiểm đếm</th>
+          <th>Số lượng (Máy)</th>
+          <th>Ghi chú đối chiếu</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="text-center">1</td>
+          <td>Tổng số điện thoại trong danh mục đơn vị quản lý</td>
+          <td class="text-center"><b>{{ ban_giao.tong_thiet_bi }}</b></td>
+          <td>Đầy đủ theo biên chế</td>
+        </tr>
+        <tr>
+          <td class="text-center">2</td>
+          <td>Số lượng điện thoại hiện có trong tủ bảo quản</td>
+          <td class="text-center"><b>{{ ban_giao.dang_trong_tu }}</b></td>
+          <td>Khớp với vị trí các ngăn tủ</td>
+        </tr>
+        <tr>
+          <td class="text-center">3</td>
+          <td>Số lượng quân nhân đang mượn sử dụng ngoài tủ</td>
+          <td class="text-center"><b>{{ ban_giao.da_lay }}</b></td>
+          <td>Có phiếu giao nhận trên hệ thống</td>
+        </tr>
+        <tr>
+          <td class="text-center">4</td>
+          <td>Số lượng thiết bị quá hạn quy định (> 120 phút)</td>
+          <td class="text-center"><b>{{ ban_giao.so_qua_han or 0 }}</b></td>
+          <td>Chuyển giao ca sau đôn đốc thu hồi</td>
+        </tr>
+        <tr>
+          <td class="text-center">5</td>
+          <td>Số lượng chênh lệch / bất thường phát sinh</td>
+          <td class="text-center"><b>{{ ban_giao.bat_thuong or 0 }}</b></td>
+          <td>{{ "Không phát sinh bất thường" if not ban_giao.bat_thuong else "Có chênh lệch cần kiểm tra" }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="sec-title">II. Tình trạng niêm phong và chìa khóa tủ bảo quản</div>
+    <ul style="margin-left: 24px; font-size: 11pt; line-height: 1.5;">
+      <li>Ổ khóa tủ bảo quản: Nguyên vẹn, chốt khóa hoạt động tốt, không có dấu hiệu cạy phá.</li>
+      <li>Tem niêm phong tủ: Đảm bảo nguyên vẹn theo quy chuẩn bảo vệ vũ khí, khí tài quân sự.</li>
+      <li>Bộ chìa khóa tủ: Đã bàn giao đầy đủ số lượng chìa khóa cho cán bộ trực ban tiếp nhận.</li>
+    </ul>
+
+    <div class="sec-title">III. Danh sách quân nhân chưa nộp thiết bị tại thời điểm bàn giao (Snapshot)</div>
+    <table>
+      <thead>
+        <tr>
+          <th>STT</th>
+          <th>Mã QN</th>
+          <th>Họ và tên</th>
+          <th>Cấp bậc</th>
+          <th>Đơn vị</th>
+          <th>Thiết bị</th>
+          <th>Ngăn tủ</th>
+          <th>Giờ lấy</th>
+          <th>Tình trạng</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if snapshot.danh_sach_chua_nop and snapshot.danh_sach_chua_nop|length > 0 %}
+          {% for item in snapshot.danh_sach_chua_nop %}
+            <tr>
+              <td class="text-center">{{ loop.index }}</td>
+              <td class="text-center"><b>{{ item.ma_quan_nhan }}</b></td>
+              <td>{{ item.ho_ten }}</td>
+              <td>{{ item.ten_cap_bac }}</td>
+              <td>{{ item.ten_don_vi }}</td>
+              <td>{{ item.ten_dien_thoai }}</td>
+              <td class="text-center">{{ item.vi_tri_ngan or item.ten_ngan or item.ma_ngan }}</td>
+              <td class="text-center">{{ item.gio_lay[11:16] if item.gio_lay and item.gio_lay|length >= 16 else (item.gio_lay or '—') }}</td>
+              <td class="text-center">
+                {% if item.muc_do == 'QUA_HAN' %}
+                  <b>{{ item.nhan_trang_thai }}</b>
+                {% elif item.muc_do == 'SAP_DEN_HAN' %}
+                  {{ item.nhan_trang_thai }}
+                {% else %}
+                  Trong hạn
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="9" class="text-center" style="font-style: italic; padding: 10px;">
+              ✓ Tất cả thiết bị đã được thu hồi đầy đủ về tủ bảo quản trước khi bàn giao.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+
+    <div class="sec-title">IV. Ý kiến dặn dò & Ghi chú bàn giao</div>
+    <p style="font-size: 11pt; line-height: 1.5; min-height: 28px; border-bottom: 1px dotted #000; padding-bottom: 4px;">
+      {{ ban_giao.ghi_chu_ban_giao or "Không có ý kiến dặn dò thêm. Đơn vị chấp hành nghiêm quy định bảo quản trang bị." }}
+    </p>
+
+    <p style="text-align: justify; margin-top: 14px; font-size: 10.5pt;">
+      Biên bản được hai bên thống nhất ký xác nhận, có hiệu lực kể từ thời điểm ký. Cán bộ tiếp nhận chịu toàn bộ trách nhiệm quản lý, theo dõi thu hồi các thiết bị chưa nộp và duy trì chế độ bảo quản tủ theo đúng quy định quân sự.
+    </p>
+
+    <div class="signatures">
+      <div class="sig-block">
+        <b>BÊN BÀN GIAO</b>
+        <small>(Ký và ghi rõ họ tên)</small>
+        <div class="sig-space"></div>
+        <div class="sig-name">{{ ban_giao.ten_nguoi_ban_giao }}</div>
+      </div>
+      <div class="sig-block">
+        <b>BÊN TIẾP NHẬN</b>
+        <small>(Ký và ghi rõ họ tên)</small>
+        <div class="sig-space"></div>
+        <div class="sig-name">{{ ban_giao.ten_nguoi_nhan }}</div>
+      </div>
+      <div class="sig-block">
+        <b>CHỈ HUY PHÊ DUYỆT</b>
+        <small>(Ký và ghi rõ họ tên)</small>
+        <div class="sig-space"></div>
+        <div class="sig-name">....................................</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

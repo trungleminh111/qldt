@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Giao nhận điện thoại · Quản lý điện thoại đại đội{% endblock %}
+{% block page_title %}Giao nhận điện thoại{% endblock %}
+{% block page_subtitle %}Kiểm tra điều kiện sử dụng theo thời gian thực và ghi nhận lấy ra / nộp vào{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Giao nhận thiết bị điện thoại</h1>
+    <p>Kiểm tra tự động khung giờ được phép sử dụng theo chức vụ và nhóm đối tượng của quân nhân.</p>
+  </div>
+</div>
+
+<div class="stepper">
+  <div class="step-item active">
+    <span class="step-num">1</span>
+    <span>Chọn quân nhân</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step-item active">
+    <span class="step-num">2</span>
+    <span>Kiểm tra thiết bị & Khung giờ</span>
+  </div>
+  <div class="step-line"></div>
+  <div class="step-item active">
+    <span class="step-num">3</span>
+    <span>Xác nhận giao dịch</span>
+  </div>
+</div>
+
+<div class="grid-two">
+  <div class="panel">
+    <div class="panel-header">
+      <h2>1. Thông tin quân nhân & Thiết bị</h2>
+    </div>
+
+    <div style="margin-bottom: 14px;">
+      <label style="display: block; font-size: 12px; font-weight: 700; color: var(--navy-900); margin-bottom: 6px;">Lọc nhanh theo đơn vị</label>
+      <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+        <button type="button" class="btn-loc-don-vi active" data-don-vi="ALL" onclick="locTheoDonVi(this, 'ALL')">Tất cả</button>
+        <button type="button" class="btn-loc-don-vi" data-don-vi="Trung đội 1" onclick="locTheoDonVi(this, 'Trung đội 1')">Trung đội 1</button>
+        <button type="button" class="btn-loc-don-vi" data-don-vi="Trung đội 2" onclick="locTheoDonVi(this, 'Trung đội 2')">Trung đội 2</button>
+        <button type="button" class="btn-loc-don-vi" data-don-vi="Trung đội 3" onclick="locTheoDonVi(this, 'Trung đội 3')">Trung đội 3</button>
+      </div>
+
+      <label for="oTimKiemNhanh" style="display: block; font-size: 12px; font-weight: 700; color: var(--navy-900); margin-bottom: 6px;">Tìm kiếm quân nhân (tên, mã quân nhân...)</label>
+      <input type="text" id="oTimKiemNhanh" placeholder="Tìm nhanh quân nhân theo tên, mã số..." oninput="locDanhSachQuanNhan()" onkeydown="xuLyPhimTimKiem(event)" style="width: 100%; padding: 10px 12px; font-size: 13.5px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
+      <div id="danhSachGoiYNhanh" style="display: none; margin-top: 8px; max-height: 180px; overflow-y: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff; box-shadow: var(--shadow-sm);"></div>
+    </div>
+
+    <form method="GET" action="{{ url_for('giao_nhan.giao_nhan') }}" id="formChonQuanNhan">
+      <label for="chonQuanNhan">Chọn quân nhân thực hiện giao nhận</label>
+      <select id="chonQuanNhan" name="ma_qn" onchange="this.form.submit()" style="font-size: 13.5px; font-weight: 700; padding: 11px;">
+        {% for qn in danh_sach_qn %}
+          <option value="{{ qn.ma_tu_sinh }}" data-ho-ten="{{ qn.ho_ten }}" data-ma-qn="{{ qn.ma_quan_nhan }}" data-don-vi="{{ qn.ten_don_vi }}" {% if qn_hien_tai and qn_hien_tai.ma_tu_sinh == qn.ma_tu_sinh %}selected{% endif %}>
+            {{ qn.ho_ten }} ({{ qn.ma_quan_nhan }}) - {{ qn.ten_cap_bac }} - {{ qn.ten_don_vi }}
+          </option>
+        {% endfor %}
+      </select>
+    </form>
+
+    {% if qn_hien_tai %}
+      <div class="info-grid">
+        <div><span>Mã quân nhân</span><b>{{ qn_hien_tai.ma_quan_nhan }}</b></div>
+        <div><span>Họ và tên</span><b>{{ qn_hien_tai.ho_ten }}</b></div>
+        <div><span>Cấp bậc</span><b>{{ qn_hien_tai.ten_cap_bac }}</b></div>
+        <div><span>Đơn vị</span><b>{{ qn_hien_tai.ten_don_vi }}</b></div>
+        <div><span>Chức vụ / Nhóm đối tượng</span><b>{{ qn_hien_tai.ten_chuc_vu }} ({{ qn_hien_tai.nhom_doi_tuong or 'Không giới hạn' }})</b></div>
+        <div><span>Điện thoại</span><b>{{ qn_hien_tai.ten_dien_thoai or 'Chưa đăng ký' }}</b></div>
+        <div>
+          <span>Vị trí tủ lưu</span>
+          {% if qn_hien_tai.ma_tu and qn_hien_tai.ma_ngan %}
+            <span class="slot-badge">
+              <span class="cabinet-tag">{{ qn_hien_tai.ma_tu }}</span> Ngăn {{ qn_hien_tai.ten_ngan or qn_hien_tai.ma_ngan }}
+            </span>
+          {% else %}
+            <span class="badge badge-gray">Chưa phân ngăn</span>
+          {% endif %}
+        </div>
+        <div>
+          <span>Trạng thái máy</span>
+          {% if qn_hien_tai.trang_thai_may == 'Đã lấy' %}
+            <span class="badge badge-amber"><span class="badge-dot"></span>Đã lấy sử dụng</span>
+          {% elif qn_hien_tai.trang_thai_may in ['Trong tủ', 'Đã nộp'] %}
+            <span class="badge badge-green"><span class="badge-dot"></span>Đang trong tủ</span>
+          {% else %}
+            <span class="badge badge-gray"><span class="badge-dot"></span>Chưa có thiết bị</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <div style="margin-top: 18px;">
+        <h3 style="font-size: 13.5px; color: var(--navy-900); font-weight: 700; margin-bottom: 8px;">2. Thời gian giao dịch</h3>
+        <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;">
+          <div>
+            <label for="transNgay" style="margin-top: 0;">Ngày giao dịch</label>
+            <input type="date" id="transNgay" value="{{ ngay_hien_tai }}" onchange="kiemTraGioDong()">
+          </div>
+          <div>
+            <label for="transGio" style="margin-top: 0;">Giờ giao dịch</label>
+            <input type="time" id="transGio" value="{{ gio_hien_tai }}" onchange="kiemTraGioDong()">
+          </div>
+        </div>
+      </div>
+
+      <div id="hopKiemTraLuat" class="rule-box {% if kiem_tra and kiem_tra.hop_le %}ok{% else %}error{% endif %}">
+        <div class="rule-icon" id="hopLuatIcon">{% if kiem_tra and kiem_tra.hop_le %}✓{% else %}⚠{% endif %}</div>
+        <div class="rule-text">
+          <b id="hopLuatTieuDe">{% if kiem_tra and kiem_tra.hop_le %}ĐƯỢC PHÉP MƯỢN{% else %}NGOÀI KHUNG GIỜ QUY ĐỊNH{% endif %}</b>
+          <p id="hopLuatMoTa">{{ kiem_tra.doi_tuong if kiem_tra else '' }} · {{ kiem_tra.thong_bao if kiem_tra else '' }}</p>
+        </div>
+      </div>
+
+      <div style="margin-top: 22px;">
+        {% if qn_hien_tai.trang_thai_may in ['Trong tủ', 'Đã nộp'] %}
+          <form method="POST" action="{{ url_for('giao_nhan.lay_may') }}" id="formLayThuong">
+            <input type="hidden" name="khoa_quan_nhan" value="{{ qn_hien_tai.ma_tu_sinh }}">
+            <input type="hidden" name="ngay" id="ngayGiaoInput" value="{{ ngay_hien_tai }}">
+            <input type="hidden" name="gio" id="gioGiaoInput" value="{{ gio_hien_tai }}">
+            <input type="hidden" name="la_ngoai_le" value="0">
+            <button type="submit" id="btnGiaoThuong" class="btn-quan-doi btn-qd-primary btn-qd-lg btn-qd-block" style="{% if not kiem_tra or not kiem_tra.hop_le %}display: none;{% endif %}">
+              ⇄ Xác nhận giao điện thoại
+            </button>
+          </form>
+
+          <button type="button" id="btnNgoaiLe" class="btn-quan-doi btn-qd-warning btn-qd-lg btn-qd-block" onclick="moModal('modalNgoaiLe')" style="{% if kiem_tra and kiem_tra.hop_le %}display: none;{% endif %}">
+            ⚠ Xử lý mượn ngoài giờ (Ngoại lệ khẩn cấp)
+          </button>
+        {% elif qn_hien_tai.trang_thai_may == 'Đã lấy' %}
+          <form method="POST" action="{{ url_for('giao_nhan.nop_may') }}">
+            <input type="hidden" name="khoa_quan_nhan" value="{{ qn_hien_tai.ma_tu_sinh }}">
+            <button type="submit" class="btn-quan-doi btn-qd-success btn-qd-lg btn-qd-block">
+              ✓ Xác nhận nộp điện thoại vào tủ
+            </button>
+          </form>
+        {% else %}
+          <div style="text-align: center; padding: 16px; background: #f8fafc; border-radius: 8px; color: var(--muted); border: 1px dashed var(--border);">
+            Quân nhân chưa được gán thiết bị điện thoại. Vui lòng thêm thiết bị trong mục Quản lý Điện thoại.
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <h2>Khung giờ sử dụng quy định</h2>
+    </div>
+
+    <div style="margin-bottom: 22px;">
+      <p style="color: var(--muted); font-size: 11.5px; margin-bottom: 12px;">
+        Khung giờ được cấu hình động theo nhóm đối tượng: <b style="color: #1e40af;">{{ qn_hien_tai.nhom_doi_tuong if qn_hien_tai else '' }}</b>
+      </p>
+
+      {% if kiem_tra and kiem_tra.khung_gio %}
+        <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm);">
+          {% for kg in kiem_tra.khung_gio %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 11px 16px; border-bottom: 1px solid #f1f5f9; font-size: 12.5px;">
+              <b>{{ kg.thu }}</b>
+              <span style="color: #1d4ed8; font-weight: 700; background: #eff6ff; padding: 3px 8px; border-radius: 4px;">{{ kg.bat_dau }} – {{ kg.ket_thuc }}</span>
+              <small style="color: var(--muted);">{{ kg.ghi_chu or '' }}</small>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--muted);">Không có giới hạn khung giờ hoặc chưa cấu hình.</p>
+      {% endif %}
+    </div>
+
+    <div style="border-top: 1px solid var(--border); padding-top: 20px;">
+      <h3 style="font-size: 13.5px; color: var(--navy-900); font-weight: 700; margin-bottom: 10px;">Cán bộ trực ban thực hiện</h3>
+      <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid var(--border-subtle);">
+        <span style="display: block; font-size: 11px; color: var(--muted); text-transform: uppercase; font-weight: 700;">Người ghi nhận giao dịch</span>
+        <b style="font-size: 14px; color: var(--navy-900); display: block; margin-top: 2px;">{{ session.get('nguoi_dung', {}).get('ho_ten', 'Cán bộ quản lý') }}</b>
+        <small style="display: block; color: var(--muted); margin-top: 2px;">Chức vụ/Vai trò: {{ session.get('nguoi_dung', {}).get('ten_vai_tro', 'Trực ca') }}</small>
+      </div>
+      <div style="margin-top: 16px; padding: 12px 14px; background: #eef6ff; border: 1px solid #bfdbfe; border-radius: 8px; color: #1e3a8a; font-size: 11.5px; line-height: 1.6;">
+        🛡 <b>Quy định đơn vị:</b> Mọi lượt giao nhận điện thoại được lưu vào sổ theo dõi kèm thời gian thực tế để phục vụ công tác thanh tra, bàn giao ca trực và kiểm kê trang bị.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalNgoaiLe">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⚠ Xác nhận mượn ngoài giờ</h2>
+      <button class="modal-close" onclick="dongModal('modalNgoaiLe')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('giao_nhan.lay_may') }}">
+      <input type="hidden" name="khoa_quan_nhan" value="{{ qn_hien_tai.ma_tu_sinh if qn_hien_tai else '' }}">
+      <input type="hidden" name="ngay" id="ngayGiaoNgoaiLeInput" value="{{ ngay_hien_tai }}">
+      <input type="hidden" name="gio" id="gioGiaoNgoaiLeInput" value="{{ gio_hien_tai }}">
+      <input type="hidden" name="la_ngoai_le" value="1">
+
+      <p style="font-size: 12.5px; color: var(--muted); margin-bottom: 14px;">
+        Thời điểm yêu cầu nằm ngoài khung giờ được phép sử dụng. Giao dịch này sẽ được ghi nhận là trường hợp ngoại lệ có giám sát chặt chẽ.
+      </p>
+
+      <label for="ly_do_ngoai_le">Lý do mượn</label>
+      <select id="ly_do_ngoai_le" name="ly_do">
+        <option value="Liên hệ gia đình khẩn cấp">Liên hệ gia đình khẩn cấp</option>
+        <option value="Công việc đột xuất đơn vị">Công việc đột xuất đơn vị</option>
+        <option value="Theo yêu cầu của cán bộ chỉ huy">Theo yêu cầu của cán bộ chỉ huy</option>
+        <option value="Lý do khác">Lý do khác</option>
+      </select>
+
+      <label for="ghi_chu_ngoai_le">Giải trình chi tiết lý do</label>
+      <textarea id="ghi_chu_ngoai_le" name="ghi_chu" placeholder="Nhập chi tiết lý do và nội dung liên hệ..." required></textarea>
+
+      <label for="han_nop_ngoai_le">Thời gian hạn chót phải nộp lại điện thoại</label>
+      <input type="time" id="han_nop_ngoai_le" name="han_nop" value="21:30" required>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalNgoaiLe')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-warning">Xác nhận ngoại lệ</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+
+{% block title %}Cấu hình khung giờ · Quản lý điện thoại đại đội{% endblock %}
+{% block page_title %}Cấu hình khung giờ sử dụng{% endblock %}
+{% block page_subtitle %}Cấu hình thời gian linh hoạt áp dụng theo chức vụ và nhóm đối tượng{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Quy định thời gian sử dụng điện thoại</h1>
+    <p>Quy định khung thời gian mượn và sử dụng điện thoại trong ngày theo từng nhóm đối tượng và chế độ công tác của đơn vị.</p>
+  </div>
+  <div class="header-actions">
+    <button type="button" class="btn-quan-doi btn-qd-primary" onclick="moModal('modalThemKhung')">＋ Thêm khung giờ mới</button>
+    <button type="button" class="btn-quan-doi btn-qd-warning" onclick="moModal('modalNgayDacBiet')">⚠ Cấu hình ngày đặc biệt</button>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Danh sách các khung giờ đang áp dụng</h2>
+  </div>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Nhóm đối tượng</th>
+          <th>Thứ trong tuần</th>
+          <th>Giờ bắt đầu</th>
+          <th>Giờ kết thúc</th>
+          <th>Mô tả / Ghi chú</th>
+          <th style="text-align: right;">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for kg in khung_gio_list %}
+          <tr>
+            <td><b>{{ kg.ten_cau_hinh }}</b></td>
+            <td><span class="badge badge-blue">{{ kg.ten_thu }}</span></td>
+            <td><b style="color: var(--navy);">{{ kg.gio_bat_dau }}</b></td>
+            <td><b style="color: var(--blue);">{{ kg.gio_ket_thuc }}</b></td>
+            <td>{{ kg.ghi_chu or '' }}</td>
+            <td style="text-align: right; white-space: nowrap;">
+              <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" style="margin-right: 4px;"
+                onclick="moModalSuaKhung('{{ kg.ma_tu_sinh }}', '{{ kg.khoa_cau_hinh_gio }}', '{{ kg.thu_trong_tuan }}', '{{ kg.gio_bat_dau }}', '{{ kg.gio_ket_thuc }}', '{{ kg.ghi_chu or '' }}')">
+                ✎ Sửa
+              </button>
+              <form method="POST" action="{{ url_for('cau_hinh.xoa_khung', id=kg.ma_tu_sinh) }}" style="display: inline-block;" onsubmit="return confirm('Đồng chí có chắc chắn muốn xóa khung giờ này?');">
+                <button type="submit" class="btn-quan-doi btn-qd-danger btn-qd-sm">
+                  Xóa
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--muted); padding: 24px;">Chưa cấu hình khung giờ nào.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Ngày đặc biệt (Lễ, Tết, Diễn tập, Cấm sử dụng)</h2>
+  </div>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Ngày áp dụng</th>
+          <th>Lý do / Sự kiện</th>
+          <th>Chế độ áp dụng</th>
+          <th>Cấu hình thay thế</th>
+          <th style="text-align: right;">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ndb in ngay_dac_biet_list %}
+          <tr>
+            <td><b>{{ ndb.ngay }}</b></td>
+            <td>{{ ndb.ly_do }}</td>
+            <td>
+              {% if ndb.cam_su_dung == 1 %}
+                <span class="badge badge-red">CẤM HOÀN TOÀN</span>
+              {% else %}
+                <span class="badge badge-amber">THAY THẾ KHUNG GIỜ</span>
+              {% endif %}
+            </td>
+            <td>{{ ndb.ten_cau_hinh_ghi_de or 'Không' }}</td>
+            <td style="text-align: right; white-space: nowrap;">
+              <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" style="margin-right: 4px;"
+                onclick="moModalSuaNgay('{{ ndb.ma_tu_sinh }}', '{{ ndb.ngay }}', '{{ ndb.ly_do }}', '{{ ndb.cam_su_dung }}', '{{ ndb.khoa_cau_hinh_ghi_de or '' }}')">
+                ✎ Sửa
+              </button>
+              <form method="POST" action="{{ url_for('cau_hinh.xoa_ngay', id=ndb.ma_tu_sinh) }}" style="display: inline-block;" onsubmit="return confirm('Xóa ngày đặc biệt này?');">
+                <button type="submit" class="btn-quan-doi btn-qd-danger btn-qd-sm">
+                  Xóa
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--muted); padding: 20px;">
+              Chưa có ngày đặc biệt nào được thiết lập.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalThemKhung">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Thêm khung giờ sử dụng mới</h2>
+      <button class="modal-close" onclick="dongModal('modalThemKhung')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('cau_hinh.them_khung') }}">
+      <label for="ch_id">Nhóm đối tượng áp dụng *</label>
+      <select id="ch_id" name="khoa_cau_hinh_gio" required>
+        {% for ch in cau_hinh_list %}
+          <option value="{{ ch.ma_tu_sinh }}">{{ ch.ten_cau_hinh }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="thu_id">Thứ trong tuần *</label>
+      <select id="thu_id" name="thu_trong_tuan" required>
+        <option value="2">Thứ Hai</option>
+        <option value="3">Thứ Ba</option>
+        <option value="4">Thứ Tư</option>
+        <option value="5">Thứ Năm</option>
+        <option value="6" selected>Thứ Sáu</option>
+        <option value="7">Thứ Bảy</option>
+        <option value="8">Chủ Nhật</option>
+      </select>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label for="gio_bd">Giờ bắt đầu *</label>
+          <input type="time" id="gio_bd" name="gio_bat_dau" value="20:00" required>
+        </div>
+        <div>
+          <label for="gio_kt">Giờ kết thúc *</label>
+          <input type="time" id="gio_kt" name="gio_ket_thuc" value="21:30" required>
+        </div>
+      </div>
+
+      <label for="kg_ghi_chu">Ghi chú</label>
+      <input type="text" id="kg_ghi_chu" name="ghi_chu" placeholder="VD: Sinh hoạt tối, giải lao cuối tuần...">
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalThemKhung')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Lưu khung giờ</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalSuaKhung">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Chỉnh sửa khung giờ</h2>
+      <button class="modal-close" onclick="dongModal('modalSuaKhung')">✕</button>
+    </div>
+    <form id="formSuaKhung" method="POST" action="">
+      <label for="sua_ch_id">Nhóm đối tượng áp dụng *</label>
+      <select id="sua_ch_id" name="khoa_cau_hinh_gio" required>
+        {% for ch in cau_hinh_list %}
+          <option value="{{ ch.ma_tu_sinh }}">{{ ch.ten_cau_hinh }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="sua_thu_id">Thứ trong tuần *</label>
+      <select id="sua_thu_id" name="thu_trong_tuan" required>
+        <option value="2">Thứ Hai</option>
+        <option value="3">Thứ Ba</option>
+        <option value="4">Thứ Tư</option>
+        <option value="5">Thứ Năm</option>
+        <option value="6">Thứ Sáu</option>
+        <option value="7">Thứ Bảy</option>
+        <option value="8">Chủ Nhật</option>
+      </select>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label for="sua_gio_bd">Giờ bắt đầu *</label>
+          <input type="time" id="sua_gio_bd" name="gio_bat_dau" required>
+        </div>
+        <div>
+          <label for="sua_gio_kt">Giờ kết thúc *</label>
+          <input type="time" id="sua_gio_kt" name="gio_ket_thuc" required>
+        </div>
+      </div>
+
+      <label for="sua_kg_ghi_chu">Ghi chú</label>
+      <input type="text" id="sua_kg_ghi_chu" name="ghi_chu">
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalSuaKhung')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalNgayDacBiet">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Thiết lập ngày đặc biệt</h2>
+      <button class="modal-close" onclick="dongModal('modalNgayDacBiet')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('cau_hinh.them_ngay') }}">
+      <label for="ndb_ngay">Ngày áp dụng *</label>
+      <input type="date" id="ndb_ngay" name="ngay" required>
+
+      <label for="ndb_ly_do">Lý do / Tên sự kiện *</label>
+      <input type="text" id="ndb_ly_do" name="ly_do" placeholder="VD: Trực sẵn sàng chiến đấu, Ngày Tết, Diễn tập..." required>
+
+      <label for="ndb_cam">Chế độ áp dụng</label>
+      <select id="ndb_cam" name="cam_su_dung">
+        <option value="1">Cấm hoàn toàn việc sử dụng điện thoại</option>
+        <option value="0">Áp dụng khung giờ thay thế</option>
+      </select>
+
+      <label for="ndb_ghi_de">Cấu hình giờ thay thế (nếu có)</label>
+      <select id="ndb_ghi_de" name="khoa_cau_hinh_ghi_de">
+        <option value="">-- Không chọn --</option>
+        {% for ch in cau_hinh_list %}
+          <option value="{{ ch.ma_tu_sinh }}">{{ ch.ten_cau_hinh }}</option>
+        {% endfor %}
+      </select>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalNgayDacBiet')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-warning">Lưu cấu hình</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalSuaNgayDacBiet">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Chỉnh sửa ngày đặc biệt</h2>
+      <button class="modal-close" onclick="dongModal('modalSuaNgayDacBiet')">✕</button>
+    </div>
+    <form id="formSuaNgay" method="POST" action="">
+      <label for="sua_ndb_ngay">Ngày áp dụng *</label>
+      <input type="date" id="sua_ndb_ngay" name="ngay" required>
+
+      <label for="sua_ndb_ly_do">Lý do / Tên sự kiện *</label>
+      <input type="text" id="sua_ndb_ly_do" name="ly_do" required>
+
+      <label for="sua_ndb_cam">Chế độ áp dụng</label>
+      <select id="sua_ndb_cam" name="cam_su_dung">
+        <option value="1">Cấm hoàn toàn việc sử dụng điện thoại</option>
+        <option value="0">Áp dụng khung giờ thay thế</option>
+      </select>
+
+      <label for="sua_ndb_ghi_de">Cấu hình giờ thay thế</label>
+      <select id="sua_ndb_ghi_de" name="khoa_cau_hinh_ghi_de">
+        <option value="">-- Không chọn --</option>
+        {% for ch in cau_hinh_list %}
+          <option value="{{ ch.ma_tu_sinh }}">{{ ch.ten_cau_hinh }}</option>
+        {% endfor %}
+      </select>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalSuaNgayDacBiet')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function moModalSuaKhung(id, khoaCh, thu, batDau, ketThuc, ghiChu) {
+  document.getElementById("formSuaKhung").action = `/cau-hinh-gio/sua/${id}`;
+  document.getElementById("sua_ch_id").value = khoaCh;
+  document.getElementById("sua_thu_id").value = thu;
+  document.getElementById("sua_gio_bd").value = batDau;
+  document.getElementById("sua_gio_kt").value = ketThuc;
+  document.getElementById("sua_kg_ghi_chu").value = ghiChu;
+  moModal("modalSuaKhung");
+}
+
+function moModalSuaNgay(id, ngay, lyDo, camSuDung, khoaGhiDe) {
+  document.getElementById("formSuaNgay").action = `/ngay-dac-biet/sua/${id}`;
+  document.getElementById("sua_ndb_ngay").value = ngay;
+  document.getElementById("sua_ndb_ly_do").value = lyDo;
+  document.getElementById("sua_ndb_cam").value = camSuDung;
+  document.getElementById("sua_ndb_ghi_de").value = khoaGhiDe;
+  moModal("modalSuaNgayDacBiet");
+}
+</script>
+{% endblock %}

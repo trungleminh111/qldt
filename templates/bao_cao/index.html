@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}Báo cáo & Thống kê · Quản lý điện thoại đại đội{% endblock %}
+{% block page_title %}Báo cáo & Thống kê số liệu{% endblock %}
+{% block page_subtitle %}Tổng hợp số liệu quản lý và biểu đồ trực quan chấp hành quy chế sử dụng điện thoại{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Báo cáo số liệu toàn đại đội</h1>
+    <p>Phân tích tỷ lệ chấp hành quy định, đối chiếu số lượng thiết bị theo từng trung đội và thống kê lượt giao nhận.</p>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('bao_cao.xuat_excel') }}" class="btn-quan-doi btn-qd-primary">↓ Xuất Excel (.xlsx)</a>
+    <a href="{{ url_for('bao_cao.in_a4') }}" class="btn-quan-doi btn-qd-secondary" target="_blank">⎙ In biểu mẫu A4</a>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <span>Tổng số quân nhân</span>
+      <b>{{ thong_ke.tong_quan_nhan }}</b>
+      <small>Biên chế đại đội</small>
+    </div>
+    <div class="stat-icon blue">♙</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <span>Tổng số điện thoại</span>
+      <b>{{ thong_ke.tong_dien_thoai }}</b>
+      <small>Thiết bị có trong sổ theo dõi</small>
+    </div>
+    <div class="stat-icon green">📱</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <span>Đang lưu trong tủ</span>
+      <b>{{ thong_ke.dang_trong_tu }}</b>
+      <small>Thiết bị niêm cất</small>
+    </div>
+    <div class="stat-icon amber">▤</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-card-info">
+      <span>Lượt ngoại lệ</span>
+      <b>{{ thong_ke.so_ngoai_le }}</b>
+      <small>Mượn khẩn cấp ngoài giờ</small>
+    </div>
+    <div class="stat-icon red">⚠</div>
+  </div>
+</div>
+
+<div class="grid-responsive-2" style="margin-bottom: 24px;">
+  <div class="panel" style="margin-bottom: 0;">
+    <div class="panel-header">
+      <h2>Trạng thái quản lý thiết bị hiện tại</h2>
+    </div>
+    <div style="position: relative; height: 260px; display: flex; align-items: center; justify-content: center;">
+      <canvas id="bieuDoTrangThai"></canvas>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom: 0;">
+    <div class="panel-header">
+      <h2>Phân bổ thiết bị theo từng Trung đội</h2>
+    </div>
+    <div style="position: relative; height: 260px;">
+      <canvas id="bieuDoDonVi"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Xu hướng lượt giao nhận thiết bị gần đây</h2>
+  </div>
+  <div style="position: relative; height: 240px;">
+    <canvas id="bieuDoGiaoNhan"></canvas>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Thống kê chi tiết theo đơn vị cơ sở</h2>
+  </div>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Đơn vị</th>
+          <th>Quân số</th>
+          <th>Số thiết bị</th>
+          <th>Đang trong tủ</th>
+          <th>Đang lấy sử dụng</th>
+          <th>Tỷ lệ an toàn</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in thong_ke.thong_ke_don_vi %}
+          <tr>
+            <td><b>{{ u.ten_don_vi }}</b></td>
+            <td>{{ u.quan_so }} đồng chí</td>
+            <td><b>{{ u.so_may }} máy</b></td>
+            <td><span class="badge badge-green">{{ u.trong_tu }}</span></td>
+            <td><span class="badge badge-amber">{{ u.da_lay }}</span></td>
+            <td>
+              {% set ty_le = (u.trong_tu / u.so_may * 100)|round(1) if u.so_may > 0 else 100 %}
+              <b style="color: var(--green);">{{ ty_le }}%</b>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <h2>Nhật ký giao nhận phục vụ báo cáo</h2>
+  </div>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Thời gian</th>
+          <th>Quân nhân</th>
+          <th>Đơn vị</th>
+          <th>Thiết bị</th>
+          <th>Tác vụ</th>
+          <th>Kết quả</th>
+          <th>Cán bộ thực hiện</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in lich_su %}
+          <tr>
+            <td>{{ h.thoi_gian }}</td>
+            <td><b>{{ h.ho_ten }}</b> ({{ h.ma_quan_nhan }})</td>
+            <td>{{ h.ten_don_vi }}</td>
+            <td>{{ h.ten_dien_thoai }}</td>
+            <td>
+              {% if h.loai == 'LAY_RA' %}
+                <span class="badge badge-amber">Lấy ra</span>
+              {% else %}
+                <span class="badge badge-green">Nộp vào</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if h.ket_qua == 'DUNG_GIO' %}
+                <span class="badge badge-green">Đúng giờ</span>
+              {% elif h.ket_qua == 'NGOAI_LE' %}
+                <span class="badge badge-amber">Ngoại lệ</span>
+              {% else %}
+                <span class="badge badge-red">{{ h.ket_qua }}</span>
+              {% endif %}
+            </td>
+            <td>{{ h.ten_nguoi_thuc_hien }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chart.min.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const ctx1 = document.getElementById("bieuDoTrangThai");
+  if (ctx1) {
+    new Chart(ctx1, {
+      type: "doughnut",
+      data: {
+        labels: ["Trong tủ", "Đã lấy sử dụng", "Mượn ngoại lệ"],
+        datasets: [{
+          data: [
+            {{ thong_ke.dang_trong_tu }},
+            {{ thong_ke.da_lay }},
+            {{ thong_ke.so_ngoai_le }}
+          ],
+          backgroundColor: ["#15803d", "#d97706", "#dc2626"],
+          borderWidth: 2,
+          borderColor: "#ffffff"
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              boxWidth: 12,
+              font: { family: "Be Vietnam Pro", size: 11 }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  const ctx2 = document.getElementById("bieuDoDonVi");
+  if (ctx2) {
+    const labelsDonVi = [{% for u in thong_ke.thong_ke_don_vi %}"{{ u.ten_don_vi }}",{% endfor %}];
+    const dataTrongTu = [{% for u in thong_ke.thong_ke_don_vi %}{{ u.trong_tu }},{% endfor %}];
+    const dataDaLay = [{% for u in thong_ke.thong_ke_don_vi %}{{ u.da_lay }},{% endfor %}];
+
+    new Chart(ctx2, {
+      type: "bar",
+      data: {
+        labels: labelsDonVi,
+        datasets: [
+          {
+            label: "Trong tủ",
+            data: dataTrongTu,
+            backgroundColor: "#15803d",
+            borderRadius: 4
+          },
+          {
+            label: "Đã lấy",
+            data: dataDaLay,
+            backgroundColor: "#d97706",
+            borderRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0, font: { family: "Be Vietnam Pro", size: 11 } }
+          },
+          x: {
+            ticks: { font: { family: "Be Vietnam Pro", size: 11 } }
+          }
+        },
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { boxWidth: 12, font: { family: "Be Vietnam Pro", size: 11 } }
+          }
+        }
+      }
+    });
+  }
+
+  const ctx3 = document.getElementById("bieuDoGiaoNhan");
+  if (ctx3) {
+    const labelsNgay = [{% for n in thong_ke.thong_ke_theo_ngay %}"{{ n.ngay }}",{% endfor %}];
+    const dataLay = [{% for n in thong_ke.thong_ke_theo_ngay %}{{ n.so_lay }},{% endfor %}];
+    const dataNop = [{% for n in thong_ke.thong_ke_theo_ngay %}{{ n.so_nop }},{% endfor %}];
+
+    new Chart(ctx3, {
+      type: "bar",
+      data: {
+        labels: labelsNgay.length ? labelsNgay : ["Hôm nay"],
+        datasets: [
+          {
+            label: "Lấy ra",
+            data: dataLay.length ? dataLay : [{{ thong_ke.da_lay }}],
+            backgroundColor: "#2563eb",
+            borderRadius: 4
+          },
+          {
+            label: "Nộp vào",
+            data: dataNop.length ? dataNop : [{{ thong_ke.dang_trong_tu }}],
+            backgroundColor: "#16a34a",
+            borderRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { precision: 0, font: { family: "Be Vietnam Pro", size: 11 } }
+          },
+          x: {
+            ticks: { font: { family: "Be Vietnam Pro", size: 11 } }
+          }
+        },
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: { boxWidth: 12, font: { family: "Be Vietnam Pro", size: 11 } }
+          }
+        }
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

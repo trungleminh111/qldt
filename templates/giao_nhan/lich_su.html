@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Lịch sử hoạt động · Quản lý điện thoại đại đội{% endblock %}
+{% block page_title %}Lịch sử hoạt động{% endblock %}
+{% block page_subtitle %}Nhật ký giao nhận thiết bị và lưu vết toàn bộ hoạt động trong đại đội{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Nhật ký giao nhận điện thoại</h1>
+    <p>Toàn bộ lượt lấy máy, nộp máy được ghi nhận tự động và không thể xóa.</p>
+  </div>
+  <div class="header-actions">
+    <a href="{{ url_for('bao_cao.xuat_excel') }}" class="btn-quan-doi btn-qd-primary">↓ Xuất Excel</a>
+    <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="window.print()">⎙ In A4</button>
+  </div>
+</div>
+
+<div class="panel">
+  <form method="GET" action="{{ url_for('giao_nhan.lich_su') }}" class="toolbar">
+    <input type="text" name="tu_khoa" placeholder="Tìm theo tên, mã quân nhân, thiết bị..." value="{{ tu_khoa }}">
+    <input type="date" name="ngay" value="{{ ngay }}">
+    <select name="loai" style="max-width: 160px;">
+      <option value="TAT_CA" {% if loai == 'TAT_CA' %}selected{% endif %}>Tất cả thao tác</option>
+      <option value="LAY_RA" {% if loai == 'LAY_RA' %}selected{% endif %}>Lấy điện thoại</option>
+      <option value="NOP_VAO" {% if loai == 'NOP_VAO' %}selected{% endif %}>Nộp điện thoại</option>
+    </select>
+    <button type="submit" class="btn-quan-doi btn-qd-secondary">Lọc dữ liệu</button>
+    <a href="{{ url_for('giao_nhan.lich_su') }}" class="btn-quan-doi btn-qd-ghost">Đặt lại</a>
+  </form>
+
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Thời gian</th>
+          <th>Quân nhân</th>
+          <th>Cấp bậc</th>
+          <th>Đơn vị</th>
+          <th>Thiết bị</th>
+          <th>Vị trí tủ / Ngăn</th>
+          <th>Thao tác</th>
+          <th>Kết quả</th>
+          <th>Người thực hiện</th>
+          <th>Ghi chú</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for h in danh_sach %}
+          <tr>
+            <td><b>{{ h.thoi_gian }}</b></td>
+            <td>
+              <b>{{ h.ho_ten }}</b>
+              <small style="display: block; color: var(--muted);">{{ h.ma_quan_nhan }}</small>
+            </td>
+            <td>{{ h.ten_cap_bac }}</td>
+            <td>{{ h.ten_don_vi }}</td>
+            <td>{{ h.ten_dien_thoai }} ({{ h.ma_thiet_bi }})</td>
+            <td>
+              {% if h.ma_tu and (h.ten_ngan or h.ma_ngan) %}
+                <span class="slot-badge">
+                  <span class="cabinet-tag">{{ h.ma_tu }}</span> Ngăn {{ h.ten_ngan or h.ma_ngan }}
+                </span>
+              {% else %}
+                <span style="color: var(--muted);">-</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if h.loai == 'LAY_RA' %}
+                <span class="badge badge-amber">Lấy điện thoại</span>
+              {% else %}
+                <span class="badge badge-green">Nộp điện thoại</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if h.ket_qua == 'DUNG_GIO' %}
+                <span class="badge badge-green">Đúng giờ</span>
+              {% elif h.ket_qua == 'NGOAI_LE' %}
+                <span class="badge badge-amber">Ngoại lệ</span>
+              {% else %}
+                <span class="badge badge-red">{{ h.ket_qua }}</span>
+              {% endif %}
+            </td>
+            <td>{{ h.ten_nguoi_thuc_hien }}</td>
+            <td style="color: var(--muted); max-width: 200px; white-space: normal;">{{ h.ghi_chu or '' }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="10" style="text-align: center; color: var(--muted); padding: 30px;">
+              Chưa có dữ liệu lịch sử phù hợp với điều kiện tìm kiếm.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

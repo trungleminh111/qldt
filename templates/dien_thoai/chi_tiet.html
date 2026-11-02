@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Thiết bị {{ dt.ma_thiet_bi }} · Quản lý điện thoại đại đội{% endblock %}
+{% block page_title %}Chi tiết thiết bị điện thoại{% endblock %}
+{% block page_subtitle %}Mã: {{ dt.ma_thiet_bi }} · {{ dt.ten_dien_thoai }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <a href="{{ url_for('dien_thoai.danh_sach') }}" class="btn-quan-doi btn-qd-secondary btn-qd-sm" style="margin-bottom: 10px;">
+      ← Quay lại danh sách
+    </a>
+    <h1>{{ dt.ten_dien_thoai }}</h1>
+    <p>{{ dt.hang_san_xuat }} {{ dt.model or '' }} · Mã: {{ dt.ma_thiet_bi }}</p>
+  </div>
+  <div class="header-actions">
+    <button type="button" class="btn-quan-doi btn-qd-primary" onclick="moModal('modalSuaDienThoai')">✎ Sửa thông tin</button>
+    {% if dt.ma_tu %}
+      <a href="{{ url_for('dien_thoai.so_do_tu', ma_tu=dt.ma_tu) }}" class="btn-quan-doi btn-qd-secondary">▤ Sơ đồ tủ {{ dt.ma_tu }}</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid-3-2">
+  <div>
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Thông số kỹ thuật thiết bị</h2>
+      </div>
+      <div class="info-grid">
+        <div><span>Mã thiết bị</span><b>{{ dt.ma_thiet_bi }}</b></div>
+        <div><span>Tên điện thoại</span><b>{{ dt.ten_dien_thoai }}</b></div>
+        <div><span>Hãng sản xuất</span><b>{{ dt.hang_san_xuat }}</b></div>
+        <div><span>Model</span><b>{{ dt.model or 'Chưa có' }}</b></div>
+        <div><span>Số IMEI</span><b>{{ dt.so_imei or 'Chưa cập nhật' }}</b></div>
+        <div><span>Số điện thoại SIM</span><b>{{ dt.so_dien_thoai or 'Chưa cập nhật' }}</b></div>
+        <div><span>Ngày đăng ký</span><b>{{ dt.ngay_tao }}</b></div>
+        <div>
+          <span>Trạng thái máy</span>
+          {% if dt.trang_thai_hien_tai == 'Đã lấy' %}
+            <span class="badge badge-amber">Đã lấy sử dụng</span>
+          {% else %}
+            <span class="badge badge-green">Đang trong tủ</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Lịch sử giao nhận thiết bị</h2>
+      </div>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Thời gian</th>
+              <th>Thao tác</th>
+              <th>Kết quả</th>
+              <th>Tủ / Ngăn</th>
+              <th>Người thực hiện</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for h in lich_su %}
+              <tr>
+                <td><b>{{ h.thoi_gian }}</b></td>
+                <td>
+                  {% if h.loai == 'LAY_RA' %}
+                    <span class="badge badge-amber">Lấy ra</span>
+                  {% else %}
+                    <span class="badge badge-green">Nộp vào</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if h.ket_qua == 'DUNG_GIO' %}
+                    <span class="badge badge-green">Đúng giờ</span>
+                  {% else %}
+                    <span class="badge badge-amber">{{ h.ket_qua }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ h.ma_tu or '-' }} · {{ h.ma_ngan or '-' }}</td>
+                <td>{{ h.ten_nguoi_thuc_hien }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="5" style="text-align: center; color: var(--muted); padding: 20px;">Chưa có lịch sử giao nhận cho thiết bị này.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Quân nhân sở hữu</h2>
+      </div>
+      <div style="background: #f8fafc; border-radius: 8px; padding: 16px;">
+        <div style="font-size: 24px; margin-bottom: 8px;">♙</div>
+        <small style="color: var(--muted); font-size: 10px;">{{ dt.ma_quan_nhan }} · {{ dt.ten_cap_bac }}</small>
+        <h3 style="font-size: 16px; color: var(--navy); margin-top: 2px;">{{ dt.ten_quan_nhan }}</h3>
+        <p style="color: var(--muted); font-size: 12px; margin-top: 4px;">{{ dt.ten_chuc_vu }} · {{ dt.ten_don_vi }}</p>
+
+        <div style="margin-top: 16px;">
+          <a href="{{ url_for('quan_nhan.chi_tiet', id=dt.khoa_quan_nhan) }}" class="btn-quan-doi btn-qd-secondary btn-qd-block">
+            Xem hồ sơ quân nhân
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h2>Vị trí lưu trữ trong tủ</h2>
+      </div>
+      <div style="padding: 14px; background: #eef6ff; border-radius: 8px;">
+        <span style="display: block; font-size: 11px; color: #406d9b;">TỦ ĐIỆN THOẠI BẢO QUẢN</span>
+        <b style="display: block; font-size: 18px; color: var(--navy); margin: 4px 0;">{{ dt.ten_tu or dt.ma_tu or '-' }}</b>
+        <span style="display: block; font-size: 13px; font-weight: 600; color: var(--blue);">Vị trí: Ngăn {{ dt.ten_ngan or dt.ma_ngan or 'Chưa phân ngăn' }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modalSuaDienThoai">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Chỉnh sửa thông tin thiết bị</h2>
+      <button class="modal-close" onclick="dongModal('modalSuaDienThoai')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('dien_thoai.sua', id=dt.ma_tu_sinh) }}">
+      <input type="hidden" name="khoa_quan_nhan" value="{{ dt.khoa_quan_nhan }}">
+      <input type="hidden" name="ma_ngan" value="{{ dt.ma_ngan or '' }}">
+
+      <label>Mã thiết bị</label>
+      <input type="text" value="{{ dt.ma_thiet_bi }}" disabled style="background: #f1f5f9; color: #64748b;">
+
+      <label for="edit_ten_dien_thoai">Tên thiết bị *</label>
+      <input type="text" id="edit_ten_dien_thoai" name="ten_dien_thoai" value="{{ dt.ten_dien_thoai }}" required>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label for="edit_hang_san_xuat">Hãng sản xuất *</label>
+          <input type="text" id="edit_hang_san_xuat" name="hang_san_xuat" value="{{ dt.hang_san_xuat }}" required>
+        </div>
+        <div>
+          <label for="edit_model">Model</label>
+          <input type="text" id="edit_model" name="model" value="{{ dt.model or '' }}">
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <label for="edit_so_imei">Số IMEI</label>
+          <input type="text" id="edit_so_imei" name="so_imei" value="{{ dt.so_imei or '' }}">
+        </div>
+        <div>
+          <label for="edit_so_dien_thoai">Số điện thoại SIM</label>
+          <input type="text" id="edit_so_dien_thoai" name="so_dien_thoai" value="{{ dt.so_dien_thoai or '' }}">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalSuaDienThoai')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
