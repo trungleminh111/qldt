@@ -155,3 +155,58 @@ class TestThemTuNgan(unittest.TestCase):
         self.assertIn(b"E06", so_do_res.data)
         self.assertIn(b"E07", so_do_res.data)
         self.assertIn(b"E08", so_do_res.data)
+    def test_so_do_tu_hien_thi_dien_thoai_va_link_chi_tiet(self):
+        so_do = lay_so_do_tu("T01")
+        co_dien_thoai = [r for r in so_do if r.get("khoa_dien_thoai")]
+        self.assertGreater(len(co_dien_thoai), 0)
+        first_dt = co_dien_thoai[0]
+        self.assertIsNotNone(first_dt["ma_thiet_bi"])
+        self.assertIsNotNone(first_dt["ho_ten"])
+
+        with self.client.session_transaction() as sess:
+            sess["nguoi_dung"] = {
+                "ma_tu_sinh": 1,
+                "ten_dang_nhap": "admin",
+                "ho_ten": "Quản trị viên",
+                "ten_vai_tro": "Quản trị",
+                "ma_vai_tro": "QUAN_TRI",
+                "quyen": []
+            }
+
+        res = self.client.get("/tu-dien-thoai/T01")
+        self.assertEqual(res.status_code, 200)
+        html = res.data.decode("utf-8")
+        self.assertIn(first_dt["ma_thiet_bi"], html)
+        self.assertIn(f"/dien-thoai/chi-tiet/{first_dt['khoa_dien_thoai']}", html)
+
+    def test_them_tu_voi_pham_vi_don_vi_danh_sach(self):
+        with self.client.session_transaction() as sess:
+            sess["nguoi_dung"] = {
+                "ma_tu_sinh": 2,
+                "ten_dang_nhap": "canbo_trungdoi",
+                "ho_ten": "Cán bộ trung đội",
+                "ten_vai_tro": "Cán bộ quản lý",
+                "ma_vai_tro": "CAN_BO",
+                "pham_vi_loai": "DON_VI",
+                "khoa_don_vi": "2,3",
+                "quyen": []
+            }
+
+        res = self.client.post("/tu-dien-thoai/them", data={
+            "ma_tu": "T05",
+            "ten_tu": "Tủ Trung đội 1 mở rộng",
+            "vi_tri": "Phòng Trung đội 1",
+            "so_ngan": "15",
+            "tien_to_ngan": "E",
+            "khoa_don_vi_quan_ly": "2"
+        }, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+
+        ket_noi = lay_ket_noi()
+        c = ket_noi.cursor()
+        c.execute("SELECT ma_tu, khoa_don_vi_quan_ly FROM tu WHERE ma_tu = 'T05'")
+        row = c.fetchone()
+        self.assertIsNotNone(row)
+        self.assertEqual(row["khoa_don_vi_quan_ly"], 2)
+        ket_noi.close()
+

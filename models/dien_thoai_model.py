@@ -153,6 +153,7 @@ def lay_so_do_tu(ma_tu_code="T01", khoa_don_vi_gioi_han=None):
     con_tro = ket_noi.cursor()
     cau_lenh = """
         SELECT ng.ma_tu_sinh, ng.ma_ngan, ng.ten_ngan, ng.khoa_quan_nhan,
+               dt.ma_tu_sinh AS khoa_dien_thoai,
                qn.ma_quan_nhan, qn.ho_ten, qn.khoa_cap_bac, cb.ten_cap_bac,
                dt.ma_thiet_bi, dt.ten_dien_thoai, dt.hang_san_xuat,
                CASE

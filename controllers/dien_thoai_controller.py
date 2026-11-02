@@ -223,13 +223,16 @@ def them_tu_moi():
         so_ngan = 24
 
     khoa_don_vi = None
-    if khoa_don_vi_gioi_han:
-        khoa_don_vi = khoa_don_vi_gioi_han
-    elif khoa_dv_raw:
+    if khoa_dv_raw:
         try:
             khoa_don_vi = int(khoa_dv_raw)
         except ValueError:
             khoa_don_vi = None
+
+    if khoa_don_vi_gioi_han:
+        ds_chophep = khoa_don_vi_gioi_han if isinstance(khoa_don_vi_gioi_han, (list, tuple, set)) else [int(khoa_don_vi_gioi_han)]
+        if khoa_don_vi not in ds_chophep:
+            khoa_don_vi = ds_chophep[0] if ds_chophep else None
 
     try:
         them_tu(

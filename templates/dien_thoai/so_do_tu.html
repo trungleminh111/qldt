@@ -57,6 +57,13 @@
             <small style="color: #8c5d1b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">{{ ng.ho_ten or '' }}</small>
           {% endif %}
         </a>
+      {% elif ng.khoa_quan_nhan %}
+        <div class="locker-cell stored" data-ma-ngan="{{ ng.ma_ngan }}" data-ten-ngan="{{ ng.ten_ngan }}" title="Đã cấp cho {{ ng.ho_ten }} nhưng chưa đăng ký thiết bị">
+          <small style="font-weight: 700;">{{ ng.ten_ngan }}</small>
+          <div style="font-size: 16px;">👤</div>
+          <b>Chưa gán máy</b>
+          <small style="color: #1b6843; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">{{ ng.ho_ten or '' }}</small>
+        </div>
       {% else %}
         <div class="locker-cell empty" data-ma-ngan="{{ ng.ma_ngan }}" data-ten-ngan="{{ ng.ten_ngan }}" title="Ngăn {{ ng.ten_ngan }} hiện đang trống" onclick="thongBaoNganTrong('{{ ng.ten_ngan }}', '{{ ng.ma_ngan }}')">
           <small style="font-weight: 700;">{{ ng.ten_ngan }}</small>
