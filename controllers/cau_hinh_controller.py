@@ -377,7 +377,7 @@ def cap_nhat_quyen(id):
         flash("Đồng chí không có thẩm quyền điều chỉnh quyền của vai trò cấp trên.", "nguy_hiem")
         return redirect(url_for("cau_hinh.phan_quyen"))
 
-    if target_role["ma_vai_tro"] == "QUAN_TRI" and user_ten_dn != "admin":
+    if target_role["ma_vai_tro"] == "QUAN_TRI" and user_ten_dn != "admin" and user.get("ma_vai_tro") != "QUAN_TRI":
         flash("Chỉ quản trị viên tối cao mới có quyền cấu hình vai trò Quản trị hệ thống.", "nguy_hiem")
         return redirect(url_for("cau_hinh.phan_quyen"))
 
@@ -386,7 +386,15 @@ def cap_nhat_quyen(id):
 
     try:
         cap_nhat_quyen_vai_tro(id, danh_sach_khoa)
-        flash("Đã cập nhật phân quyền cho vai trò thành công.", "thanh_cong")
+        if user.get("khoa_vai_tro") == id:
+            vai_tro_list_moi = lay_danh_sach_vai_tro()
+            role_moi = next((vt for vt in vai_tro_list_moi if vt["ma_tu_sinh"] == id), None)
+            if role_moi:
+                user["cac_quyen"] = role_moi.get("ds_ma_quyen", [])
+                user["danh_sach_quyen"] = role_moi.get("ds_ma_quyen", [])
+                session["nguoi_dung"] = user
+                session.modified = True
+        flash(f"Đã cập nhật phân quyền cho vai trò {target_role['ten_vai_tro']} thành công.", "thanh_cong")
     except Exception as e:
         flash(f"Lỗi cập nhật quyền: {str(e)}", "nguy_hiem")
 

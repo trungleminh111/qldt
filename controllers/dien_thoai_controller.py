@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from controllers import yeu_cau_dang_nhap, lay_don_vi_gioi_han
 from models.dien_thoai_model import (
     lay_tat_ca_dien_thoai,
@@ -19,6 +19,21 @@ from models.quan_nhan_model import lay_tat_ca_quan_nhan, lay_chi_tiet_quan_nhan,
 from models.giao_nhan_model import danh_sach_lich_su
 
 dien_thoai_bp = Blueprint("dien_thoai", __name__)
+
+def kiem_tra_quyen_quan_ly_tu():
+    nguoi_dung = session.get("nguoi_dung", {})
+    if not nguoi_dung:
+        return False
+    ten_dang_nhap = nguoi_dung.get("ten_dang_nhap")
+    ma_vai_tro = nguoi_dung.get("ma_vai_tro")
+    if ten_dang_nhap == "admin" or ma_vai_tro == "QUAN_TRI":
+        return True
+    if ma_vai_tro in ["NGUOI_TRUC", "QUAN_NHAN"]:
+        return False
+    if ma_vai_tro in ["CHI_HUY", "CAN_BO"]:
+        return True
+    danh_sach_quyen = nguoi_dung.get("danh_sach_quyen") or nguoi_dung.get("cac_quyen") or []
+    return any(q in danh_sach_quyen for q in ["CAUHINH.DANHMUC", "DIENTHOAI.SUA", "QUANTRI.HETHONG"])
 
 @dien_thoai_bp.route("/dien-thoai")
 @yeu_cau_dang_nhap
@@ -52,7 +67,8 @@ def danh_sach():
         so_apple=so_apple,
         so_samsung=so_samsung,
         so_khac=so_khac,
-        khoa_don_vi_gioi_han=khoa_don_vi_gioi_han
+        khoa_don_vi_gioi_han=khoa_don_vi_gioi_han,
+        co_quyen_quan_ly_tu=kiem_tra_quyen_quan_ly_tu()
     )
 
 @dien_thoai_bp.route("/dien-thoai/chi-tiet/<int:id>")
@@ -201,12 +217,16 @@ def danh_sach_tu():
         tu_list=danh_sach_tu_data,
         don_vi_list=cac_don_vi,
         goi_y_tu=goi_y_tu,
-        khoa_don_vi_gioi_han=khoa_don_vi_gioi_han
+        khoa_don_vi_gioi_han=khoa_don_vi_gioi_han,
+        co_quyen_quan_ly_tu=kiem_tra_quyen_quan_ly_tu()
     )
 
 @dien_thoai_bp.route("/tu-dien-thoai/them", methods=["POST"])
 @yeu_cau_dang_nhap
 def them_tu_moi():
+    if not kiem_tra_quyen_quan_ly_tu():
+        flash("Đồng chí không có thẩm quyền thêm tủ bảo quản mới.", "nguy_hiem")
+        return redirect(url_for("dien_thoai.danh_sach_tu"))
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     ma_tu = request.form.get("ma_tu", "").strip().upper()
     ten_tu = request.form.get("ten_tu", "").strip()
@@ -283,14 +303,20 @@ def so_do_tu(ma_tu):
         ma_tu_hien_tai=ma_tu,
         goi_y_ngan=goi_y_ngan,
         don_vi_list=cac_don_vi,
-        goi_y_tu=goi_y_tu
+        goi_y_tu=goi_y_tu,
+        co_quyen_quan_ly_tu=kiem_tra_quyen_quan_ly_tu()
     )
 
 @dien_thoai_bp.route("/ngan-tu/them", methods=["POST"])
 @yeu_cau_dang_nhap
 def them_ngan_moi():
-    khoa_tu_raw = request.form.get("khoa_tu")
     ma_tu = request.form.get("ma_tu", "").strip()
+    if not kiem_tra_quyen_quan_ly_tu():
+        flash("Đồng chí không có thẩm quyền thêm ngăn vào tủ.", "nguy_hiem")
+        if ma_tu:
+            return redirect(url_for("dien_thoai.so_do_tu", ma_tu=ma_tu))
+        return redirect(url_for("dien_thoai.danh_sach_tu"))
+    khoa_tu_raw = request.form.get("khoa_tu")
     ten_ngan = request.form.get("ten_ngan", "").strip()
     so_luong_raw = request.form.get("so_luong", "1").strip()
 
@@ -326,6 +352,9 @@ def them_ngan_moi():
 @dien_thoai_bp.route("/tu-dien-thoai/xoa", methods=["POST"])
 @yeu_cau_dang_nhap
 def xoa_tu_moi():
+    if not kiem_tra_quyen_quan_ly_tu():
+        flash("Đồng chí không có thẩm quyền xóa tủ bảo quản.", "nguy_hiem")
+        return redirect(url_for("dien_thoai.danh_sach_tu"))
     khoa_tu_raw = request.form.get("khoa_tu") or request.form.get("ma_tu")
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     if not khoa_tu_raw:
@@ -345,8 +374,13 @@ def xoa_tu_moi():
 @dien_thoai_bp.route("/ngan-tu/xoa", methods=["POST"])
 @yeu_cau_dang_nhap
 def xoa_ngan_moi():
-    khoa_ngan_raw = request.form.get("khoa_ngan") or request.form.get("ma_ngan")
     ma_tu_redirect = request.form.get("ma_tu", "").strip().upper()
+    if not kiem_tra_quyen_quan_ly_tu():
+        flash("Đồng chí không có thẩm quyền xóa ngăn tủ.", "nguy_hiem")
+        if ma_tu_redirect:
+            return redirect(url_for("dien_thoai.so_do_tu", ma_tu=ma_tu_redirect))
+        return redirect(url_for("dien_thoai.danh_sach_tu"))
+    khoa_ngan_raw = request.form.get("khoa_ngan") or request.form.get("ma_ngan")
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
 
     if not khoa_ngan_raw:

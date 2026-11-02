@@ -310,3 +310,67 @@ class TestThemTuNgan(unittest.TestCase):
         ds_sau = lay_danh_sach_tu()
         self.assertFalse(any(t["ma_tu"] == "T97" for t in ds_sau))
 
+    def test_truc_ban_bi_tu_choi_xoa_va_them_tu_ngan(self):
+        khoa_tu = them_tu(
+            ma_tu="T96",
+            ten_tu="Tủ kiểm tra trực ban",
+            vi_tri="Phòng trực ban",
+            so_ngan=2,
+            khoa_don_vi_quan_ly=1,
+            tien_to_ngan="Z"
+        )
+        so_do_t96 = lay_so_do_tu("T96")
+        ngan_target = so_do_t96[0]
+
+        with self.client.session_transaction() as sess:
+            sess["nguoi_dung"] = {
+                "ma_tu_sinh": 2,
+                "ten_dang_nhap": "tuananh",
+                "ho_ten": "Phạm Tuấn Anh",
+                "ten_vai_tro": "Cán bộ trực ca",
+                "ma_vai_tro": "NGUOI_TRUC",
+                "cac_quyen": ["GIAONHAN.GHI", "GIAONHAN.XEM", "CATRUC.BANGIAO"],
+                "danh_sach_quyen": ["GIAONHAN.GHI", "GIAONHAN.XEM", "CATRUC.BANGIAO"]
+            }
+
+        res_view = self.client.get("/tu-dien-thoai")
+        self.assertNotIn("＋ Thêm tủ bảo quản mới", res_view.data.decode("utf-8"))
+        self.assertNotIn("🗑 Xóa", res_view.data.decode("utf-8"))
+
+        res_sodo = self.client.get("/tu-dien-thoai/T96")
+        self.assertNotIn("🗑 Xóa tủ này", res_sodo.data.decode("utf-8"))
+
+        res_xoa_tu = self.client.post("/tu-dien-thoai/xoa", data={"ma_tu": "T96"}, follow_redirects=True)
+        self.assertIn("không có thẩm quyền", res_xoa_tu.data.decode("utf-8"))
+        ds_tu = lay_danh_sach_tu()
+        self.assertTrue(any(t["ma_tu"] == "T96" for t in ds_tu))
+
+        res_xoa_ngan = self.client.post("/ngan-tu/xoa", data={
+            "khoa_ngan": str(ngan_target["ma_tu_sinh"]),
+            "ma_tu": "T96"
+        }, follow_redirects=True)
+        self.assertIn("không có thẩm quyền", res_xoa_ngan.data.decode("utf-8"))
+        so_do_sau = lay_so_do_tu("T96")
+        self.assertEqual(len(so_do_sau), 2)
+
+    def test_cap_nhat_quyen_vai_tro_va_hien_thi_checked(self):
+        with self.client.session_transaction() as sess:
+            sess["nguoi_dung"] = {
+                "ma_tu_sinh": 1,
+                "ten_dang_nhap": "admin",
+                "ho_ten": "Quản trị viên",
+                "ten_vai_tro": "Quản trị",
+                "ma_vai_tro": "QUAN_TRI",
+                "cac_quyen": ["QUANTRI.TAIKHOAN"],
+                "danh_sach_quyen": ["QUANTRI.TAIKHOAN"]
+            }
+
+        res_post = self.client.post("/vai-tro/cap-nhat-quyen/2", data={
+            "quyen_ids": ["1", "2", "3", "5"]
+        }, follow_redirects=True)
+        self.assertEqual(res_post.status_code, 200)
+
+        res_get = self.client.get("/tai-khoan-phan-quyen")
+        html = res_get.data.decode("utf-8")
+        self.assertIn("checked", html)
+

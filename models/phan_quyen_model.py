@@ -244,6 +244,11 @@ def sua_tai_khoan(ma_tu_sinh, ho_ten, mat_khau_moi=None, khoa_vai_tro=None, pham
             SET khoa_vai_tro = ?, pham_vi_loai = ?, pham_vi_khoa = ?
             WHERE khoa_tai_khoan = ?
         """, (khoa_vai_tro, pham_vi_loai, pham_vi_khoa, ma_tu_sinh))
+        if con_tro.rowcount == 0:
+            con_tro.execute("""
+                INSERT INTO tai_khoan_vai_tro (khoa_tai_khoan, khoa_vai_tro, pham_vi_loai, pham_vi_khoa, hieu_luc_tu)
+                VALUES (?, ?, ?, ?, datetime('now', 'localtime'))
+            """, (ma_tu_sinh, khoa_vai_tro, pham_vi_loai, pham_vi_khoa))
 
     ket_noi.commit()
     ket_noi.close()

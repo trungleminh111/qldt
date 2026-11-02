@@ -105,13 +105,17 @@
             <span class="badge badge-blue" style="margin-left: 8px;">{{ vt.ma_vai_tro }}</span>
             <small style="display: block; color: var(--muted); margin-top: 2px;">{{ vt.mo_ta or 'Quy định chức trách' }}</small>
           </div>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" onclick="chonTatCaQuyenVaiTro('vt_{{ vt.ma_tu_sinh }}', true)" style="padding: 2px 8px; font-size: 11px;">Chọn tất cả</button>
+            <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" onclick="chonTatCaQuyenVaiTro('vt_{{ vt.ma_tu_sinh }}', false)" style="padding: 2px 8px; font-size: 11px;">Bỏ chọn</button>
+          </div>
         </div>
 
         <form method="POST" action="{{ url_for('cau_hinh.cap_nhat_quyen', id=vt.ma_tu_sinh) }}">
           <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-bottom: 16px;">
             {% for q in quyen_list %}
               <label style="display: flex; align-items: flex-start; gap: 10px; background: #fff; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">
-                <input type="checkbox" name="quyen_ids" value="{{ q.ma_tu_sinh }}" {% if q.ma_tu_sinh in vt.cac_quyen %}checked{% endif %}>
+                <input type="checkbox" name="quyen_ids" value="{{ q.ma_tu_sinh }}" class="cb-quyen-vt_{{ vt.ma_tu_sinh }}" {% if q.ma_tu_sinh in vt.cac_quyen_ids %}checked{% endif %}>
                 <div>
                   <b style="font-size: 12.5px; color: #1e293b; display: block;">{{ q.ten_quyen }}</b>
                   <span style="font-size: 11px; color: var(--muted); line-height: 1.4; display: block; margin-top: 2px;">{{ q.mo_ta or '' }}</span>
@@ -291,6 +295,11 @@ function chuyenPhamViSua(loai) {
   const hopTu = document.getElementById("hop_chon_tu_sua");
   if (hopDv) hopDv.style.display = (loai === "DON_VI") ? "block" : "none";
   if (hopTu) hopTu.style.display = (loai === "TU") ? "block" : "none";
+}
+
+function chonTatCaQuyenVaiTro(prefix, check) {
+  const cbs = document.querySelectorAll('.' + 'cb-quyen-' + prefix);
+  cbs.forEach(cb => { cb.checked = check; });
 }
 
 function chonTatCaDonVi(modalType, check) {

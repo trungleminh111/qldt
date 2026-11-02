@@ -10,11 +10,13 @@
     <h1>Tủ bảo quản điện thoại</h1>
     <p>Quản lý các tủ bảo quản, số lượng ngăn và sơ đồ lưu trữ theo đơn vị.</p>
   </div>
+  {% if co_quyen_quan_ly_tu %}
   <div>
     <button type="button" class="btn-quan-doi btn-qd-primary" onclick="moModal('modalThemTu')">
       ＋ Thêm tủ bảo quản mới
     </button>
   </div>
+  {% endif %}
 </div>
 
 <div class="grid-two">
@@ -42,6 +44,7 @@
         <a href="{{ url_for('dien_thoai.so_do_tu', ma_tu=t.ma_tu) }}" class="btn-quan-doi btn-qd-primary" style="flex: 1; text-align: center;">
           ▤ Xem sơ đồ chi tiết tủ {{ t.ma_tu }}
         </a>
+        {% if co_quyen_quan_ly_tu %}
         <form method="POST" action="{{ url_for('dien_thoai.xoa_tu_moi') }}" onsubmit="return confirm('Đồng chí có chắc chắn muốn xóa {{ t.ten_tu }} ({{ t.ma_tu }})? Lưu ý tủ phải không có thiết bị/quân nhân.');" style="margin: 0;">
           <input type="hidden" name="khoa_tu" value="{{ t.ma_tu_sinh }}">
           <input type="hidden" name="ma_tu" value="{{ t.ma_tu }}">
@@ -49,6 +52,7 @@
             🗑 Xóa
           </button>
         </form>
+        {% endif %}
       </div>
     </div>
   {% endfor %}
