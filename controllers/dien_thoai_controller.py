@@ -258,8 +258,17 @@ def so_do_tu(ma_tu):
     cac_tu = lay_danh_sach_tu(khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
     tu_hien_tai = next((t for t in cac_tu if t["ma_tu"].upper() == ma_tu), None)
     if not tu_hien_tai:
-        flash("Đồng chí không có thẩm quyền truy cập tủ của đơn vị khác.", "canh_bao")
-        return redirect(url_for("dien_thoai.danh_sach_tu"))
+        tat_ca_tu = lay_danh_sach_tu(khoa_don_vi_gioi_han=None)
+        tu_ton_tai = next((t for t in tat_ca_tu if t["ma_tu"].upper() == ma_tu), None)
+        if tu_ton_tai and not khoa_don_vi_gioi_han:
+            tu_hien_tai = tu_ton_tai
+            cac_tu = tat_ca_tu
+        elif not tu_ton_tai:
+            flash("Tủ bảo quản không tồn tại hoặc đã ngừng sử dụng.", "canh_bao")
+            return redirect(url_for("dien_thoai.danh_sach_tu"))
+        else:
+            flash("Đồng chí không có thẩm quyền truy cập tủ của đơn vị khác.", "canh_bao")
+            return redirect(url_for("dien_thoai.danh_sach_tu"))
     ngan_list = lay_so_do_tu(ma_tu, khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
     goi_y_ngan = lay_goi_y_ngan_tiep_theo(tu_hien_tai["ma_tu_sinh"])
     cac_don_vi = lay_danh_sach_don_vi(khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)

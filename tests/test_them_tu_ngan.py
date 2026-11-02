@@ -209,4 +209,22 @@ class TestThemTuNgan(unittest.TestCase):
         self.assertIsNotNone(row)
         self.assertEqual(row["khoa_don_vi_quan_ly"], 2)
         ket_noi.close()
+    def test_admin_truy_cap_tat_ca_tu_khong_bi_gioi_han(self):
+        with self.client.session_transaction() as sess:
+            sess["nguoi_dung"] = {
+                "ma_tu_sinh": 1,
+                "ten_dang_nhap": "admin",
+                "ho_ten": "Quản trị viên",
+                "ten_vai_tro": "Quản trị",
+                "ma_vai_tro": "QUAN_TRI",
+                "pham_vi_loai": "DON_VI",
+                "khoa_don_vi": "2",
+                "quyen": []
+            }
+
+        res = self.client.get("/tu-dien-thoai/T02", follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+        html = res.data.decode("utf-8")
+        self.assertNotIn("Đồng chí không có thẩm quyền truy cập tủ của đơn vị khác", html)
+        self.assertIn("T02", html)
 

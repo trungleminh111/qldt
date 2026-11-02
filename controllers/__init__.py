@@ -42,6 +42,10 @@ def lay_don_vi_gioi_han():
     nguoi_dung = session.get("nguoi_dung")
     if not nguoi_dung:
         return None
+    ten_dang_nhap = nguoi_dung.get("ten_dang_nhap")
+    ma_vai_tro = nguoi_dung.get("ma_vai_tro")
+    if ten_dang_nhap == "admin" or ma_vai_tro == "QUAN_TRI":
+        return None
     if nguoi_dung.get("pham_vi_loai") == "DON_VI":
         pv_khoa = nguoi_dung.get("khoa_don_vi") or nguoi_dung.get("pham_vi_khoa")
         if not pv_khoa:
