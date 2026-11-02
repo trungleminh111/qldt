@@ -1,7 +1,7 @@
 import os
-from flask import Flask
+from flask import Flask, request
 import config
-from models.co_so_du_lieu import khoi_tao_co_so_du_lieu
+from models.co_so_du_lieu import khoi_tao_co_so_du_lieu, kiem_tra_da_co_du_lieu
 from models.du_lieu_mau import nap_du_lieu_mau
 from controllers.auth_controller import auth_bp
 from controllers.dashboard_controller import dashboard_bp
@@ -20,7 +20,16 @@ def tao_ung_dung():
     app.config["UPLOAD_FOLDER"] = config.UPLOAD_FOLDER
 
     khoi_tao_co_so_du_lieu()
-    nap_du_lieu_mau()
+    if not kiem_tra_da_co_du_lieu():
+        nap_du_lieu_mau()
+
+    @app.after_request
+    def khong_luu_cache(phan_hoi):
+        if not request.path.startswith("/static/"):
+            phan_hoi.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+            phan_hoi.headers["Pragma"] = "no-cache"
+            phan_hoi.headers["Expires"] = "0"
+        return phan_hoi
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)

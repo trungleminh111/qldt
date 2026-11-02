@@ -45,7 +45,8 @@ def danh_sach():
         don_vi_hien_tai=ma_don_vi,
         tong_so=tong_so,
         so_da_nop=so_da_nop,
-        so_da_lay=so_da_lay
+        so_da_lay=so_da_lay,
+        khoa_don_vi_gioi_han=khoa_don_vi_gioi_han
     )
 
 @quan_nhan_bp.route("/quan-nhan/chi-tiet/<int:id>")

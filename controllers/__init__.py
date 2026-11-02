@@ -36,11 +36,23 @@ def yeu_cau_quyen(*quyen_hop_le):
         return ham_trang_tri
     return decorator
 
+from models.co_so_du_lieu import kiem_tra_thuoc_don_vi
+
 def lay_don_vi_gioi_han():
     nguoi_dung = session.get("nguoi_dung")
     if not nguoi_dung:
         return None
     if nguoi_dung.get("pham_vi_loai") == "DON_VI":
-        return nguoi_dung.get("khoa_don_vi")
+        pv_khoa = nguoi_dung.get("khoa_don_vi") or nguoi_dung.get("pham_vi_khoa")
+        if not pv_khoa:
+            return None
+        if isinstance(pv_khoa, str) and "," in pv_khoa:
+            return [int(x.strip()) for x in pv_khoa.split(",") if x.strip().isdigit()]
+        if isinstance(pv_khoa, (list, tuple, set)):
+            return [int(x) for x in pv_khoa if str(x).isdigit()]
+        try:
+            return int(pv_khoa)
+        except (ValueError, TypeError):
+            return None
     return None
 

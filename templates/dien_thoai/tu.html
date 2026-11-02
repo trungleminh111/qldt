@@ -5,10 +5,15 @@
 {% block page_subtitle %}Danh sách tủ bảo quản và phân bổ các ngăn cho từng trung đội{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
   <div>
     <h1>Tủ bảo quản điện thoại</h1>
-    <p>Mỗi tủ quản lý 24 ngăn tương ứng với từng quân nhân trong trung đội/tiểu đội.</p>
+    <p>Quản lý các tủ bảo quản, số lượng ngăn và sơ đồ lưu trữ theo đơn vị.</p>
+  </div>
+  <div>
+    <button type="button" class="btn-quan-doi btn-qd-primary" onclick="moModal('modalThemTu')">
+      ＋ Thêm tủ bảo quản mới
+    </button>
   </div>
 </div>
 
@@ -40,5 +45,52 @@
       </div>
     </div>
   {% endfor %}
+</div>
+
+<div class="modal-backdrop" id="modalThemTu">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Thêm tủ bảo quản điện thoại mới</h2>
+      <button class="modal-close" onclick="dongModal('modalThemTu')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('dien_thoai.them_tu_moi') }}">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label for="tu_ma">Mã tủ *</label>
+          <input type="text" id="tu_ma" name="ma_tu" value="{{ goi_y_tu.ma_tu if goi_y_tu else 'T05' }}" placeholder="VD: T05" required>
+        </div>
+        <div>
+          <label for="tu_tiento">Tiền tố ngăn</label>
+          <input type="text" id="tu_tiento" name="tien_to_ngan" value="{{ goi_y_tu.tien_to_ngan if goi_y_tu else 'E' }}" placeholder="VD: E" maxlength="4">
+        </div>
+      </div>
+
+      <label for="tu_ten">Tên tủ bảo quản *</label>
+      <input type="text" id="tu_ten" name="ten_tu" value="{{ goi_y_tu.ten_tu if goi_y_tu else 'Tủ bảo quản mới' }}" placeholder="VD: Tủ Trung đội 4, Tủ Đại đội bộ..." required>
+
+      <label for="tu_donvi">Đơn vị phụ trách / quản lý</label>
+      <select id="tu_donvi" name="khoa_don_vi_quan_ly">
+        {% for dv in don_vi_list %}
+          <option value="{{ dv.ma_tu_sinh }}">{{ dv.ten_don_vi }}</option>
+        {% endfor %}
+      </select>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label for="tu_songan">Số lượng ngăn khởi tạo</label>
+          <input type="number" id="tu_songan" name="so_ngan" value="24" min="1" max="100" required>
+        </div>
+        <div>
+          <label for="tu_vitri">Vị trí đặt tủ</label>
+          <input type="text" id="tu_vitri" name="vi_tri" placeholder="VD: Phòng giao ban, Phòng trực ban...">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalThemTu')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Khởi tạo tủ</button>
+      </div>
+    </form>
+  </div>
 </div>
 {% endblock %}

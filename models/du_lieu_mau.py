@@ -1,19 +1,27 @@
 from datetime import datetime, timedelta
 from werkzeug.security import generate_password_hash
-from models.co_so_du_lieu import lay_ket_noi
+from models.co_so_du_lieu import lay_ket_noi, kiem_tra_da_co_du_lieu
 
 def ma_hoa_mat_khau(mat_khau):
     return generate_password_hash(mat_khau)
 
 
-def nap_du_lieu_mau():
+def nap_du_lieu_mau(ep_buoc=False):
+    if not ep_buoc and kiem_tra_da_co_du_lieu():
+        return False
+
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
 
-    con_tro.execute("SELECT COUNT(*) FROM cap_bac")
-    if con_tro.fetchone()[0] > 0:
-        ket_noi.close()
-        return
+    if not ep_buoc:
+        con_tro.execute("SELECT COUNT(*) FROM tai_khoan")
+        if con_tro.fetchone()[0] > 0:
+            ket_noi.close()
+            return False
+        con_tro.execute("SELECT COUNT(*) FROM cap_bac")
+        if con_tro.fetchone()[0] > 0:
+            ket_noi.close()
+            return False
 
     cac_cap_bac = [
         ("B2", "Binh nhì", 1),
@@ -258,3 +266,4 @@ def nap_du_lieu_mau():
 
     ket_noi.commit()
     ket_noi.close()
+    return True

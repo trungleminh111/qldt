@@ -36,13 +36,22 @@
     </div>
 
     <div style="margin-bottom: 14px;">
-      <label style="display: block; font-size: 12px; font-weight: 700; color: var(--navy-900); margin-bottom: 6px;">Lọc nhanh theo đơn vị</label>
-      <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
-        <button type="button" class="btn-loc-don-vi active" data-don-vi="ALL" onclick="locTheoDonVi(this, 'ALL')">Tất cả</button>
-        <button type="button" class="btn-loc-don-vi" data-don-vi="Trung đội 1" onclick="locTheoDonVi(this, 'Trung đội 1')">Trung đội 1</button>
-        <button type="button" class="btn-loc-don-vi" data-don-vi="Trung đội 2" onclick="locTheoDonVi(this, 'Trung đội 2')">Trung đội 2</button>
-        <button type="button" class="btn-loc-don-vi" data-don-vi="Trung đội 3" onclick="locTheoDonVi(this, 'Trung đội 3')">Trung đội 3</button>
-      </div>
+      {% if khoa_don_vi_gioi_han or (don_vi_list and don_vi_list|length == 1) %}
+        <div style="margin-bottom: 12px; display: inline-flex; align-items: center; gap: 8px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 7px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;">
+          <span style="font-size: 15px;">🛡</span>
+          <span>Phân quyền quản lý: <b>{{ don_vi_list[0].ten_don_vi if don_vi_list else 'Đơn vị phụ trách' }}</b></span>
+        </div>
+      {% else %}
+        <label style="display: block; font-size: 12px; font-weight: 700; color: var(--navy-900); margin-bottom: 6px;">Lọc nhanh theo đơn vị</label>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px;">
+          <button type="button" class="btn-loc-don-vi active" data-don-vi="ALL" onclick="locTheoDonVi(this, 'ALL')">Tất cả</button>
+          {% for dv in don_vi_list %}
+            {% if dv.ma_don_vi != 'C1' %}
+              <button type="button" class="btn-loc-don-vi" data-don-vi="{{ dv.ten_don_vi }}" onclick="locTheoDonVi(this, '{{ dv.ten_don_vi }}')">{{ dv.ten_don_vi }}</button>
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
 
       <label for="oTimKiemNhanh" style="display: block; font-size: 12px; font-weight: 700; color: var(--navy-900); margin-bottom: 6px;">Tìm kiếm quân nhân (tên, mã quân nhân...)</label>
       <input type="text" id="oTimKiemNhanh" placeholder="Tìm nhanh quân nhân theo tên, mã số..." oninput="locDanhSachQuanNhan()" onkeydown="xuLyPhimTimKiem(event)" style="width: 100%; padding: 10px 12px; font-size: 13.5px; border: 1px solid var(--border); border-radius: 6px; box-sizing: border-box;">
@@ -91,15 +100,25 @@
       </div>
 
       <div style="margin-top: 18px;">
-        <h3 style="font-size: 13.5px; color: var(--navy-900); font-weight: 700; margin-bottom: 8px;">2. Thời gian giao dịch</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h3 style="font-size: 13.5px; color: var(--navy-900); font-weight: 700; margin: 0;">2. Thời gian giao dịch</h3>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span id="liveClockBadge" class="badge badge-green" style="font-size: 11px; padding: 3px 8px; font-weight: 600; cursor: pointer;" onclick="batLaiRealTime()" title="Thời gian tự động cập nhật theo đồng hồ thực">
+              ● Thời gian thực (Live)
+            </span>
+            <button type="button" id="btnResetLiveClock" class="btn-quan-doi btn-qd-secondary" onclick="batLaiRealTime()" style="padding: 2px 8px; font-size: 11px; height: auto; display: none;">
+              Lấy giờ hiện tại
+            </button>
+          </div>
+        </div>
         <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;">
           <div>
             <label for="transNgay" style="margin-top: 0;">Ngày giao dịch</label>
-            <input type="date" id="transNgay" value="{{ ngay_hien_tai }}" onchange="kiemTraGioDong()">
+            <input type="date" id="transNgay" value="{{ ngay_hien_tai }}" onchange="nguoiDungSuaThoiGian()">
           </div>
           <div>
             <label for="transGio" style="margin-top: 0;">Giờ giao dịch</label>
-            <input type="time" id="transGio" value="{{ gio_hien_tai }}" onchange="kiemTraGioDong()">
+            <input type="time" id="transGio" value="{{ gio_hien_tai }}" onchange="nguoiDungSuaThoiGian()">
           </div>
         </div>
       </div>
@@ -130,6 +149,8 @@
         {% elif qn_hien_tai.trang_thai_may == 'Đã lấy' %}
           <form method="POST" action="{{ url_for('giao_nhan.nop_may') }}">
             <input type="hidden" name="khoa_quan_nhan" value="{{ qn_hien_tai.ma_tu_sinh }}">
+            <input type="hidden" name="ngay" id="ngayNopInput" value="{{ ngay_hien_tai }}">
+            <input type="hidden" name="gio" id="gioNopInput" value="{{ gio_hien_tai }}">
             <button type="submit" class="btn-quan-doi btn-qd-success btn-qd-lg btn-qd-block">
               ✓ Xác nhận nộp điện thoại vào tủ
             </button>

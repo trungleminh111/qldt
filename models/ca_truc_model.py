@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from models.co_so_du_lieu import lay_ket_noi
+from models.co_so_du_lieu import lay_ket_noi, tao_dieu_kien_don_vi
 
 def lay_danh_sach_ca_truc():
     ket_noi = lay_ket_noi()
@@ -36,16 +36,17 @@ def lay_so_lieu_kiem_ke(khoa_don_vi_gioi_han=None):
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
 
-    if khoa_don_vi_gioi_han:
-        con_tro.execute("""
+    dieu_kien, params = tao_dieu_kien_don_vi("qn.khoa_don_vi", khoa_don_vi_gioi_han)
+    if dieu_kien:
+        con_tro.execute(f"""
             SELECT COUNT(*)
             FROM dien_thoai dt
             JOIN quan_nhan qn ON dt.khoa_quan_nhan = qn.ma_tu_sinh
-            WHERE dt.da_xoa = 0 AND qn.khoa_don_vi = ?
-        """, (khoa_don_vi_gioi_han,))
+            WHERE dt.da_xoa = 0 {dieu_kien}
+        """, params)
         tong_thiet_bi = con_tro.fetchone()[0]
 
-        con_tro.execute("""
+        con_tro.execute(f"""
             SELECT COUNT(*)
             FROM dien_thoai dt
             JOIN quan_nhan qn ON dt.khoa_quan_nhan = qn.ma_tu_sinh
@@ -58,11 +59,11 @@ def lay_so_lieu_kiem_ke(khoa_don_vi_gioi_han=None):
                     GROUP BY khoa_dien_thoai
                 ) gn2 ON gn1.ma_tu_sinh = gn2.max_id
             ) gn ON gn.khoa_dien_thoai = dt.ma_tu_sinh
-            WHERE gn.loai = 'LAY_RA' AND dt.da_xoa = 0 AND qn.khoa_don_vi = ?
-        """, (khoa_don_vi_gioi_han,))
+            WHERE gn.loai = 'LAY_RA' AND dt.da_xoa = 0 {dieu_kien}
+        """, params)
         da_lay = con_tro.fetchone()[0]
 
-        con_tro.execute("""
+        con_tro.execute(f"""
             SELECT gn.thoi_gian
             FROM dien_thoai dt
             JOIN quan_nhan qn ON dt.khoa_quan_nhan = qn.ma_tu_sinh
@@ -75,8 +76,8 @@ def lay_so_lieu_kiem_ke(khoa_don_vi_gioi_han=None):
                     GROUP BY khoa_dien_thoai
                 ) gn2 ON gn1.ma_tu_sinh = gn2.max_id
             ) gn ON gn.khoa_dien_thoai = dt.ma_tu_sinh
-            WHERE gn.loai = 'LAY_RA' AND dt.da_xoa = 0 AND qn.khoa_don_vi = ?
-        """, (khoa_don_vi_gioi_han,))
+            WHERE gn.loai = 'LAY_RA' AND dt.da_xoa = 0 {dieu_kien}
+        """, params)
         rows = con_tro.fetchall()
     else:
         con_tro.execute("SELECT COUNT(*) FROM dien_thoai WHERE da_xoa = 0")

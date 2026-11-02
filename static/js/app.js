@@ -70,21 +70,117 @@ window.addEventListener("keydown", function(event) {
   }
 });
 
+let cheDoRealTimeGiaoNhan = true;
+
+function layChuoiThoiGianHienTai() {
+  const now = new Date();
+  const nam = now.getFullYear();
+  const thang = String(now.getMonth() + 1).padStart(2, "0");
+  const ngay = String(now.getDate()).padStart(2, "0");
+  const gio = String(now.getHours()).padStart(2, "0");
+  const phut = String(now.getMinutes()).padStart(2, "0");
+  return {
+    ngay: `${nam}-${thang}-${ngay}`,
+    gio: `${gio}:${phut}`
+  };
+}
+
+function dongBoGiaTriThoiGian(ngay, gio) {
+  const ngayGiaoInput = document.getElementById("ngayGiaoInput");
+  const gioGiaoInput = document.getElementById("gioGiaoInput");
+  const ngayNgoaiLe = document.getElementById("ngayGiaoNgoaiLeInput");
+  const gioNgoaiLe = document.getElementById("gioGiaoNgoaiLeInput");
+  const ngayNopInput = document.getElementById("ngayNopInput");
+  const gioNopInput = document.getElementById("gioNopInput");
+
+  if (ngayGiaoInput) ngayGiaoInput.value = ngay;
+  if (gioGiaoInput) gioGiaoInput.value = gio;
+  if (ngayNgoaiLe) ngayNgoaiLe.value = ngay;
+  if (gioNgoaiLe) gioNgoaiLe.value = gio;
+  if (ngayNopInput) ngayNopInput.value = ngay;
+  if (gioNopInput) gioNopInput.value = gio;
+}
+
+function capNhatThoiGianGiaoNhanRealTime() {
+  const inputNgay = document.getElementById("transNgay");
+  const inputGio = document.getElementById("transGio");
+  if (!inputNgay || !inputGio) return;
+  if (!cheDoRealTimeGiaoNhan) return;
+
+  const thoiGian = layChuoiThoiGianHienTai();
+  let coThayDoi = false;
+
+  if (inputNgay.value !== thoiGian.ngay) {
+    inputNgay.value = thoiGian.ngay;
+    coThayDoi = true;
+  }
+  if (inputGio.value !== thoiGian.gio) {
+    inputGio.value = thoiGian.gio;
+    coThayDoi = true;
+  }
+
+  dongBoGiaTriThoiGian(inputNgay.value, inputGio.value);
+
+  if (coThayDoi) {
+    kiemTraGioDong();
+  }
+}
+
+function nguoiDungSuaThoiGian() {
+  cheDoRealTimeGiaoNhan = false;
+  const inputNgay = document.getElementById("transNgay");
+  const inputGio = document.getElementById("transGio");
+  const badge = document.getElementById("liveClockBadge");
+  const btnReset = document.getElementById("btnResetLiveClock");
+
+  if (badge) {
+    badge.className = "badge badge-amber";
+    badge.textContent = "✎ Giờ chỉnh tay";
+    badge.title = "Đang ở chế độ chỉnh tay. Nhấn để bật lại đồng bộ thời gian thực";
+  }
+  if (btnReset) {
+    btnReset.style.display = "inline-flex";
+  }
+
+  if (inputNgay && inputGio) {
+    dongBoGiaTriThoiGian(inputNgay.value, inputGio.value);
+  }
+  kiemTraGioDong();
+}
+
+function batLaiRealTime() {
+  cheDoRealTimeGiaoNhan = true;
+  const badge = document.getElementById("liveClockBadge");
+  const btnReset = document.getElementById("btnResetLiveClock");
+
+  if (badge) {
+    badge.className = "badge badge-green";
+    badge.textContent = "● Thời gian thực (Live)";
+    badge.title = "Đang đồng bộ tự động theo thời gian thực";
+  }
+  if (btnReset) {
+    btnReset.style.display = "none";
+  }
+
+  const thoiGian = layChuoiThoiGianHienTai();
+  const inputNgay = document.getElementById("transNgay");
+  const inputGio = document.getElementById("transGio");
+  if (inputNgay) inputNgay.value = thoiGian.ngay;
+  if (inputGio) inputGio.value = thoiGian.gio;
+
+  dongBoGiaTriThoiGian(thoiGian.ngay, thoiGian.gio);
+  kiemTraGioDong();
+}
+
 function kiemTraGioDong() {
   const selectQn = document.getElementById("chonQuanNhan");
   const inputNgay = document.getElementById("transNgay");
   const inputGio = document.getElementById("transGio");
   const hopLuat = document.getElementById("hopKiemTraLuat");
 
-  const ngayGiaoInput = document.getElementById("ngayGiaoInput");
-  const gioGiaoInput = document.getElementById("gioGiaoInput");
-  const ngayNgoaiLe = document.getElementById("ngayGiaoNgoaiLeInput");
-  const gioNgoaiLe = document.getElementById("gioGiaoNgoaiLeInput");
-
-  if (inputNgay && ngayGiaoInput) ngayGiaoInput.value = inputNgay.value;
-  if (inputGio && gioGiaoInput) gioGiaoInput.value = inputGio.value;
-  if (inputNgay && ngayNgoaiLe) ngayNgoaiLe.value = inputNgay.value;
-  if (inputGio && gioNgoaiLe) gioNgoaiLe.value = inputGio.value;
+  if (inputNgay && inputGio) {
+    dongBoGiaTriThoiGian(inputNgay.value, inputGio.value);
+  }
 
   if (!selectQn || !hopLuat) return;
 
@@ -287,6 +383,10 @@ function chuyenBuocCaTruc(buoc) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function kiemTraXacNhanBanGiao(event) {
+  return kichHoatBanGiao(event);
+}
+
 function kichHoatBanGiao(event) {
   if (event) event.preventDefault();
   const form = document.getElementById("formBanGiaoCa");
@@ -483,4 +583,10 @@ function khoiTaoSidebarResponsive() {
 
 document.addEventListener("DOMContentLoaded", function() {
   khoiTaoSidebarResponsive();
+  const inputNgay = document.getElementById("transNgay");
+  if (inputNgay) {
+    capNhatThoiGianGiaoNhanRealTime();
+    kiemTraGioDong();
+    setInterval(capNhatThoiGianGiaoNhanRealTime, 1000);
+  }
 });

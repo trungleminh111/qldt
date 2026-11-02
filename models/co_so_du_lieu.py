@@ -3,10 +3,69 @@ import os
 import config
 
 def lay_ket_noi():
-    ket_noi = sqlite3.connect(config.DATABASE_PATH)
+    ket_noi = sqlite3.connect(config.DATABASE_PATH, timeout=30.0)
     ket_noi.row_factory = sqlite3.Row
     ket_noi.execute("PRAGMA foreign_keys = ON")
+    ket_noi.execute("PRAGMA journal_mode = WAL")
+    ket_noi.execute("PRAGMA synchronous = NORMAL")
+    ket_noi.execute("PRAGMA busy_timeout = 30000")
     return ket_noi
+
+def kiem_tra_da_co_du_lieu():
+    if not os.path.exists(config.DATABASE_PATH):
+        return False
+    try:
+        ket_noi = lay_ket_noi()
+        con_tro = ket_noi.cursor()
+        con_tro.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='tai_khoan'")
+        if not con_tro.fetchone():
+            ket_noi.close()
+            return False
+        con_tro.execute("SELECT COUNT(*) FROM tai_khoan")
+        so_tk = con_tro.fetchone()[0]
+        con_tro.execute("SELECT COUNT(*) FROM quan_nhan")
+        so_qn = con_tro.fetchone()[0]
+        con_tro.execute("SELECT COUNT(*) FROM cap_bac")
+        so_cb = con_tro.fetchone()[0]
+        ket_noi.close()
+        return (so_tk > 0 or so_qn > 0 or so_cb > 0)
+    except Exception:
+        return False
+
+def tao_dieu_kien_don_vi(cot_don_vi, khoa_don_vi_gioi_han):
+    if not khoa_don_vi_gioi_han:
+        return "", []
+    if isinstance(khoa_don_vi_gioi_han, (list, tuple, set)):
+        ds_id = [int(x) for x in khoa_don_vi_gioi_han if str(x).isdigit()]
+        if not ds_id:
+            return "", []
+        if len(ds_id) == 1:
+            return f" AND {cot_don_vi} = ?", [ds_id[0]]
+        placeholders = ",".join("?" for _ in ds_id)
+        return f" AND {cot_don_vi} IN ({placeholders})", ds_id
+    if isinstance(khoa_don_vi_gioi_han, str) and "," in khoa_don_vi_gioi_han:
+        ds_id = [int(x.strip()) for x in khoa_don_vi_gioi_han.split(",") if x.strip().isdigit()]
+        if not ds_id:
+            return "", []
+        placeholders = ",".join("?" for _ in ds_id)
+        return f" AND {cot_don_vi} IN ({placeholders})", ds_id
+    try:
+        val = int(khoa_don_vi_gioi_han)
+        return f" AND {cot_don_vi} = ?", [val]
+    except (ValueError, TypeError):
+        return "", []
+
+def kiem_tra_thuoc_don_vi(khoa_don_vi, khoa_don_vi_gioi_han):
+    if not khoa_don_vi_gioi_han:
+        return True
+    if not khoa_don_vi:
+        return False
+    if isinstance(khoa_don_vi_gioi_han, (list, tuple, set)):
+        return int(khoa_don_vi) in [int(x) for x in khoa_don_vi_gioi_han]
+    if isinstance(khoa_don_vi_gioi_han, str) and "," in khoa_don_vi_gioi_han:
+        ds_id = [int(x.strip()) for x in khoa_don_vi_gioi_han.split(",") if x.strip().isdigit()]
+        return int(khoa_don_vi) in ds_id
+    return int(khoa_don_vi) == int(khoa_don_vi_gioi_han)
 
 def khoi_tao_co_so_du_lieu():
     ket_noi = lay_ket_noi()
@@ -55,6 +114,7 @@ def khoi_tao_co_so_du_lieu():
         pham_vi_khoa INTEGER,
         khoa_cau_hinh_ghi_de INTEGER,
         cam_su_dung INTEGER DEFAULT 0,
+        loai_lap TEXT DEFAULT 'MOT_LAN',
         ly_do TEXT NOT NULL,
         dang_dung INTEGER DEFAULT 1,
         FOREIGN KEY (khoa_cau_hinh_ghi_de) REFERENCES cau_hinh_gio(ma_tu_sinh)
@@ -346,6 +406,12 @@ def kiem_tra_va_nang_cap_bang_ban_giao():
         con_tro.execute("ALTER TABLE ban_giao_ca ADD COLUMN ten_ngan_snapshot TEXT")
     if "so_qua_han" not in cot_hien_co:
         con_tro.execute("ALTER TABLE ban_giao_ca ADD COLUMN so_qua_han INTEGER DEFAULT 0")
+
+    con_tro.execute("PRAGMA table_info(ngay_dac_biet)")
+    cot_ndb = [row["name"] for row in con_tro.fetchall()]
+    if cot_ndb and "loai_lap" not in cot_ndb:
+        con_tro.execute("ALTER TABLE ngay_dac_biet ADD COLUMN loai_lap TEXT DEFAULT 'MOT_LAN'")
+
     ket_noi.commit()
     ket_noi.close()
 

@@ -1,5 +1,5 @@
 from datetime import datetime
-from models.co_so_du_lieu import lay_ket_noi
+from models.co_so_du_lieu import lay_ket_noi, tao_dieu_kien_don_vi
 
 def lay_tat_ca_dien_thoai(tu_khoa=None, ma_don_vi=None, khoa_don_vi_gioi_han=None):
     ket_noi = lay_ket_noi()
@@ -36,8 +36,9 @@ def lay_tat_ca_dien_thoai(tu_khoa=None, ma_don_vi=None, khoa_don_vi_gioi_han=Non
         tk = f"%{tu_khoa}%"
         tham_so.extend([tk, tk, tk, tk])
     if khoa_don_vi_gioi_han:
-        cau_lenh += " AND qn.khoa_don_vi = ?"
-        tham_so.append(khoa_don_vi_gioi_han)
+        dieu_kien, params = tao_dieu_kien_don_vi("qn.khoa_don_vi", khoa_don_vi_gioi_han)
+        cau_lenh += dieu_kien
+        tham_so.extend(params)
     elif ma_don_vi and ma_don_vi != "TAT_CA":
         cau_lenh += " AND (dv.ma_don_vi = ? OR dv.ma_tu_sinh = ?)"
         tham_so.extend([ma_don_vi, ma_don_vi])
@@ -78,8 +79,9 @@ def lay_chi_tiet_dien_thoai(ma_tu_sinh, khoa_don_vi_gioi_han=None):
     """
     tham_so = [ma_tu_sinh, ma_tu_sinh]
     if khoa_don_vi_gioi_han:
-        cau_lenh += " AND qn.khoa_don_vi = ?"
-        tham_so.append(khoa_don_vi_gioi_han)
+        dieu_kien, params = tao_dieu_kien_don_vi("qn.khoa_don_vi", khoa_don_vi_gioi_han)
+        cau_lenh += dieu_kien
+        tham_so.extend(params)
     con_tro.execute(cau_lenh, tham_so)
     dong = con_tro.fetchone()
     ket_qua = dict(dong) if dong else None
@@ -134,8 +136,9 @@ def lay_danh_sach_tu(khoa_don_vi_gioi_han=None):
     """
     tham_so = []
     if khoa_don_vi_gioi_han:
-        cau_lenh += " AND t.khoa_don_vi_quan_ly = ?"
-        tham_so.append(khoa_don_vi_gioi_han)
+        dieu_kien, params = tao_dieu_kien_don_vi("t.khoa_don_vi_quan_ly", khoa_don_vi_gioi_han)
+        cau_lenh += dieu_kien
+        tham_so.extend(params)
     cau_lenh += """
         GROUP BY t.ma_tu_sinh
         ORDER BY t.ma_tu ASC
@@ -176,8 +179,9 @@ def lay_so_do_tu(ma_tu_code="T01", khoa_don_vi_gioi_han=None):
     """
     tham_so = [ma_tu_code]
     if khoa_don_vi_gioi_han:
-        cau_lenh += " AND t.khoa_don_vi_quan_ly = ?"
-        tham_so.append(khoa_don_vi_gioi_han)
+        dieu_kien, params = tao_dieu_kien_don_vi("t.khoa_don_vi_quan_ly", khoa_don_vi_gioi_han)
+        cau_lenh += dieu_kien
+        tham_so.extend(params)
     cau_lenh += " ORDER BY ng.ma_ngan ASC"
     con_tro.execute(cau_lenh, tham_so)
     ket_qua = [dict(row) for row in con_tro.fetchall()]
@@ -208,10 +212,174 @@ def lay_tat_ca_ngan_trong(khoa_don_vi_gioi_han=None):
     """
     tham_so = []
     if khoa_don_vi_gioi_han:
-        cau_lenh += " AND t.khoa_don_vi_quan_ly = ?"
-        tham_so.append(khoa_don_vi_gioi_han)
+        dieu_kien, params = tao_dieu_kien_don_vi("t.khoa_don_vi_quan_ly", khoa_don_vi_gioi_han)
+        cau_lenh += dieu_kien
+        tham_so.extend(params)
     cau_lenh += " ORDER BY ng.ma_ngan ASC"
     con_tro.execute(cau_lenh, tham_so)
     ket_qua = [dict(row) for row in con_tro.fetchall()]
     ket_noi.close()
     return ket_qua
+
+def lay_goi_y_tu_tiep_theo():
+    import re
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    con_tro.execute("SELECT ma_tu FROM tu ORDER BY ma_tu_sinh DESC")
+    rows = con_tro.fetchall()
+    ket_noi.close()
+    max_num = 0
+    for r in rows:
+        m = re.search(r"(\d+)", r["ma_tu"])
+        if m:
+            num = int(m.group(1))
+            if num > max_num:
+                max_num = num
+    next_num = max_num + 1 if max_num > 0 else len(rows) + 1
+    ma_tu_goi_y = f"T{next_num:02d}"
+    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    tien_to_goi_y = letters[(next_num - 1) % len(letters)]
+    return {
+        "ma_tu": ma_tu_goi_y,
+        "tien_to_ngan": tien_to_goi_y,
+        "ten_tu": f"Tủ bảo quản {next_num}"
+    }
+
+def them_tu(ma_tu, ten_tu, vi_tri="", so_ngan=24, khoa_don_vi_quan_ly=None, tien_to_ngan=None):
+    import re
+    ma_tu = (ma_tu or "").strip().upper()
+    ten_tu = (ten_tu or "").strip()
+    vi_tri = (vi_tri or "").strip()
+    so_ngan = int(so_ngan) if so_ngan else 24
+    if so_ngan < 1:
+        so_ngan = 1
+    if so_ngan > 100:
+        so_ngan = 100
+
+    if not tien_to_ngan or not str(tien_to_ngan).strip():
+        m = re.search(r"(\d+)", ma_tu)
+        num = int(m.group(1)) if m else 1
+        letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        tien_to_ngan = letters[(num - 1) % len(letters)]
+    else:
+        tien_to_ngan = str(tien_to_ngan).strip().upper()
+
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    con_tro.execute("""
+        INSERT INTO tu (ma_tu, ten_tu, vi_tri, so_ngan, khoa_don_vi_quan_ly, dang_dung)
+        VALUES (?, ?, ?, ?, ?, 1)
+    """, (ma_tu, ten_tu, vi_tri, so_ngan, khoa_don_vi_quan_ly))
+    khoa_tu = con_tro.lastrowid
+
+    for i in range(1, so_ngan + 1):
+        ten_ngan = f"{tien_to_ngan}{i:02d}"
+        ma_ngan = f"{ma_tu}-{ten_ngan}"
+        con_tro.execute("""
+            INSERT INTO ngan (ma_ngan, ten_ngan, khoa_tu, khoa_quan_nhan, dang_dung)
+            VALUES (?, ?, ?, NULL, 1)
+        """, (ma_ngan, ten_ngan, khoa_tu))
+
+    ket_noi.commit()
+    ket_noi.close()
+    return khoa_tu
+
+def lay_goi_y_ngan_tiep_theo(khoa_tu):
+    import re
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    con_tro.execute("SELECT ma_tu FROM tu WHERE ma_tu_sinh = ?", (khoa_tu,))
+    tu_row = con_tro.fetchone()
+    ma_tu = tu_row["ma_tu"] if tu_row else "T01"
+
+    con_tro.execute("SELECT ten_ngan, ma_ngan FROM ngan WHERE khoa_tu = ? ORDER BY ma_tu_sinh ASC", (khoa_tu,))
+    rows = con_tro.fetchall()
+    ket_noi.close()
+
+    if not rows:
+        return ("A01", f"{ma_tu}-A01")
+
+    max_num = 0
+    prefix = ""
+    for r in rows:
+        ten = r["ten_ngan"] or ""
+        m = re.search(r"([A-Za-z]+)(\d+)", ten)
+        if m:
+            prefix = m.group(1)
+            val = int(m.group(2))
+            if val > max_num:
+                max_num = val
+    if not prefix:
+        prefix = "N"
+    next_num = max_num + 1 if max_num > 0 else len(rows) + 1
+    ten_ngan_goi_y = f"{prefix}{next_num:02d}"
+    ma_ngan_goi_y = f"{ma_tu}-{ten_ngan_goi_y}"
+    return (ten_ngan_goi_y, ma_ngan_goi_y)
+
+def them_ngan(khoa_tu, ten_ngan=None, ma_ngan=None, so_luong=1):
+    import re
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    con_tro.execute("SELECT ma_tu FROM tu WHERE ma_tu_sinh = ?", (khoa_tu,))
+    tu_row = con_tro.fetchone()
+    if not tu_row:
+        ket_noi.close()
+        raise ValueError("Tủ bảo quản không tồn tại.")
+    ma_tu = tu_row["ma_tu"]
+
+    so_luong = int(so_luong) if so_luong else 1
+    if so_luong < 1:
+        so_luong = 1
+    if so_luong > 50:
+        so_luong = 50
+
+    ids = []
+    current_ten = (ten_ngan or "").strip()
+    prefix = ""
+    start_num = 1
+    if current_ten:
+        m = re.search(r"([A-Za-z]+)(\d+)", current_ten)
+        if m:
+            prefix = m.group(1).upper()
+            start_num = int(m.group(2))
+        else:
+            prefix = current_ten.upper()
+            start_num = 1
+    else:
+        goi_y_ten, _ = lay_goi_y_ngan_tiep_theo(khoa_tu)
+        m = re.search(r"([A-Za-z]+)(\d+)", goi_y_ten)
+        if m:
+            prefix = m.group(1)
+            start_num = int(m.group(2))
+        else:
+            prefix = "N"
+            start_num = 1
+
+    for offset in range(so_luong):
+        num = start_num + offset
+        cur_ten = f"{prefix}{num:02d}" if len(prefix) > 0 else f"{num:02d}"
+        cur_ma = f"{ma_tu}-{cur_ten}"
+
+        con_tro.execute("SELECT ma_tu_sinh FROM ngan WHERE ma_ngan = ?", (cur_ma,))
+        existing = con_tro.fetchone()
+        if existing:
+            con_tro.execute("SELECT COUNT(*) as cnt FROM ngan WHERE ma_ngan LIKE ?", (f"{cur_ma}%",))
+            dup_cnt = con_tro.fetchone()["cnt"]
+            cur_ma = f"{cur_ma}-{dup_cnt + 1}"
+            cur_ten = f"{cur_ten}-{dup_cnt + 1}"
+
+        con_tro.execute("""
+            INSERT INTO ngan (ma_ngan, ten_ngan, khoa_tu, khoa_quan_nhan, dang_dung)
+            VALUES (?, ?, ?, NULL, 1)
+        """, (cur_ma, cur_ten, khoa_tu))
+        ids.append(con_tro.lastrowid)
+
+    con_tro.execute("""
+        UPDATE tu
+        SET so_ngan = (SELECT COUNT(*) FROM ngan WHERE khoa_tu = ?)
+        WHERE ma_tu_sinh = ?
+    """, (khoa_tu, khoa_tu))
+
+    ket_noi.commit()
+    ket_noi.close()
+    return ids

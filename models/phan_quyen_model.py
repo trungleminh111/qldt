@@ -38,9 +38,10 @@ def xac_thuc_dang_nhap(ten_dang_nhap, mat_khau):
 
     con_tro.execute("""
         SELECT tk.ma_tu_sinh, tk.ten_dang_nhap, tk.mat_khau_ma_hoa, tk.ho_ten, tk.khoa_quan_nhan,
-               qn.khoa_don_vi,
+               COALESCE(tkv.pham_vi_khoa, qn.khoa_don_vi) AS khoa_don_vi,
                vt.ma_tu_sinh AS khoa_vai_tro, vt.ma_vai_tro, vt.ten_vai_tro,
-               tkv.pham_vi_loai
+               tkv.pham_vi_loai,
+               COALESCE(tkv.pham_vi_khoa, qn.khoa_don_vi) AS pham_vi_khoa
         FROM tai_khoan tk
         LEFT JOIN quan_nhan qn ON tk.khoa_quan_nhan = qn.ma_tu_sinh
         LEFT JOIN tai_khoan_vai_tro tkv ON tkv.khoa_tai_khoan = tk.ma_tu_sinh AND tkv.dang_dung = 1
@@ -96,13 +97,36 @@ def lay_tat_ca_tai_khoan(bac_nguoi_xem=None):
     con_tro = ket_noi.cursor()
     con_tro.execute("""
         SELECT tk.ma_tu_sinh, tk.ten_dang_nhap, tk.ho_ten, tk.dang_dung, tk.dang_nhap_cuoi,
-               vt.ma_tu_sinh AS khoa_vai_tro, vt.ten_vai_tro, vt.ma_vai_tro, tkv.pham_vi_loai
+               vt.ma_tu_sinh AS khoa_vai_tro, vt.ten_vai_tro, vt.ma_vai_tro,
+               tkv.pham_vi_loai,
+               COALESCE(tkv.pham_vi_khoa, qn.khoa_don_vi) AS pham_vi_khoa,
+               COALESCE(dv.ten_don_vi, dv_qn.ten_don_vi) AS ten_don_vi_pham_vi,
+               t.ten_tu AS ten_tu_pham_vi
         FROM tai_khoan tk
+        LEFT JOIN quan_nhan qn ON tk.khoa_quan_nhan = qn.ma_tu_sinh
+        LEFT JOIN don_vi dv_qn ON qn.khoa_don_vi = dv_qn.ma_tu_sinh
         LEFT JOIN tai_khoan_vai_tro tkv ON tkv.khoa_tai_khoan = tk.ma_tu_sinh AND tkv.dang_dung = 1
         LEFT JOIN vai_tro vt ON tkv.khoa_vai_tro = vt.ma_tu_sinh
+        LEFT JOIN don_vi dv ON (tkv.pham_vi_loai = 'DON_VI' AND tkv.pham_vi_khoa = dv.ma_tu_sinh)
+        LEFT JOIN tu t ON (tkv.pham_vi_loai = 'TU' AND tkv.pham_vi_khoa = t.ma_tu_sinh)
+        GROUP BY tk.ma_tu_sinh
         ORDER BY tk.ma_tu_sinh ASC
     """)
     danh_sach = [dict(row) for row in con_tro.fetchall()]
+    con_tro.execute("SELECT ma_tu_sinh, ten_don_vi FROM don_vi")
+    ban_do_don_vi = {row["ma_tu_sinh"]: row["ten_don_vi"] for row in con_tro.fetchall()}
+    for tk in danh_sach:
+        if tk.get("pham_vi_loai") == "DON_VI" and tk.get("pham_vi_khoa"):
+            pv_raw = str(tk["pham_vi_khoa"]).strip()
+            if "," in pv_raw:
+                ds_id = [int(x.strip()) for x in pv_raw.split(",") if x.strip().isdigit()]
+                ten_ds = [ban_do_don_vi.get(i) for i in ds_id if ban_do_don_vi.get(i)]
+                if ten_ds:
+                    tk["ten_don_vi_pham_vi"] = ", ".join(ten_ds)
+            elif pv_raw.isdigit():
+                i = int(pv_raw)
+                if ban_do_don_vi.get(i):
+                    tk["ten_don_vi_pham_vi"] = ban_do_don_vi.get(i)
     ket_noi.close()
     if bac_nguoi_xem is None:
         return danh_sach
@@ -113,8 +137,11 @@ def lay_chi_tiet_tai_khoan(ma_tu_sinh):
     con_tro = ket_noi.cursor()
     con_tro.execute("""
         SELECT tk.ma_tu_sinh, tk.ten_dang_nhap, tk.ho_ten, tk.dang_dung,
-               tkv.khoa_vai_tro, vt.ma_vai_tro, vt.ten_vai_tro, tkv.pham_vi_loai
+               tkv.khoa_vai_tro, vt.ma_vai_tro, vt.ten_vai_tro,
+               tkv.pham_vi_loai,
+               COALESCE(tkv.pham_vi_khoa, qn.khoa_don_vi) AS pham_vi_khoa
         FROM tai_khoan tk
+        LEFT JOIN quan_nhan qn ON tk.khoa_quan_nhan = qn.ma_tu_sinh
         LEFT JOIN tai_khoan_vai_tro tkv ON tkv.khoa_tai_khoan = tk.ma_tu_sinh AND tkv.dang_dung = 1
         LEFT JOIN vai_tro vt ON tkv.khoa_vai_tro = vt.ma_tu_sinh
         WHERE tk.ma_tu_sinh = ?
@@ -152,7 +179,7 @@ def lay_danh_sach_quyen():
     ket_noi.close()
     return ket_qua
 
-def them_tai_khoan(ten_dang_nhap, mat_khau, ho_ten, khoa_vai_tro, khoa_quan_nhan=None, pham_vi_loai="TOAN_BO"):
+def them_tai_khoan(ten_dang_nhap, mat_khau, ho_ten, khoa_vai_tro, khoa_quan_nhan=None, pham_vi_loai="TOAN_BO", pham_vi_khoa=None):
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
     mk_ma_hoa = ma_hoa_mat_khau(mat_khau)
@@ -164,15 +191,15 @@ def them_tai_khoan(ten_dang_nhap, mat_khau, ho_ten, khoa_vai_tro, khoa_quan_nhan
     tk_id = con_tro.lastrowid
 
     con_tro.execute("""
-        INSERT INTO tai_khoan_vai_tro (khoa_tai_khoan, khoa_vai_tro, pham_vi_loai, hieu_luc_tu)
-        VALUES (?, ?, ?, datetime('now', 'localtime'))
-    """, (tk_id, khoa_vai_tro, pham_vi_loai))
+        INSERT INTO tai_khoan_vai_tro (khoa_tai_khoan, khoa_vai_tro, pham_vi_loai, pham_vi_khoa, hieu_luc_tu)
+        VALUES (?, ?, ?, ?, datetime('now', 'localtime'))
+    """, (tk_id, khoa_vai_tro, pham_vi_loai, pham_vi_khoa))
 
     ket_noi.commit()
     ket_noi.close()
     return tk_id
 
-def sua_tai_khoan(ma_tu_sinh, ho_ten, mat_khau_moi=None, khoa_vai_tro=None, pham_vi_loai="TOAN_BO", dang_dung=1, nguoi_thuc_hien=None):
+def sua_tai_khoan(ma_tu_sinh, ho_ten, mat_khau_moi=None, khoa_vai_tro=None, pham_vi_loai="TOAN_BO", dang_dung=1, nguoi_thuc_hien=None, pham_vi_khoa=None):
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
 
@@ -214,9 +241,9 @@ def sua_tai_khoan(ma_tu_sinh, ho_ten, mat_khau_moi=None, khoa_vai_tro=None, pham
 
         con_tro.execute("""
             UPDATE tai_khoan_vai_tro
-            SET khoa_vai_tro = ?, pham_vi_loai = ?
+            SET khoa_vai_tro = ?, pham_vi_loai = ?, pham_vi_khoa = ?
             WHERE khoa_tai_khoan = ?
-        """, (khoa_vai_tro, pham_vi_loai, ma_tu_sinh))
+        """, (khoa_vai_tro, pham_vi_loai, pham_vi_khoa, ma_tu_sinh))
 
     ket_noi.commit()
     ket_noi.close()
@@ -228,16 +255,18 @@ def xoa_tai_khoan(ma_tu_sinh):
     tk = con_tro.fetchone()
     if not tk:
         ket_noi.close()
-        return
+        return False
 
     if tk["ten_dang_nhap"] == "admin" or ma_tu_sinh == 1:
         ket_noi.close()
         raise PermissionError("Tuyệt đối không được phép xóa tài khoản quản trị tối cao (admin).")
 
     con_tro.execute("DELETE FROM tai_khoan_vai_tro WHERE khoa_tai_khoan = ?", (ma_tu_sinh,))
+    con_tro.execute("DELETE FROM nhat_ky WHERE khoa_tai_khoan = ?", (ma_tu_sinh,))
     con_tro.execute("DELETE FROM tai_khoan WHERE ma_tu_sinh = ?", (ma_tu_sinh,))
     ket_noi.commit()
     ket_noi.close()
+    return True
 
 def cap_nhat_quyen_vai_tro(khoa_vai_tro, danh_sach_khoa_quyen):
     ket_noi = lay_ket_noi()

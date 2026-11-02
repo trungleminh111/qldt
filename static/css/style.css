@@ -950,6 +950,14 @@ input:focus, select:focus, textarea:focus {
   gap: 5px;
   transition: all 0.15s ease;
   box-shadow: var(--shadow-sm);
+  text-decoration: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+.locker-cell:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .locker-cell.stored {

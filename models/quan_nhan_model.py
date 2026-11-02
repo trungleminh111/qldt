@@ -1,13 +1,14 @@
+import re
 import openpyxl
-from models.co_so_du_lieu import lay_ket_noi
+from models.co_so_du_lieu import lay_ket_noi, tao_dieu_kien_don_vi, kiem_tra_thuoc_don_vi
 
 def lay_danh_sach_don_vi(khoa_don_vi_gioi_han=None):
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
-    if khoa_don_vi_gioi_han:
-        con_tro.execute("SELECT ma_tu_sinh, ma_don_vi, ten_don_vi, khoa_don_vi_cha FROM don_vi WHERE dang_dung = 1 AND ma_tu_sinh = ? ORDER BY thu_tu ASC", (khoa_don_vi_gioi_han,))
-    else:
-        con_tro.execute("SELECT ma_tu_sinh, ma_don_vi, ten_don_vi, khoa_don_vi_cha FROM don_vi WHERE dang_dung = 1 ORDER BY thu_tu ASC")
+    cau_lenh = "SELECT ma_tu_sinh, ma_don_vi, ten_don_vi, khoa_don_vi_cha FROM don_vi WHERE dang_dung = 1"
+    dieu_kien, tham_so = tao_dieu_kien_don_vi("ma_tu_sinh", khoa_don_vi_gioi_han)
+    cau_lenh += dieu_kien + " ORDER BY thu_tu ASC, ma_tu_sinh ASC"
+    con_tro.execute(cau_lenh, tham_so)
     ket_qua = [dict(row) for row in con_tro.fetchall()]
     ket_noi.close()
     return ket_qua
@@ -39,7 +40,7 @@ def lay_tat_ca_quan_nhan(tu_khoa=None, ma_don_vi=None, trang_thai=None, khoa_don
     con_tro = ket_noi.cursor()
 
     cau_lenh = """
-        SELECT qn.ma_tu_sinh, qn.ma_quan_nhan, qn.ho_ten, qn.ngay_sinh, qn.ngay_nhap_ngu,
+        SELECT qn.ma_tu_sinh, qn.ma_quan_nhan, qn.ho_ten, qn.ngay_sinh, qn.ngay_nhap_ngu, qn.khoa_don_vi,
                cb.ten_cap_bac, cv.ten_chuc_vu, dv.ten_don_vi, dv.ma_don_vi,
                ch.ten_cau_hinh AS nhom_doi_tuong,
                dt.ma_thiet_bi, dt.ten_dien_thoai, dt.hang_san_xuat, dt.model,
@@ -78,8 +79,9 @@ def lay_tat_ca_quan_nhan(tu_khoa=None, ma_don_vi=None, trang_thai=None, khoa_don
         tham_so.extend([tk, tk, tk])
 
     if khoa_don_vi_gioi_han:
-        cau_lenh += " AND qn.khoa_don_vi = ?"
-        tham_so.append(khoa_don_vi_gioi_han)
+        dieu_kien_dv, tham_so_dv = tao_dieu_kien_don_vi("qn.khoa_don_vi", khoa_don_vi_gioi_han)
+        cau_lenh += dieu_kien_dv
+        tham_so.extend(tham_so_dv)
     elif ma_don_vi and ma_don_vi != "TAT_CA":
         cau_lenh += " AND (dv.ma_don_vi = ? OR dv.ma_tu_sinh = ?)"
         tham_so.extend([ma_don_vi, ma_don_vi])
@@ -124,8 +126,9 @@ def lay_chi_tiet_quan_nhan(ma_tu_sinh, khoa_don_vi_gioi_han=None):
     """
     tham_so = [ma_tu_sinh, ma_tu_sinh]
     if khoa_don_vi_gioi_han:
-        cau_lenh += " AND qn.khoa_don_vi = ?"
-        tham_so.append(khoa_don_vi_gioi_han)
+        dieu_kien_dv, tham_so_dv = tao_dieu_kien_don_vi("qn.khoa_don_vi", khoa_don_vi_gioi_han)
+        cau_lenh += dieu_kien_dv
+        tham_so.extend(tham_so_dv)
     con_tro.execute(cau_lenh, tham_so)
     dong = con_tro.fetchone()
     ket_qua = dict(dong) if dong else None
@@ -196,7 +199,7 @@ def import_quan_nhan_excel(file_path, khoa_don_vi_gioi_han=None):
         k_cv = chuc_vu_dict.get(ten_cv, list(chuc_vu_dict.values())[0])
         k_dv = don_vi_dict.get(ten_dv, list(don_vi_dict.values())[0])
 
-        if khoa_don_vi_gioi_han and k_dv != khoa_don_vi_gioi_han:
+        if khoa_don_vi_gioi_han and not kiem_tra_thuoc_don_vi(k_dv, khoa_don_vi_gioi_han):
             continue
 
         con_tro.execute("SELECT ma_tu_sinh FROM quan_nhan WHERE ma_quan_nhan = ?", (ma_qn,))
@@ -217,3 +220,133 @@ def import_quan_nhan_excel(file_path, khoa_don_vi_gioi_han=None):
     ket_noi.commit()
     ket_noi.close()
     return so_dong_thanh_cong
+
+def lay_tat_ca_don_vi():
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    con_tro.execute("""
+        SELECT dv.ma_tu_sinh, dv.ma_don_vi, dv.ten_don_vi, dv.khoa_don_vi_cha, dv.thu_tu, dv.dang_dung,
+               cha.ten_don_vi AS ten_don_vi_cha,
+               COUNT(DISTINCT qn.ma_tu_sinh) AS so_quan_nhan,
+               COUNT(DISTINCT t.ma_tu_sinh) AS so_tu
+        FROM don_vi dv
+        LEFT JOIN don_vi cha ON dv.khoa_don_vi_cha = cha.ma_tu_sinh
+        LEFT JOIN quan_nhan qn ON qn.khoa_don_vi = dv.ma_tu_sinh AND qn.da_xoa = 0
+        LEFT JOIN tu t ON t.khoa_don_vi_quan_ly = dv.ma_tu_sinh AND t.dang_dung = 1
+        GROUP BY dv.ma_tu_sinh
+        ORDER BY dv.thu_tu ASC, dv.ma_tu_sinh ASC
+    """)
+    ket_qua = [dict(row) for row in con_tro.fetchall()]
+    ket_noi.close()
+    return ket_qua
+
+def lay_chi_tiet_don_vi(ma_tu_sinh):
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    con_tro.execute("""
+        SELECT dv.ma_tu_sinh, dv.ma_don_vi, dv.ten_don_vi, dv.khoa_don_vi_cha, dv.thu_tu, dv.dang_dung
+        FROM don_vi dv
+        WHERE dv.ma_tu_sinh = ?
+    """, (ma_tu_sinh,))
+    row = con_tro.fetchone()
+    ket_qua = dict(row) if row else None
+    ket_noi.close()
+    return ket_qua
+
+def lay_goi_y_phan_doi_tiep_theo():
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    con_tro.execute("SELECT ma_don_vi, ten_don_vi FROM don_vi WHERE khoa_don_vi_cha IS NOT NULL")
+    rows = con_tro.fetchall()
+    ket_noi.close()
+    max_num = 0
+    for r in rows:
+        m = re.search(r"(\d+)", r["ma_don_vi"] or "")
+        if m:
+            val = int(m.group(1))
+            if val > max_num:
+                max_num = val
+    next_num = max_num + 1 if max_num > 0 else len(rows) + 1
+    return {
+        "ma_don_vi": f"TD{next_num}",
+        "ten_don_vi": f"Trung đội {next_num}",
+        "thu_tu": next_num
+    }
+
+def them_don_vi(ma_don_vi, ten_don_vi, khoa_don_vi_cha=1, thu_tu=None):
+    ma_don_vi = (ma_don_vi or "").strip().upper()
+    ten_don_vi = (ten_don_vi or "").strip()
+    if not ma_don_vi or not ten_don_vi:
+        raise ValueError("Vui lòng điền đầy đủ mã và tên phân đội.")
+
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+
+    con_tro.execute("SELECT ma_tu_sinh FROM don_vi WHERE ma_don_vi = ?", (ma_don_vi,))
+    if con_tro.fetchone():
+        ket_noi.close()
+        raise ValueError(f"Mã phân đội '{ma_don_vi}' đã tồn tại trong hệ thống.")
+
+    if thu_tu is None or str(thu_tu).strip() == "":
+        con_tro.execute("SELECT MAX(thu_tu) as max_tt FROM don_vi WHERE khoa_don_vi_cha IS NOT NULL")
+        max_tt = con_tro.fetchone()["max_tt"] or 0
+        thu_tu = max_tt + 1
+    else:
+        thu_tu = int(thu_tu)
+
+    con_tro.execute("""
+        INSERT INTO don_vi (ma_don_vi, ten_don_vi, khoa_don_vi_cha, thu_tu, dang_dung)
+        VALUES (?, ?, ?, ?, 1)
+    """, (ma_don_vi, ten_don_vi, khoa_don_vi_cha, thu_tu))
+    id_moi = con_tro.lastrowid
+    ket_noi.commit()
+    ket_noi.close()
+    return id_moi
+
+def sua_don_vi(ma_tu_sinh, ma_don_vi, ten_don_vi, thu_tu=None, dang_dung=1):
+    ma_don_vi = (ma_don_vi or "").strip().upper()
+    ten_don_vi = (ten_don_vi or "").strip()
+    if not ma_don_vi or not ten_don_vi:
+        raise ValueError("Vui lòng điền đầy đủ mã và tên phân đội.")
+
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+
+    con_tro.execute("SELECT ma_tu_sinh FROM don_vi WHERE ma_don_vi = ? AND ma_tu_sinh != ?", (ma_don_vi, ma_tu_sinh))
+    if con_tro.fetchone():
+        ket_noi.close()
+        raise ValueError(f"Mã phân đội '{ma_don_vi}' đã được sử dụng bởi phân đội khác.")
+
+    if thu_tu is None or str(thu_tu).strip() == "":
+        thu_tu = 0
+    else:
+        thu_tu = int(thu_tu)
+
+    con_tro.execute("""
+        UPDATE don_vi
+        SET ma_don_vi = ?, ten_don_vi = ?, thu_tu = ?, dang_dung = ?
+        WHERE ma_tu_sinh = ?
+    """, (ma_don_vi, ten_don_vi, thu_tu, dang_dung, ma_tu_sinh))
+    ket_noi.commit()
+    ket_noi.close()
+    return True
+
+def xoa_don_vi(ma_tu_sinh):
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    con_tro.execute("SELECT COUNT(*) as cnt FROM quan_nhan WHERE khoa_don_vi = ? AND da_xoa = 0", (ma_tu_sinh,))
+    so_qn = con_tro.fetchone()["cnt"]
+    if so_qn > 0:
+        ket_noi.close()
+        raise ValueError(f"Không thể xóa phân đội này vì đang có {so_qn} quân nhân trực thuộc. Vui lòng chuyển quân nhân sang phân đội khác trước.")
+
+    con_tro.execute("SELECT COUNT(*) as cnt FROM tu WHERE khoa_don_vi_quan_ly = ? AND dang_dung = 1", (ma_tu_sinh,))
+    so_tu = con_tro.fetchone()["cnt"]
+    if so_tu > 0:
+        ket_noi.close()
+        raise ValueError(f"Không thể xóa phân đội này vì đang có {so_tu} tủ bảo quản phụ trách.")
+
+    con_tro.execute("DELETE FROM don_vi WHERE ma_tu_sinh = ?", (ma_tu_sinh,))
+    ket_noi.commit()
+    ket_noi.close()
+    return True

@@ -57,12 +57,18 @@
 <div class="panel">
   <form method="GET" action="{{ url_for('dien_thoai.danh_sach') }}" class="toolbar">
     <input type="text" name="tu_khoa" placeholder="Tìm theo mã máy, tên máy, họ tên..." value="{{ tu_khoa }}">
-    <select name="don_vi" onchange="this.form.submit()">
-      <option value="TAT_CA" {% if don_vi_hien_tai == 'TAT_CA' %}selected{% endif %}>Tất cả đơn vị</option>
-      {% for dv in don_vi_list %}
-        <option value="{{ dv.ma_don_vi }}" {% if don_vi_hien_tai == dv.ma_don_vi %}selected{% endif %}>{{ dv.ten_don_vi }}</option>
-      {% endfor %}
-    </select>
+    {% if not khoa_don_vi_gioi_han and don_vi_list|length > 1 %}
+      <select name="don_vi" onchange="this.form.submit()">
+        <option value="TAT_CA" {% if don_vi_hien_tai == 'TAT_CA' %}selected{% endif %}>Tất cả đơn vị</option>
+        {% for dv in don_vi_list %}
+          <option value="{{ dv.ma_don_vi }}" {% if don_vi_hien_tai == dv.ma_don_vi %}selected{% endif %}>{{ dv.ten_don_vi }}</option>
+        {% endfor %}
+      </select>
+    {% elif don_vi_list|length == 1 %}
+      <span class="badge badge-blue" style="font-size: 13px; padding: 7px 12px; display: inline-flex; align-items: center; gap: 5px;">
+        🛡 <b>{{ don_vi_list[0].ten_don_vi }}</b>
+      </span>
+    {% endif %}
     <button type="submit" class="btn-quan-doi btn-qd-secondary">Tìm kiếm</button>
     {% if tu_khoa or don_vi_hien_tai != 'TAT_CA' %}
       <a href="{{ url_for('dien_thoai.danh_sach') }}" class="btn-quan-doi btn-qd-ghost">Xóa lọc</a>
@@ -104,11 +110,13 @@
             <td>{{ dt.ten_don_vi }}</td>
             <td>
               {% if dt.ma_tu and dt.ma_ngan %}
-                <span class="slot-badge">
-                  <span class="cabinet-tag">{{ dt.ma_tu }}</span> Ngăn {{ dt.ten_ngan or dt.ma_ngan }}
+                <span class="slot-badge" style="cursor: pointer;" onclick="moModalGanNgan('{{ dt.ma_tu_sinh }}', '{{ dt.ma_thiet_bi }}', '{{ dt.ten_dien_thoai }}', '{{ dt.ten_quan_nhan }}', '{{ dt.ma_tu }}', '{{ dt.ma_ngan }}')" title="Nhấn để đổi vị trí ngăn tủ">
+                  <span class="cabinet-tag">{{ dt.ma_tu }}</span> Ngăn {{ dt.ten_ngan or dt.ma_ngan }} ✎
                 </span>
               {% else %}
-                <span class="badge badge-gray">Chưa phân ngăn</span>
+                <button type="button" class="btn-quan-doi btn-qd-warning btn-qd-sm" onclick="moModalGanNgan('{{ dt.ma_tu_sinh }}', '{{ dt.ma_thiet_bi }}', '{{ dt.ten_dien_thoai }}', '{{ dt.ten_quan_nhan }}', '', '')" title="Nhấn để gán vị trí ngăn tủ">
+                  ⚡ Chưa phân ngăn (Gán ngay)
+                </button>
               {% endif %}
             </td>
             <td>
@@ -118,7 +126,16 @@
                 <span class="badge badge-green"><span class="badge-dot"></span>Trong tủ</span>
               {% endif %}
             </td>
-            <td style="text-align: right;">
+            <td style="text-align: right; white-space: nowrap;">
+              {% if not (dt.ma_tu and dt.ma_ngan) %}
+                <button type="button" class="btn-quan-doi btn-qd-primary btn-qd-sm" onclick="moModalGanNgan('{{ dt.ma_tu_sinh }}', '{{ dt.ma_thiet_bi }}', '{{ dt.ten_dien_thoai }}', '{{ dt.ten_quan_nhan }}', '', '')" style="margin-right: 4px;">
+                  Gán ngăn
+                </button>
+              {% else %}
+                <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" onclick="moModalGanNgan('{{ dt.ma_tu_sinh }}', '{{ dt.ma_thiet_bi }}', '{{ dt.ten_dien_thoai }}', '{{ dt.ten_quan_nhan }}', '{{ dt.ma_tu }}', '{{ dt.ma_ngan }}')" style="margin-right: 4px;" title="Đổi ngăn khác">
+                  Đổi ngăn
+                </button>
+              {% endif %}
               <a href="{{ url_for('dien_thoai.chi_tiet', id=dt.ma_tu_sinh) }}" class="btn-quan-doi btn-qd-ghost btn-qd-sm">
                 Chi tiết
               </a>
@@ -183,13 +200,31 @@
         {% endfor %}
       </select>
 
-      <label for="dt_ngan">Gán vị trí ngăn tủ</label>
-      <select id="dt_ngan" name="ma_ngan">
-        <option value="">-- Chưa gán ngăn --</option>
-        {% for ng in ngan_trong_list %}
-          <option value="{{ ng.ma_ngan }}">{{ ng.ma_tu }} - {{ ng.ten_ngan }} ({{ ng.ma_ngan }})</option>
-        {% endfor %}
-      </select>
+      <div style="margin-top: 14px; padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
+        <div style="font-weight: 700; font-size: 13px; color: var(--navy); margin-bottom: 8px;">
+          GÁN VỊ TRÍ TỦ &amp; NGĂN BẢO QUẢN
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="dt_chon_tu" style="font-size: 12px; font-weight: 600;">1. Chọn tủ (chỉ hiện tủ còn trống)</label>
+            <select id="dt_chon_tu" onchange="locNganTheoTu(this.value)">
+              <option value="">-- Chọn tủ bảo quản --</option>
+              {% for tu in tu_trong_list %}
+                <option value="{{ tu.ma_tu }}">{{ tu.ten_tu }} ({{ tu.ma_tu }}) — Còn {{ tu.so_ngan_trong }} ngăn trống</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="dt_ngan" style="font-size: 12px; font-weight: 600;">2. Chọn ngăn còn trống</label>
+            <select id="dt_ngan" name="ma_ngan">
+              <option value="">-- Vui lòng chọn tủ trước --</option>
+            </select>
+          </div>
+        </div>
+        <div id="dt_ngan_thong_bao" style="margin-top: 6px; font-size: 11px; color: #64748b;">
+          Chọn tủ trước để lọc danh sách các ngăn còn trống.
+        </div>
+      </div>
 
       <div class="modal-footer">
         <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalThemDienThoai')">Hủy</button>
@@ -198,4 +233,191 @@
     </form>
   </div>
 </div>
+
+<div class="modal-backdrop" id="modalGanNganNhanh">
+  <div class="modal" style="max-width: 480px;">
+    <div class="modal-header">
+      <h2>Gán vị trí ngăn tủ</h2>
+      <button class="modal-close" onclick="dongModal('modalGanNganNhanh')">✕</button>
+    </div>
+    <form id="formGanNganNhanh" method="POST" action="">
+      <div style="background: #f1f5f9; padding: 10px 14px; border-radius: 6px; margin-bottom: 14px; font-size: 13px;">
+        <div><span>Thiết bị:</span> <b id="gan_tb_ten"></b> (<span id="gan_tb_ma"></span>)</div>
+        <div style="margin-top: 4px;"><span>Quân nhân:</span> <b id="gan_tb_qn"></b></div>
+      </div>
+
+      <div style="padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="quick_chon_tu" style="font-size: 12px; font-weight: 600;">1. Chọn tủ (chỉ hiện tủ còn trống)</label>
+            <select id="quick_chon_tu" onchange="locNganQuick(this.value, '')">
+              <option value="">-- Chọn tủ bảo quản --</option>
+              {% for tu in tu_trong_list %}
+                <option value="{{ tu.ma_tu }}">{{ tu.ten_tu }} ({{ tu.ma_tu }}) — Còn {{ tu.so_ngan_trong }} ngăn trống</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="quick_ngan" style="font-size: 12px; font-weight: 600;">2. Chọn ngăn còn trống</label>
+            <select id="quick_ngan" name="ma_ngan">
+              <option value="">-- Vui lòng chọn tủ trước --</option>
+            </select>
+          </div>
+        </div>
+        <div id="quick_ngan_thong_bao" style="margin-top: 6px; font-size: 11px; color: #64748b;">
+          Chọn tủ trước để lọc danh sách các ngăn còn trống.
+        </div>
+      </div>
+
+      <div class="modal-footer" style="margin-top: 18px;">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalGanNganNhanh')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Xác nhận gán ngăn</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const danhSachNganTrong = {{ (ngan_trong_list or []) | tojson }};
+
+function locNganTheoTu(maTu) {
+  const selectNgan = document.getElementById("dt_ngan");
+  const thongBao = document.getElementById("dt_ngan_thong_bao");
+  if (!selectNgan) return;
+
+  selectNgan.innerHTML = "";
+
+  if (!maTu) {
+    const optDefault = document.createElement("option");
+    optDefault.value = "";
+    optDefault.textContent = "-- Vui lòng chọn tủ trước --";
+    selectNgan.appendChild(optDefault);
+    if (thongBao) {
+      thongBao.textContent = "Chọn tủ trước để lọc danh sách các ngăn còn trống.";
+      thongBao.style.color = "#64748b";
+    }
+    return;
+  }
+
+  const optChuaGan = document.createElement("option");
+  optChuaGan.value = "";
+  optChuaGan.textContent = "-- Chưa gán ngăn cụ thể --";
+  selectNgan.appendChild(optChuaGan);
+
+  const danhSachLoc = danhSachNganTrong.filter(function(item) {
+    return item.ma_tu === maTu;
+  });
+
+  if (danhSachLoc.length === 0) {
+    const optHet = document.createElement("option");
+    optHet.value = "";
+    optHet.textContent = "Tủ này hiện đã hết ngăn trống";
+    optHet.disabled = true;
+    selectNgan.appendChild(optHet);
+    if (thongBao) {
+      thongBao.textContent = "Tủ này hiện không còn ngăn trống nào.";
+      thongBao.style.color = "#dc2626";
+    }
+    return;
+  }
+
+  danhSachLoc.forEach(function(item) {
+    const opt = document.createElement("option");
+    opt.value = item.ma_ngan;
+    opt.textContent = "Ngăn " + item.ten_ngan + " (" + item.ma_ngan + ") — Còn trống";
+    selectNgan.appendChild(opt);
+  });
+
+  if (thongBao) {
+    thongBao.textContent = "Đã tìm thấy " + danhSachLoc.length + " ngăn còn trống trong tủ.";
+    thongBao.style.color = "#16a34a";
+  }
+}
+
+function moModalGanNgan(id, maTb, tenTb, tenQn, maTuHienTai, maNganHienTai) {
+  const form = document.getElementById("formGanNganNhanh");
+  if (form) {
+    form.action = "/dien-thoai/gan-ngan/" + id;
+  }
+  const elMa = document.getElementById("gan_tb_ma");
+  const elTen = document.getElementById("gan_tb_ten");
+  const elQn = document.getElementById("gan_tb_qn");
+  if (elMa) elMa.textContent = maTb;
+  if (elTen) elTen.textContent = tenTb;
+  if (elQn) elQn.textContent = tenQn;
+
+  const selectTu = document.getElementById("quick_chon_tu");
+  if (selectTu) {
+    selectTu.value = maTuHienTai || "";
+    locNganQuick(maTuHienTai || "", maNganHienTai || "");
+  }
+
+  moModal("modalGanNganNhanh");
+}
+
+function locNganQuick(maTu, maNganChon) {
+  const selectNgan = document.getElementById("quick_ngan");
+  const thongBao = document.getElementById("quick_ngan_thong_bao");
+  if (!selectNgan) return;
+
+  selectNgan.innerHTML = "";
+
+  if (!maTu) {
+    const optDefault = document.createElement("option");
+    optDefault.value = "";
+    optDefault.textContent = "-- Vui lòng chọn tủ trước --";
+    selectNgan.appendChild(optDefault);
+    if (thongBao) {
+      thongBao.textContent = "Chọn tủ trước để lọc danh sách các ngăn còn trống.";
+      thongBao.style.color = "#64748b";
+    }
+    return;
+  }
+
+  const optChuaGan = document.createElement("option");
+  optChuaGan.value = "";
+  optChuaGan.textContent = "-- Chưa gán ngăn (để trống) --";
+  selectNgan.appendChild(optChuaGan);
+
+  if (maNganChon) {
+    const optCur = document.createElement("option");
+    optCur.value = maNganChon;
+    optCur.textContent = "Ngăn " + maNganChon + " — Đang sử dụng";
+    optCur.selected = true;
+    selectNgan.appendChild(optCur);
+  }
+
+  const danhSachLoc = danhSachNganTrong.filter(function(item) {
+    return item.ma_tu === maTu && item.ma_ngan !== maNganChon;
+  });
+
+  if (danhSachLoc.length === 0 && !maNganChon) {
+    const optHet = document.createElement("option");
+    optHet.value = "";
+    optHet.textContent = "Tủ này hiện đã hết ngăn trống";
+    optHet.disabled = true;
+    selectNgan.appendChild(optHet);
+    if (thongBao) {
+      thongBao.textContent = "Tủ này hiện không còn ngăn trống nào.";
+      thongBao.style.color = "#dc2626";
+    }
+    return;
+  }
+
+  danhSachLoc.forEach(function(item) {
+    const opt = document.createElement("option");
+    opt.value = item.ma_ngan;
+    opt.textContent = "Ngăn " + item.ten_ngan + " (" + item.ma_ngan + ") — Còn trống";
+    if (maNganChon && item.ma_ngan === maNganChon) {
+      opt.selected = true;
+    }
+    selectNgan.appendChild(opt);
+  });
+
+  if (thongBao) {
+    thongBao.textContent = "Đã tìm thấy " + danhSachLoc.length + " ngăn còn trống trong tủ.";
+    thongBao.style.color = "#16a34a";
+  }
+}
+</script>
 {% endblock %}

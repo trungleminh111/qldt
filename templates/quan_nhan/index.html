@@ -20,12 +20,18 @@
 <div class="panel">
   <form method="GET" action="{{ url_for('quan_nhan.danh_sach') }}" class="toolbar">
     <input type="text" name="tu_khoa" placeholder="Tìm theo tên, mã quân nhân..." value="{{ tu_khoa }}">
-    <select name="don_vi" onchange="this.form.submit()">
-      <option value="TAT_CA" {% if don_vi_hien_tai == 'TAT_CA' %}selected{% endif %}>Tất cả đơn vị</option>
-      {% for dv in don_vi_list %}
-        <option value="{{ dv.ma_don_vi }}" {% if don_vi_hien_tai == dv.ma_don_vi %}selected{% endif %}>{{ dv.ten_don_vi }}</option>
-      {% endfor %}
-    </select>
+    {% if not khoa_don_vi_gioi_han and don_vi_list|length > 1 %}
+      <select name="don_vi" onchange="this.form.submit()">
+        <option value="TAT_CA" {% if don_vi_hien_tai == 'TAT_CA' %}selected{% endif %}>Tất cả đơn vị</option>
+        {% for dv in don_vi_list %}
+          <option value="{{ dv.ma_don_vi }}" {% if don_vi_hien_tai == dv.ma_don_vi %}selected{% endif %}>{{ dv.ten_don_vi }}</option>
+        {% endfor %}
+      </select>
+    {% elif don_vi_list|length == 1 %}
+      <span class="badge badge-blue" style="font-size: 13px; padding: 7px 12px; display: inline-flex; align-items: center; gap: 5px;">
+        🛡 <b>{{ don_vi_list[0].ten_don_vi }}</b>
+      </span>
+    {% endif %}
     <button type="submit" class="btn-quan-doi btn-qd-secondary">Tìm kiếm</button>
     {% if tu_khoa or don_vi_hien_tai != 'TAT_CA' %}
       <a href="{{ url_for('quan_nhan.danh_sach') }}" class="btn-quan-doi btn-qd-ghost">Xóa lọc</a>

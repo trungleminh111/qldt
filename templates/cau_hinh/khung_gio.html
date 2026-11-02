@@ -72,7 +72,8 @@
     <table>
       <thead>
         <tr>
-          <th>Ngày áp dụng</th>
+          <th>Ngày mốc</th>
+          <th>Chu kỳ lặp lại</th>
           <th>Lý do / Sự kiện</th>
           <th>Chế độ áp dụng</th>
           <th>Cấu hình thay thế</th>
@@ -83,10 +84,21 @@
         {% for ndb in ngay_dac_biet_list %}
           <tr>
             <td><b>{{ ndb.ngay }}</b></td>
-            <td>{{ ndb.ly_do }}</td>
+            <td>
+              {% if ndb.loai_lap == 'HANG_NAM' %}
+                <span class="badge" style="background: #fdf2f8; color: #9d174d; border: 1px solid #fbcfe8;">🔄 {{ ndb.mo_ta_loai_lap }}</span>
+              {% elif ndb.loai_lap == 'HANG_THANG' %}
+                <span class="badge badge-blue">🔄 {{ ndb.mo_ta_loai_lap }}</span>
+              {% elif ndb.loai_lap == 'HANG_TUAN' %}
+                <span class="badge badge-purple">🔄 {{ ndb.mo_ta_loai_lap }}</span>
+              {% else %}
+                <span class="badge badge-gray">Một lần</span>
+              {% endif %}
+            </td>
+            <td><b>{{ ndb.ly_do }}</b></td>
             <td>
               {% if ndb.cam_su_dung == 1 %}
-                <span class="badge badge-red">CẤM HOÀN TOÀN</span>
+                <span class="badge badge-red">⛔ CẤM HOÀN TOÀN</span>
               {% else %}
                 <span class="badge badge-amber">THAY THẾ KHUNG GIỜ</span>
               {% endif %}
@@ -94,7 +106,7 @@
             <td>{{ ndb.ten_cau_hinh_ghi_de or 'Không' }}</td>
             <td style="text-align: right; white-space: nowrap;">
               <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" style="margin-right: 4px;"
-                onclick="moModalSuaNgay('{{ ndb.ma_tu_sinh }}', '{{ ndb.ngay }}', '{{ ndb.ly_do }}', '{{ ndb.cam_su_dung }}', '{{ ndb.khoa_cau_hinh_ghi_de or '' }}')">
+                onclick="moModalSuaNgay('{{ ndb.ma_tu_sinh }}', '{{ ndb.ngay }}', '{{ ndb.ly_do }}', '{{ ndb.cam_su_dung }}', '{{ ndb.khoa_cau_hinh_ghi_de or '' }}', '{{ ndb.loai_lap or 'MOT_LAN' }}')">
                 ✎ Sửa
               </button>
               <form method="POST" action="{{ url_for('cau_hinh.xoa_ngay', id=ndb.ma_tu_sinh) }}" style="display: inline-block;" onsubmit="return confirm('Xóa ngày đặc biệt này?');">
@@ -106,7 +118,7 @@
           </tr>
         {% else %}
           <tr>
-            <td colspan="5" style="text-align: center; color: var(--muted); padding: 20px;">
+            <td colspan="6" style="text-align: center; color: var(--muted); padding: 20px;">
               Chưa có ngày đặc biệt nào được thiết lập.
             </td>
           </tr>
@@ -217,8 +229,19 @@
       <button class="modal-close" onclick="dongModal('modalNgayDacBiet')">✕</button>
     </div>
     <form method="POST" action="{{ url_for('cau_hinh.them_ngay') }}">
-      <label for="ndb_ngay">Ngày áp dụng *</label>
-      <input type="date" id="ndb_ngay" name="ngay" required>
+      <label for="ndb_ngay">Ngày áp dụng (Mốc ngày) *</label>
+      <input type="date" id="ndb_ngay" name="ngay" required onchange="capNhatGiaiThichLoaiLap('ndb')">
+
+      <label for="ndb_loai_lap">Chu kỳ lặp lại *</label>
+      <select id="ndb_loai_lap" name="loai_lap" onchange="capNhatGiaiThichLoaiLap('ndb')">
+        <option value="MOT_LAN">Một lần (Chỉ áp dụng đúng ngày cụ thể này)</option>
+        <option value="HANG_TUAN">Hàng tuần (Lặp lại vào thứ này mỗi tuần)</option>
+        <option value="HANG_THANG">Hàng tháng (Lặp lại vào ngày này mỗi tháng)</option>
+        <option value="HANG_NAM">Hàng năm (Lặp lại vào ngày này mỗi năm)</option>
+      </select>
+      <div id="ndb_loai_lap_mo_ta" style="font-size: 12px; color: #1e40af; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 6px 10px; margin-top: 4px; margin-bottom: 12px;">
+        Chỉ áp dụng một lần duy nhất cho ngày đã chọn.
+      </div>
 
       <label for="ndb_ly_do">Lý do / Tên sự kiện *</label>
       <input type="text" id="ndb_ly_do" name="ly_do" placeholder="VD: Trực sẵn sàng chiến đấu, Ngày Tết, Diễn tập..." required>
@@ -252,8 +275,19 @@
       <button class="modal-close" onclick="dongModal('modalSuaNgayDacBiet')">✕</button>
     </div>
     <form id="formSuaNgay" method="POST" action="">
-      <label for="sua_ndb_ngay">Ngày áp dụng *</label>
-      <input type="date" id="sua_ndb_ngay" name="ngay" required>
+      <label for="sua_ndb_ngay">Ngày áp dụng (Mốc ngày) *</label>
+      <input type="date" id="sua_ndb_ngay" name="ngay" required onchange="capNhatGiaiThichLoaiLap('sua_ndb')">
+
+      <label for="sua_ndb_loai_lap">Chu kỳ lặp lại *</label>
+      <select id="sua_ndb_loai_lap" name="loai_lap" onchange="capNhatGiaiThichLoaiLap('sua_ndb')">
+        <option value="MOT_LAN">Một lần (Chỉ áp dụng đúng ngày cụ thể này)</option>
+        <option value="HANG_TUAN">Hàng tuần (Lặp lại vào thứ này mỗi tuần)</option>
+        <option value="HANG_THANG">Hàng tháng (Lặp lại vào ngày này mỗi tháng)</option>
+        <option value="HANG_NAM">Hàng năm (Lặp lại vào ngày này mỗi năm)</option>
+      </select>
+      <div id="sua_ndb_loai_lap_mo_ta" style="font-size: 12px; color: #1e40af; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 4px; padding: 6px 10px; margin-top: 4px; margin-bottom: 12px;">
+        Chỉ áp dụng một lần duy nhất cho ngày đã chọn.
+      </div>
 
       <label for="sua_ndb_ly_do">Lý do / Tên sự kiện *</label>
       <input type="text" id="sua_ndb_ly_do" name="ly_do" required>
@@ -291,12 +325,54 @@ function moModalSuaKhung(id, khoaCh, thu, batDau, ketThuc, ghiChu) {
   moModal("modalSuaKhung");
 }
 
-function moModalSuaNgay(id, ngay, lyDo, camSuDung, khoaGhiDe) {
+function capNhatGiaiThichLoaiLap(prefix) {
+  const inputNgay = document.getElementById(`${prefix}_ngay`);
+  const selectLap = document.getElementById(`${prefix}_loai_lap`);
+  const moTaEl = document.getElementById(`${prefix}_loai_lap_mo_ta`);
+  if (!selectLap || !moTaEl) return;
+
+  const loai = selectLap.value;
+  const valNgay = inputNgay ? inputNgay.value : "";
+
+  if (!valNgay) {
+    if (loai === "HANG_TUAN") moTaEl.textContent = "Lặp lại hàng tuần vào thứ của ngày đã chọn.";
+    else if (loai === "HANG_THANG") moTaEl.textContent = "Lặp lại hàng tháng vào ngày đã chọn.";
+    else if (loai === "HANG_NAM") moTaEl.textContent = "Lặp lại hàng năm vào ngày/tháng đã chọn.";
+    else moTaEl.textContent = "Chỉ áp dụng một lần duy nhất cho ngày đã chọn.";
+    return;
+  }
+
+  const parts = valNgay.split("-");
+  if (parts.length === 3) {
+    const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    const dayOfWeek = d.getDay();
+    const tenThu = dayOfWeek === 0 ? "Chủ Nhật" : `Thứ ${dayOfWeek + 1}`;
+    const ngayThang = `${parts[2]}/${parts[1]}`;
+    const ngay = parts[2];
+
+    if (loai === "HANG_TUAN") {
+      moTaEl.textContent = `🔔 Lặp lại vào ${tenThu} hàng tuần (Chào cờ, sinh hoạt tuần...)`;
+    } else if (loai === "HANG_THANG") {
+      moTaEl.textContent = `🔔 Lặp lại vào ngày ${ngay} hàng tháng (Ngày kỹ thuật, kiểm kê...)`;
+    } else if (loai === "HANG_NAM") {
+      moTaEl.textContent = `🔔 Lặp lại vào ngày ${ngayThang} hàng năm (Ngày 22/12, 30/4, Tết...)`;
+    } else {
+      moTaEl.textContent = `🔔 Chỉ áp dụng một lần duy nhất vào ngày ${parts[2]}/${parts[1]}/${parts[0]}.`;
+    }
+  }
+}
+
+function moModalSuaNgay(id, ngay, lyDo, camSuDung, khoaGhiDe, loaiLap) {
   document.getElementById("formSuaNgay").action = `/ngay-dac-biet/sua/${id}`;
   document.getElementById("sua_ndb_ngay").value = ngay;
   document.getElementById("sua_ndb_ly_do").value = lyDo;
   document.getElementById("sua_ndb_cam").value = camSuDung;
   document.getElementById("sua_ndb_ghi_de").value = khoaGhiDe;
+  const selLap = document.getElementById("sua_ndb_loai_lap");
+  if (selLap) {
+    selLap.value = loaiLap || "MOT_LAN";
+  }
+  capNhatGiaiThichLoaiLap("sua_ndb");
   moModal("modalSuaNgayDacBiet");
 }
 </script>

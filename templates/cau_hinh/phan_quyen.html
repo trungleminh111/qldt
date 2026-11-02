@@ -1,35 +1,36 @@
 {% extends "base.html" %}
 
-{% block title %}Tài khoản & Phân quyền · Quản lý điện thoại đại đội{% endblock %}
+{% block title %}Quản lý tài khoản & Phân quyền · Quản lý điện thoại đại đội{% endblock %}
 {% block page_title %}Tài khoản & Phân quyền cán bộ{% endblock %}
-{% block page_subtitle %}Quản lý tài khoản cán bộ, gán vai trò quân sự và cấu hình thẩm quyền thao tác{% endblock %}
+{% block page_subtitle %}Thiết lập tài khoản đăng nhập, gán vai trò trách nhiệm và phân quyền thao tác linh hoạt theo chức năng của từng cán bộ{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
   <div>
-    <h1>Quản lý tài khoản & Phân quyền cán bộ</h1>
+    <h1>Quản lý tài khoản &amp; Phân quyền cán bộ</h1>
     <p>Thiết lập tài khoản đăng nhập, gán vai trò trách nhiệm và phân quyền thao tác linh hoạt theo chức năng của từng cán bộ.</p>
   </div>
-  <div class="header-actions">
-    <button type="button" class="btn-quan-doi btn-qd-primary" onclick="moModal('modalThemTaiKhoan')">＋ Thêm tài khoản cán bộ</button>
+  <div>
+    <button type="button" class="btn-quan-doi btn-qd-primary" onclick="moModalThemTK()">
+      ＋ Thêm tài khoản mới
+    </button>
   </div>
 </div>
 
-<div class="panel">
+<div class="panel" style="margin-bottom: 24px;">
   <div class="panel-header">
     <h2>Danh sách tài khoản cán bộ quản lý</h2>
   </div>
-
-  <div class="table-responsive">
+  <div class="table-container">
     <table>
       <thead>
         <tr>
           <th>Họ và tên</th>
           <th>Tên đăng nhập</th>
           <th>Vai trò đảm nhiệm</th>
-          <th>Phạm vi quản lý</th>
+          <th>Phạm vi phụ trách</th>
           <th>Đăng nhập gần nhất</th>
-          <th>Trạng thái</th>
+          <th style="text-align: center;">Trạng thái</th>
           <th style="text-align: right;">Thao tác</th>
         </tr>
       </thead>
@@ -37,41 +38,48 @@
         {% for tk in tai_khoan_list %}
           <tr>
             <td><b>{{ tk.ho_ten }}</b></td>
-            <td><span style="font-weight: 700; color: var(--navy);">{{ tk.ten_dang_nhap }}</span></td>
-            <td><span class="badge badge-blue">{{ tk.ten_vai_tro or 'Chưa gán' }}</span></td>
+            <td><code>{{ tk.ten_dang_nhap }}</code></td>
+            <td>
+              <span class="role-badge">{{ tk.ten_vai_tro or 'Chưa gán vai trò' }}</span>
+            </td>
             <td>
               {% if tk.pham_vi_loai == 'TOAN_BO' %}
-                Toàn đại đội
+                <span class="badge badge-green">★ Toàn đại đội</span>
               {% elif tk.pham_vi_loai == 'DON_VI' %}
-                Theo trung đội
+                <span class="badge badge-blue" title="{{ tk.ten_don_vi_pham_vi or '' }}">
+                  🎯 {{ tk.ten_don_vi_pham_vi or 'Trung đội' }}
+                </span>
               {% elif tk.pham_vi_loai == 'TU' %}
-                Theo tủ quản lý
+                <span class="badge badge-amber">🔒 {{ tk.ten_tu_pham_vi or 'Tủ' }}</span>
               {% else %}
-                {{ tk.pham_vi_loai }}
+                <span class="badge badge-gray">{{ tk.pham_vi_loai }}</span>
               {% endif %}
             </td>
             <td>{{ tk.dang_nhap_cuoi or 'Chưa đăng nhập' }}</td>
-            <td>
-              {% if tk.dang_dung == 1 %}
-                <span class="badge badge-green">Hoạt động</span>
+            <td style="text-align: center;">
+              {% if tk.dang_dung %}
+                <span class="badge badge-green"><span class="badge-dot"></span>Hoạt động</span>
               {% else %}
-                <span class="badge badge-gray">Tạm khóa</span>
+                <span class="badge badge-gray"><span class="badge-dot"></span>Tạm khóa</span>
               {% endif %}
             </td>
             <td style="text-align: right; white-space: nowrap;">
-              {% if tk.ten_dang_nhap != 'admin' or session.get('nguoi_dung', {}).get('ten_dang_nhap') == 'admin' %}
-              <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" style="margin-right: 4px;"
-                onclick="moModalSuaTK('{{ tk.ma_tu_sinh }}', '{{ tk.ho_ten }}', '{{ tk.khoa_vai_tro or '' }}', '{{ tk.pham_vi_loai }}', '{{ tk.dang_dung }}')">
+              <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm"
+                onclick="moModalSuaTK('{{ tk.ma_tu_sinh }}', '{{ tk.ho_ten }}', '{{ tk.khoa_vai_tro or '' }}', '{{ tk.pham_vi_loai }}', '{{ tk.dang_dung }}', '{{ tk.pham_vi_khoa or '' }}')"
+                style="margin-right: 4px;">
                 ✎ Sửa
               </button>
-              {% endif %}
               {% if tk.ten_dang_nhap != 'admin' %}
-                <form method="POST" action="{{ url_for('cau_hinh.xoa_tk', id=tk.ma_tu_sinh) }}" style="display: inline-block;" onsubmit="return confirm('Đồng chí có chắc chắn muốn xóa tài khoản này?');">
-                  <button type="submit" class="btn-quan-doi btn-qd-danger btn-qd-sm">
-                    Xóa
-                  </button>
+                <form method="POST" action="{{ url_for('cau_hinh.xoa_tk', id=tk.ma_tu_sinh) }}" style="display: inline;" onsubmit="return confirm('Đồng chí có chắc chắn muốn xóa tài khoản {{ tk.ten_dang_nhap }} không?');">
+                  <button type="submit" class="btn-quan-doi btn-qd-danger btn-qd-sm">✕ Xóa</button>
                 </form>
               {% endif %}
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--muted); padding: 36px;">
+              Chưa có tài khoản cán bộ nào trong hệ thống.
             </td>
           </tr>
         {% endfor %}
@@ -85,28 +93,28 @@
     <h2>Phân quyền thẩm quyền theo vai trò quân sự</h2>
   </div>
   <p style="color: var(--muted); font-size: 12px; margin-bottom: 20px;">
-    Đánh dấu chọn các chức năng cho phép từng vai trò được quyền thực hiện trong quá trình quản lý và bàn giao ca.
+    Đánh dấu chọn các chức năng cho phép từng vai trò được quyền thực hiện trong quá trình quản lý và vận hành hệ thống.
   </p>
 
   <div style="display: flex; flex-direction: column; gap: 24px;">
     {% for vt in vai_tro_list %}
       <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; padding: 18px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #e2e8f0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
           <div>
             <b style="font-size: 15px; color: var(--navy);">{{ vt.ten_vai_tro }}</b>
             <span class="badge badge-blue" style="margin-left: 8px;">{{ vt.ma_vai_tro }}</span>
-            <small style="display: block; color: var(--muted); margin-top: 2px;">{{ vt.mo_ta or 'Quy định thẩm quyền nghiệp vụ' }}</small>
+            <small style="display: block; color: var(--muted); margin-top: 2px;">{{ vt.mo_ta or 'Quy định chức trách' }}</small>
           </div>
         </div>
 
         <form method="POST" action="{{ url_for('cau_hinh.cap_nhat_quyen', id=vt.ma_tu_sinh) }}">
-          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; margin-bottom: 16px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px; margin-bottom: 16px;">
             {% for q in quyen_list %}
-              <label style="display: flex; align-items: flex-start; gap: 10px; background: #fff; padding: 10px 14px; border-radius: 6px; border: 1px solid #e2e8f0; cursor: pointer; margin: 0;">
-                <input type="checkbox" name="quyen_ids" value="{{ q.ma_tu_sinh }}" {% if q.ma_tu_sinh in vt.cac_quyen_ids %}checked{% endif %} style="width: auto; margin-top: 3px;">
+              <label style="display: flex; align-items: flex-start; gap: 10px; background: #fff; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer;">
+                <input type="checkbox" name="quyen_ids" value="{{ q.ma_tu_sinh }}" {% if q.ma_tu_sinh in vt.cac_quyen %}checked{% endif %}>
                 <div>
                   <b style="font-size: 12.5px; color: #1e293b; display: block;">{{ q.ten_quyen }}</b>
-                  <span style="font-size: 11px; color: var(--muted); line-height: 1.4; display: block;">{{ q.mo_ta }}</span>
+                  <span style="font-size: 11px; color: var(--muted); line-height: 1.4; display: block; margin-top: 2px;">{{ q.mo_ta or '' }}</span>
                 </div>
               </label>
             {% endfor %}
@@ -124,36 +132,70 @@
 </div>
 
 <div class="modal-backdrop" id="modalThemTaiKhoan">
-  <div class="modal">
+  <div class="modal" style="max-width: 540px;">
     <div class="modal-header">
       <h2>Thêm tài khoản cán bộ mới</h2>
       <button class="modal-close" onclick="dongModal('modalThemTaiKhoan')">✕</button>
     </div>
     <form method="POST" action="{{ url_for('cau_hinh.them_tk') }}">
-      <label for="tk_tendn">Tên đăng nhập *</label>
-      <input type="text" id="tk_tendn" name="ten_dang_nhap" placeholder="VD: vanhung" required>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label for="tk_tendn">Tên đăng nhập *</label>
+          <input type="text" id="tk_tendn" name="ten_dang_nhap" placeholder="VD: vanhung" required>
+        </div>
+        <div>
+          <label for="tk_matkhau">Mật khẩu khởi tạo *</label>
+          <input type="password" id="tk_matkhau" name="mat_khau" placeholder="••••••••" required>
+        </div>
+      </div>
 
-      <label for="tk_matkhau">Mật khẩu khởi tạo *</label>
-      <input type="password" id="tk_matkhau" name="mat_khau" value="12345678" required>
-
-      <label for="tk_hoten">Họ và tên cán bộ *</label>
+      <label for="tk_hoten" style="margin-top: 12px;">Họ và tên cán bộ *</label>
       <input type="text" id="tk_hoten" name="ho_ten" placeholder="Nhập họ và tên cán bộ" required>
 
-      <label for="tk_vaitro">Vai trò đảm nhiệm *</label>
+      <label for="tk_vaitro" style="margin-top: 12px;">Vai trò đảm nhiệm *</label>
       <select id="tk_vaitro" name="khoa_vai_tro" required>
         {% for vt in vai_tro_list %}
           <option value="{{ vt.ma_tu_sinh }}">{{ vt.ten_vai_tro }}</option>
         {% endfor %}
       </select>
 
-      <label for="tk_phamvi">Phạm vi quản lý</label>
-      <select id="tk_phamvi" name="pham_vi_loai">
-        <option value="TOAN_BO">Toàn đại đội</option>
-        <option value="DON_VI">Theo trung đội trực thuộc</option>
-        <option value="TU">Theo tủ quản lý</option>
+      <label for="tk_pham_vi_loai" style="margin-top: 12px;">Phạm vi quản lý *</label>
+      <select id="tk_pham_vi_loai" name="pham_vi_loai" onchange="chuyenPhamViThem(this.value)" required>
+        <option value="TOAN_BO">★ Toàn đại đội (Tất cả đơn vị &amp; tủ)</option>
+        <option value="DON_VI">Theo trung đội trực thuộc (Linh hoạt chọn 1 hoặc nhiều trung đội)</option>
+        <option value="TU">Theo tủ quản lý cụ thể</option>
       </select>
 
-      <div class="modal-footer">
+      <div id="hop_chon_don_vi_them" style="display: none; margin-top: 12px; padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 12px; font-weight: 700; color: var(--navy);">Chọn các trung đội được quản lý:</span>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" onclick="chonTatCaDonVi('them', true)" style="padding: 2px 8px; font-size: 11px;">Chọn tất cả</button>
+            <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" onclick="chonTatCaDonVi('them', false)" style="padding: 2px 8px; font-size: 11px;">Bỏ chọn</button>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 160px; overflow-y: auto;">
+          {% for dv in don_vi_list %}
+            {% if dv.ma_don_vi != 'C1' %}
+              <label style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                <input type="checkbox" name="pham_vi_khoa_don_vi" value="{{ dv.ma_tu_sinh }}" class="cb-don-vi-them">
+                <span><b>{{ dv.ten_don_vi }}</b></span>
+              </label>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+
+      <div id="hop_chon_tu_them" style="display: none; margin-top: 12px; padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
+        <label for="them_pham_vi_khoa_tu" style="margin-top: 0; font-size: 12px; font-weight: 700; color: var(--navy);">Chọn tủ bảo quản được quản lý:</label>
+        <select id="them_pham_vi_khoa_tu" name="pham_vi_khoa_tu">
+          {% for tu in tu_list %}
+            <option value="{{ tu.ma_tu_sinh }}">{{ tu.ten_tu }} (Mã tủ: {{ tu.ma_tu }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="modal-footer" style="margin-top: 20px;">
         <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalThemTaiKhoan')">Hủy</button>
         <button type="submit" class="btn-quan-doi btn-qd-primary">Lưu tài khoản</button>
       </div>
@@ -162,7 +204,7 @@
 </div>
 
 <div class="modal-backdrop" id="modalSuaTaiKhoan">
-  <div class="modal">
+  <div class="modal" style="max-width: 540px;">
     <div class="modal-header">
       <h2>Chỉnh sửa thông tin tài khoản</h2>
       <button class="modal-close" onclick="dongModal('modalSuaTaiKhoan')">✕</button>
@@ -171,30 +213,64 @@
       <label for="sua_tk_hoten">Họ và tên cán bộ *</label>
       <input type="text" id="sua_tk_hoten" name="ho_ten" required>
 
-      <label for="sua_tk_matkhau">Đổi mật khẩu mới (để trống nếu không đổi)</label>
+      <label for="sua_tk_matkhau" style="margin-top: 12px;">Đổi mật khẩu mới (để trống nếu giữ nguyên)</label>
       <input type="password" id="sua_tk_matkhau" name="mat_khau_moi" placeholder="Để trống nếu giữ nguyên mật khẩu cũ">
 
-      <label for="sua_tk_vaitro">Vai trò đảm nhiệm *</label>
-      <select id="sua_tk_vaitro" name="khoa_vai_tro" required>
-        {% for vt in vai_tro_list %}
-          <option value="{{ vt.ma_tu_sinh }}">{{ vt.ten_vai_tro }}</option>
-        {% endfor %}
+      <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 12px; margin-top: 12px;">
+        <div>
+          <label for="sua_tk_vaitro" style="margin-top: 0;">Vai trò đảm nhiệm *</label>
+          <select id="sua_tk_vaitro" name="khoa_vai_tro" required>
+            {% for vt in vai_tro_list %}
+              <option value="{{ vt.ma_tu_sinh }}">{{ vt.ten_vai_tro }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="sua_tk_trangthai" style="margin-top: 0;">Trạng thái tài khoản</label>
+          <select id="sua_tk_trangthai" name="dang_dung">
+            <option value="1">Hoạt động bình thường</option>
+            <option value="0">Tạm khóa tài khoản</option>
+          </select>
+        </div>
+      </div>
+
+      <label for="sua_tk_pham_vi_loai" style="margin-top: 12px;">Phạm vi quản lý *</label>
+      <select id="sua_tk_pham_vi_loai" name="pham_vi_loai" onchange="chuyenPhamViSua(this.value)" required>
+        <option value="TOAN_BO">★ Toàn đại đội (Tất cả đơn vị &amp; tủ)</option>
+        <option value="DON_VI">Theo trung đội trực thuộc (Linh hoạt chọn 1 hoặc nhiều trung đội)</option>
+        <option value="TU">Theo tủ quản lý cụ thể</option>
       </select>
 
-      <label for="sua_tk_phamvi">Phạm vi quản lý</label>
-      <select id="sua_tk_phamvi" name="pham_vi_loai">
-        <option value="TOAN_BO">Toàn đại đội</option>
-        <option value="DON_VI">Theo trung đội trực thuộc</option>
-        <option value="TU">Theo tủ quản lý</option>
-      </select>
+      <div id="hop_chon_don_vi_sua" style="display: none; margin-top: 12px; padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 12px; font-weight: 700; color: var(--navy);">Chọn các trung đội được quản lý:</span>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" onclick="chonTatCaDonVi('sua', true)" style="padding: 2px 8px; font-size: 11px;">Chọn tất cả</button>
+            <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" onclick="chonTatCaDonVi('sua', false)" style="padding: 2px 8px; font-size: 11px;">Bỏ chọn</button>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 160px; overflow-y: auto;">
+          {% for dv in don_vi_list %}
+            {% if dv.ma_don_vi != 'C1' %}
+              <label style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 12px; cursor: pointer;">
+                <input type="checkbox" name="pham_vi_khoa_don_vi" value="{{ dv.ma_tu_sinh }}" class="cb-don-vi-sua">
+                <span><b>{{ dv.ten_don_vi }}</b></span>
+              </label>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
 
-      <label for="sua_tk_trangthai">Trạng thái tài khoản</label>
-      <select id="sua_tk_trangthai" name="dang_dung">
-        <option value="1">Hoạt động bình thường</option>
-        <option value="0">Tạm khóa tài khoản</option>
-      </select>
+      <div id="hop_chon_tu_sua" style="display: none; margin-top: 12px; padding: 12px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px;">
+        <label for="sua_pham_vi_khoa_tu" style="margin-top: 0; font-size: 12px; font-weight: 700; color: var(--navy);">Chọn tủ bảo quản được quản lý:</label>
+        <select id="sua_pham_vi_khoa_tu" name="pham_vi_khoa_tu">
+          {% for tu in tu_list %}
+            <option value="{{ tu.ma_tu_sinh }}">{{ tu.ten_tu }} (Mã tủ: {{ tu.ma_tu }})</option>
+          {% endfor %}
+        </select>
+      </div>
 
-      <div class="modal-footer">
+      <div class="modal-footer" style="margin-top: 20px;">
         <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalSuaTaiKhoan')">Hủy</button>
         <button type="submit" class="btn-quan-doi btn-qd-primary">Lưu thay đổi</button>
       </div>
@@ -203,15 +279,58 @@
 </div>
 
 <script>
-function moModalSuaTK(id, hoTen, khoaVaiTro, phamVi, dangDung) {
+function chuyenPhamViThem(loai) {
+  const hopDv = document.getElementById("hop_chon_don_vi_them");
+  const hopTu = document.getElementById("hop_chon_tu_them");
+  if (hopDv) hopDv.style.display = (loai === "DON_VI") ? "block" : "none";
+  if (hopTu) hopTu.style.display = (loai === "TU") ? "block" : "none";
+}
+
+function chuyenPhamViSua(loai) {
+  const hopDv = document.getElementById("hop_chon_don_vi_sua");
+  const hopTu = document.getElementById("hop_chon_tu_sua");
+  if (hopDv) hopDv.style.display = (loai === "DON_VI") ? "block" : "none";
+  if (hopTu) hopTu.style.display = (loai === "TU") ? "block" : "none";
+}
+
+function chonTatCaDonVi(modalType, check) {
+  const cbs = document.querySelectorAll(`.cb-don-vi-${modalType}`);
+  cbs.forEach(cb => { cb.checked = check; });
+}
+
+function moModalThemTK() {
+  document.getElementById("tk_pham_vi_loai").value = "TOAN_BO";
+  chuyenPhamViThem("TOAN_BO");
+  chonTatCaDonVi("them", false);
+  moModal("modalThemTaiKhoan");
+}
+
+function moModalSuaTK(id, hoTen, khoaVaiTro, phamViLoai, dangDung, phamViKhoa) {
   document.getElementById("formSuaTK").action = `/tai-khoan/sua/${id}`;
   document.getElementById("sua_tk_hoten").value = hoTen;
   document.getElementById("sua_tk_matkhau").value = "";
   if (khoaVaiTro) {
     document.getElementById("sua_tk_vaitro").value = khoaVaiTro;
   }
-  document.getElementById("sua_tk_phamvi").value = phamVi || "TOAN_BO";
   document.getElementById("sua_tk_trangthai").value = dangDung;
+
+  const loai = phamViLoai || "TOAN_BO";
+  document.getElementById("sua_tk_pham_vi_loai").value = loai;
+  chuyenPhamViSua(loai);
+
+  chonTatCaDonVi("sua", false);
+  if (loai === "DON_VI" && phamViKhoa) {
+    const ids = String(phamViKhoa).split(",").map(s => s.trim());
+    document.querySelectorAll(".cb-don-vi-sua").forEach(cb => {
+      if (ids.includes(cb.value)) {
+        cb.checked = true;
+      }
+    });
+  } else if (loai === "TU" && phamViKhoa) {
+    const selTu = document.getElementById("sua_pham_vi_khoa_tu");
+    if (selTu) selTu.value = phamViKhoa;
+  }
+
   moModal("modalSuaTaiKhoan");
 }
 </script>

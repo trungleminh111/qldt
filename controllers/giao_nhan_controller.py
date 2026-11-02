@@ -1,7 +1,7 @@
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from controllers import yeu_cau_dang_nhap, lay_don_vi_gioi_han
-from models.quan_nhan_model import lay_tat_ca_quan_nhan, lay_chi_tiet_quan_nhan
+from models.quan_nhan_model import lay_tat_ca_quan_nhan, lay_chi_tiet_quan_nhan, lay_danh_sach_don_vi
 from models.giao_nhan_model import (
     kiem_tra_khung_gio,
     thuc_hien_lay_dien_thoai,
@@ -17,6 +17,7 @@ giao_nhan_bp = Blueprint("giao_nhan", __name__)
 def giao_nhan():
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     danh_sach_qn = lay_tat_ca_quan_nhan(khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
+    cac_don_vi = lay_danh_sach_don_vi(khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
     ma_qn_chon = request.args.get("ma_qn")
 
     qn_hien_tai = None
@@ -42,7 +43,9 @@ def giao_nhan():
         qn_hien_tai=qn_hien_tai,
         kiem_tra=ket_qua_kiem_tra,
         ngay_hien_tai=ngay_hien_tai,
-        gio_hien_tai=gio_hien_tai
+        gio_hien_tai=gio_hien_tai,
+        don_vi_list=cac_don_vi,
+        khoa_don_vi_gioi_han=khoa_don_vi_gioi_han
     )
 
 @giao_nhan_bp.route("/api/kiem-tra-gio")
@@ -116,6 +119,8 @@ def lay_may():
 def nop_may():
     khoa_qn = request.form.get("khoa_quan_nhan")
     ghi_chu = request.form.get("ghi_chu", "")
+    ngay = request.form.get("ngay")
+    gio = request.form.get("gio")
 
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     if khoa_don_vi_gioi_han:
@@ -123,6 +128,8 @@ def nop_may():
         if not qn_kiem_tra:
             flash("Đồng chí không có thẩm quyền thao tác với quân nhân ngoài đơn vị.", "nguy_hiem")
             return redirect(url_for("giao_nhan.giao_nhan"))
+
+    thoi_gian = f"{ngay} {gio}:00" if ngay and gio else datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     nguoi_dung = session.get("nguoi_dung", {})
     khoa_nguoi_thuc_hien = nguoi_dung.get("ma_tu_sinh", 1)
@@ -132,6 +139,7 @@ def nop_may():
         khoa_quan_nhan=khoa_qn,
         khoa_nguoi_thuc_hien=khoa_nguoi_thuc_hien,
         ten_nguoi_thuc_hien=ten_nguoi_thuc_hien,
+        thoi_gian=thoi_gian,
         ghi_chu=ghi_chu,
         khoa_don_vi_gioi_han=khoa_don_vi_gioi_han
     )

@@ -56,6 +56,9 @@
         <a href="{{ url_for('dien_thoai.danh_sach_tu') }}" class="nav-link {% if request.endpoint in ['dien_thoai.danh_sach_tu', 'dien_thoai.so_do_tu'] %}active{% endif %}">
           <span class="nav-icon">▤</span> Tủ & Sơ đồ 24 ngăn
         </a>
+        <a href="{{ url_for('cau_hinh.danh_sach_phan_doi') }}" class="nav-link {% if request.endpoint == 'cau_hinh.danh_sach_phan_doi' %}active{% endif %}">
+          <span class="nav-icon">⛨</span> Quản lý phân đội
+        </a>
 
         <div class="nav-group-title">CẤU HÌNH & BÁO CÁO</div>
         {% set ds_quyen = session.get('nguoi_dung', {}).get('cac_quyen', []) or session.get('nguoi_dung', {}).get('danh_sach_quyen', []) %}
@@ -82,7 +85,7 @@
             <b style="display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ session.get('nguoi_dung', {}).get('ho_ten', 'Cán bộ quản lý') }}</b>
             <small style="color: #9cb8d1; font-size: 10px;">{{ session.get('nguoi_dung', {}).get('ten_vai_tro', 'Trực ca') }}</small>
           </div>
-          <a href="{{ url_for('auth.dang_xuat') }}" class="btn-user-logout" title="Đăng xuất" aria-label="Đăng xuất" style="font-size: 14px; color: #94a3b8; text-decoration: none; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">↪</a>
+          <a href="{{ url_for('auth.dang_xuat') }}" class="btn-user-logout btn-quan-doi btn-qd-secondary btn-qd-sm" title="Đăng xuất" aria-label="Đăng xuất" style="font-size: 14px; color: #94a3b8; text-decoration: none; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">↪</a>
         </div>
         <div style="margin-top: 10px; text-align: center; color: #526a84; font-size: 10px; font-weight: 600;">
           QLĐT Đại đội 1 · Phiên bản 2.0.0

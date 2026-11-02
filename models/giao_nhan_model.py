@@ -1,6 +1,7 @@
 import threading
 from datetime import datetime
-from models.co_so_du_lieu import lay_ket_noi
+from models.co_so_du_lieu import lay_ket_noi, tao_dieu_kien_don_vi
+from models.cau_hinh_model import lay_mo_ta_loai_lap
 
 _khoa_giao_nhan = threading.Lock()
 
@@ -56,25 +57,63 @@ def kiem_tra_khung_gio(khoa_quan_nhan, thoi_diem=None):
         }
 
     ngay_str = thoi_diem.strftime("%Y-%m-%d")
-    con_tro.execute("""
-        SELECT cam_su_dung, ly_do, khoa_cau_hinh_ghi_de
-        FROM ngay_dac_biet
-        WHERE ngay = ? AND dang_dung = 1
-    """, (ngay_str,))
-    ngay_dac_biet = con_tro.fetchone()
+    thu_so = thoi_diem.weekday() + 2
+    ngay_trong_thang = thoi_diem.day
+    thang_ngay_str = thoi_diem.strftime("%m-%d")
 
-    if ngay_dac_biet:
-        if ngay_dac_biet["cam_su_dung"] == 1:
+    con_tro.execute("""
+        SELECT cam_su_dung, ly_do, khoa_cau_hinh_ghi_de, ngay, loai_lap
+        FROM ngay_dac_biet
+        WHERE dang_dung = 1
+    """)
+    tat_ca_ndb = [dict(row) for row in con_tro.fetchall()]
+
+    cac_ndb_khop = []
+    for ndb in tat_ca_ndb:
+        loai_lap = ndb.get("loai_lap") or "MOT_LAN"
+        ref_ngay = ndb.get("ngay") or ""
+        khop = False
+
+        if loai_lap == "MOT_LAN":
+            khop = (ref_ngay == ngay_str)
+        elif loai_lap == "HANG_NAM":
+            if len(ref_ngay) >= 10:
+                khop = (ref_ngay[5:10] == thang_ngay_str)
+        elif loai_lap == "HANG_THANG":
+            if len(ref_ngay) >= 10:
+                try:
+                    ref_day = int(ref_ngay.split("-")[2])
+                    khop = (ngay_trong_thang == ref_day)
+                except (ValueError, IndexError):
+                    pass
+        elif loai_lap == "HANG_TUAN":
+            if len(ref_ngay) >= 10:
+                try:
+                    ref_dt = datetime.strptime(ref_ngay, "%Y-%m-%d")
+                    ref_thu_so = ref_dt.weekday() + 2
+                    khop = (thu_so == ref_thu_so)
+                except (ValueError, IndexError):
+                    pass
+
+        if khop:
+            cac_ndb_khop.append(ndb)
+
+    if cac_ndb_khop:
+        ndb_cam = next((r for r in cac_ndb_khop if r.get("cam_su_dung") == 1), None)
+        if ndb_cam:
             ket_noi.close()
+            mo_ta = lay_mo_ta_loai_lap(ndb_cam.get("loai_lap"), ndb_cam.get("ngay"))
             return {
                 "hop_le": False,
                 "ma_trang_thai": "CAM_SU_DUNG",
-                "thong_bao": f"Ngày đặc biệt cấm sử dụng: {ngay_dac_biet['ly_do']}",
+                "thong_bao": f"Ngày đặc biệt cấm sử dụng ({mo_ta}): {ndb_cam['ly_do']}",
                 "doi_tuong": ten_doi_tuong,
                 "khung_gio": []
             }
-        if ngay_dac_biet["khoa_cau_hinh_ghi_de"]:
-            khoa_ch = ngay_dac_biet["khoa_cau_hinh_ghi_de"]
+
+        ndb_ghi_de = next((r for r in cac_ndb_khop if r.get("khoa_cau_hinh_ghi_de")), None)
+        if ndb_ghi_de and ndb_ghi_de["khoa_cau_hinh_ghi_de"]:
+            khoa_ch = ndb_ghi_de["khoa_cau_hinh_ghi_de"]
 
     thu_so = thoi_diem.weekday() + 2
     gio_phut_str = thoi_diem.strftime("%H:%M")
@@ -143,8 +182,9 @@ def thuc_hien_lay_dien_thoai(khoa_quan_nhan, khoa_nguoi_thuc_hien, ten_nguoi_thu
     """
     tham_so_qn = [khoa_quan_nhan]
     if khoa_don_vi_gioi_han:
-        cau_lenh_qn += " AND qn.khoa_don_vi = ?"
-        tham_so_qn.append(khoa_don_vi_gioi_han)
+        dieu_kien, params = tao_dieu_kien_don_vi("qn.khoa_don_vi", khoa_don_vi_gioi_han)
+        cau_lenh_qn += dieu_kien
+        tham_so_qn.extend(params)
 
     con_tro.execute(cau_lenh_qn, tham_so_qn)
     thong_tin = con_tro.fetchone()
@@ -206,8 +246,9 @@ def thuc_hien_nop_dien_thoai(khoa_quan_nhan, khoa_nguoi_thuc_hien, ten_nguoi_thu
             """
             tham_so_qn = [khoa_quan_nhan]
             if khoa_don_vi_gioi_han:
-                cau_lenh_qn += " AND qn.khoa_don_vi = ?"
-                tham_so_qn.append(khoa_don_vi_gioi_han)
+                dieu_kien, params = tao_dieu_kien_don_vi("qn.khoa_don_vi", khoa_don_vi_gioi_han)
+                cau_lenh_qn += dieu_kien
+                tham_so_qn.extend(params)
 
             con_tro.execute(cau_lenh_qn, tham_so_qn)
             thong_tin = con_tro.fetchone()
@@ -268,8 +309,9 @@ def danh_sach_chua_nop(khoa_don_vi_gioi_han=None):
     """
     tham_so = []
     if khoa_don_vi_gioi_han:
-        cau_lenh += " AND qn.khoa_don_vi = ?"
-        tham_so.append(khoa_don_vi_gioi_han)
+        dieu_kien, params = tao_dieu_kien_don_vi("qn.khoa_don_vi", khoa_don_vi_gioi_han)
+        cau_lenh += dieu_kien
+        tham_so.extend(params)
     cau_lenh += " ORDER BY gn.thoi_gian ASC"
     con_tro.execute(cau_lenh, tham_so)
     danh_sach = []
@@ -319,8 +361,9 @@ def danh_sach_lich_su(tu_khoa=None, ngay=None, loai=None, limit=100, khoa_don_vi
     """
     tham_so = []
     if khoa_don_vi_gioi_han:
-        cau_lenh += " AND qn.khoa_don_vi = ?"
-        tham_so.append(khoa_don_vi_gioi_han)
+        dieu_kien, params = tao_dieu_kien_don_vi("qn.khoa_don_vi", khoa_don_vi_gioi_han)
+        cau_lenh += dieu_kien
+        tham_so.extend(params)
     if tu_khoa:
         cau_lenh += " AND (qn.ho_ten LIKE ? OR qn.ma_quan_nhan LIKE ? OR dt.ma_thiet_bi LIKE ?)"
         tk = f"%{tu_khoa}%"

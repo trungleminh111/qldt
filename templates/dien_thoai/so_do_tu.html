@@ -2,16 +2,21 @@
 
 {% block title %}Sơ đồ tủ {{ ma_tu_hien_tai }} · Quản lý điện thoại đại đội{% endblock %}
 {% block page_title %}Sơ đồ tủ {{ ma_tu_hien_tai }}{% endblock %}
-{% block page_subtitle %}{{ tu_hien_tai.ten_tu if tu_hien_tai else '' }} · 24 ngăn lưu trữ{% endblock %}
+{% block page_subtitle %}{{ tu_hien_tai.ten_tu if tu_hien_tai else '' }} · {{ ngan_list|length }} ngăn lưu trữ{% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
   <div>
     <a href="{{ url_for('dien_thoai.danh_sach_tu') }}" class="btn-quan-doi btn-qd-secondary btn-qd-sm" style="margin-bottom: 10px;">
       ← Quay lại danh sách tủ
     </a>
     <h1>Sơ đồ tủ điện thoại {{ ma_tu_hien_tai }}</h1>
-    <p>{{ tu_hien_tai.ten_tu if tu_hien_tai else '' }} · Theo dõi vị trí từng ngăn trong tủ bảo quản.</p>
+    <p>{{ tu_hien_tai.ten_tu if tu_hien_tai else '' }} · Theo dõi vị trí từng ngăn trong tủ bảo quản (Tổng {{ ngan_list|length }} ngăn).</p>
+  </div>
+  <div>
+    <button type="button" class="btn-quan-doi btn-qd-primary" onclick="moModal('modalThemNgan')">
+      ＋ Thêm ngăn vào tủ
+    </button>
   </div>
 </div>
 
@@ -35,25 +40,77 @@
 
   <div class="locker-grid">
     {% for ng in ngan_list %}
-      <div class="locker-cell {% if ng.trang_thai_ngan == 'QUA_HAN' or ng.qua_han or ng.muc_do == 'QUA_HAN' %}overdue{% elif ng.trang_thai_ngan == 'DANG_LUU' %}stored{% elif ng.trang_thai_ngan == 'DA_LAY' %}away{% else %}empty{% endif %}" data-ma-ngan="{{ ng.ma_ngan }}" data-ten-ngan="{{ ng.ten_ngan }}">
-        <small style="font-weight: 700;">{{ ng.ten_ngan }}</small>
-        {% if ng.trang_thai_ngan == 'QUA_HAN' or ng.qua_han or ng.muc_do == 'QUA_HAN' %}
-          <div style="font-size: 16px;">⚠</div>
-          <b style="color: #b91c1c;">Quá hạn</b>
-          <small style="color: #991b1b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">{{ ng.ho_ten or '' }}</small>
-        {% elif ng.trang_thai_ngan == 'DANG_LUU' %}
-          <div style="font-size: 16px;">📱</div>
-          <b>{{ ng.ma_thiet_bi or 'Có máy' }}</b>
-          <small style="color: #1b6843; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">{{ ng.ho_ten or '' }}</small>
-        {% elif ng.trang_thai_ngan == 'DA_LAY' %}
-          <div style="font-size: 16px;">⇄</div>
-          <b style="color: var(--amber);">Đã lấy</b>
-          <small style="color: #8c5d1b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">{{ ng.ho_ten or '' }}</small>
-        {% else %}
+      {% if ng.khoa_dien_thoai %}
+        <a href="{{ url_for('dien_thoai.chi_tiet', id=ng.khoa_dien_thoai) }}" class="locker-cell {% if ng.trang_thai_ngan == 'QUA_HAN' or ng.qua_han or ng.muc_do == 'QUA_HAN' %}overdue{% elif ng.trang_thai_ngan == 'DANG_LUU' %}stored{% elif ng.trang_thai_ngan == 'DA_LAY' %}away{% endif %}" data-ma-ngan="{{ ng.ma_ngan }}" data-ten-ngan="{{ ng.ten_ngan }}" title="Nhấn để xem chi tiết thiết bị {{ ng.ma_thiet_bi }} ({{ ng.ho_ten }})">
+          <small style="font-weight: 700;">{{ ng.ten_ngan }}</small>
+          {% if ng.trang_thai_ngan == 'QUA_HAN' or ng.qua_han or ng.muc_do == 'QUA_HAN' %}
+            <div style="font-size: 16px;">⚠</div>
+            <b style="color: #b91c1c;">Quá hạn</b>
+            <small style="color: #991b1b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">{{ ng.ho_ten or '' }}</small>
+          {% elif ng.trang_thai_ngan == 'DANG_LUU' %}
+            <div style="font-size: 16px;">📱</div>
+            <b>{{ ng.ma_thiet_bi or 'Có máy' }}</b>
+            <small style="color: #1b6843; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">{{ ng.ho_ten or '' }}</small>
+          {% elif ng.trang_thai_ngan == 'DA_LAY' %}
+            <div style="font-size: 16px;">⇄</div>
+            <b style="color: var(--amber);">Đã lấy</b>
+            <small style="color: #8c5d1b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 90%;">{{ ng.ho_ten or '' }}</small>
+          {% endif %}
+        </a>
+      {% else %}
+        <div class="locker-cell empty" data-ma-ngan="{{ ng.ma_ngan }}" data-ten-ngan="{{ ng.ten_ngan }}" title="Ngăn {{ ng.ten_ngan }} hiện đang trống" onclick="thongBaoNganTrong('{{ ng.ten_ngan }}', '{{ ng.ma_ngan }}')">
+          <small style="font-weight: 700;">{{ ng.ten_ngan }}</small>
           <span style="color: #94a3b8; font-size: 11px;">Trống</span>
-        {% endif %}
-      </div>
+        </div>
+      {% endif %}
     {% endfor %}
+
+    <div class="locker-cell" onclick="moModal('modalThemNgan')" style="border: 2px dashed #94a3b8; background: #f8fafc; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 80px;" title="Nhấn để thêm ngăn mới vào tủ {{ ma_tu_hien_tai }}">
+      <div style="font-size: 20px; color: var(--navy); font-weight: 700;">＋</div>
+      <span style="font-size: 11px; font-weight: 700; color: var(--navy);">Thêm ngăn</span>
+    </div>
   </div>
 </div>
+
+<div class="modal-backdrop" id="modalThemNgan">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Thêm ngăn mới vào tủ {{ ma_tu_hien_tai }}</h2>
+      <button class="modal-close" onclick="dongModal('modalThemNgan')">✕</button>
+    </div>
+    <form method="POST" action="{{ url_for('dien_thoai.them_ngan_moi') }}">
+      <input type="hidden" name="khoa_tu" value="{{ tu_hien_tai.ma_tu_sinh if tu_hien_tai else '' }}">
+      <input type="hidden" name="ma_tu" value="{{ ma_tu_hien_tai }}">
+
+      <div style="margin-bottom: 14px; background: #f1f5f9; padding: 10px; border-radius: 6px; font-size: 13px;">
+        <div><b>Tủ bảo quản:</b> {{ tu_hien_tai.ten_tu if tu_hien_tai else '' }} ({{ ma_tu_hien_tai }})</div>
+        <div><b>Tổng số ngăn hiện tại:</b> {{ ngan_list|length }} ngăn</div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label for="ngan_ten">Tên / Ký hiệu ngăn mới *</label>
+          <input type="text" id="ngan_ten" name="ten_ngan" value="{{ goi_y_ngan[0] if goi_y_ngan else '' }}" placeholder="VD: B25, A25..." required>
+        </div>
+        <div>
+          <label for="ngan_soluong">Số lượng ngăn cần thêm</label>
+          <input type="number" id="ngan_soluong" name="so_luong" value="1" min="1" max="30" required>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-quan-doi btn-qd-secondary" onclick="dongModal('modalThemNgan')">Hủy</button>
+        <button type="submit" class="btn-quan-doi btn-qd-primary">Xác nhận thêm ngăn</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function thongBaoNganTrong(tenNgan, maNgan) {
+  if (confirm("Ngăn " + tenNgan + " (" + maNgan + ") hiện đang trống (chưa có điện thoại). Đồng chí có muốn chuyển tới trang Quản lý điện thoại để gán thiết bị vào ngăn này không?")) {
+    window.location.href = "{{ url_for('dien_thoai.danh_sach') }}";
+  }
+}
+</script>
 {% endblock %}

@@ -23,7 +23,17 @@ from models.phan_quyen_model import (
     cap_nhat_quyen_vai_tro,
     BAC_VAI_TRO
 )
-from models.quan_nhan_model import lay_tat_ca_quan_nhan
+from models.quan_nhan_model import (
+    lay_tat_ca_quan_nhan,
+    lay_danh_sach_don_vi,
+    lay_tat_ca_don_vi,
+    lay_chi_tiet_don_vi,
+    lay_goi_y_phan_doi_tiep_theo,
+    them_don_vi,
+    sua_don_vi,
+    xoa_don_vi
+)
+from models.dien_thoai_model import lay_danh_sach_tu
 
 cau_hinh_bp = Blueprint("cau_hinh", __name__)
 
@@ -101,13 +111,14 @@ def them_ngay():
     ly_do = request.form.get("ly_do")
     cam_su_dung = 1 if request.form.get("cam_su_dung") == "1" else 0
     khoa_ghi_de = request.form.get("khoa_cau_hinh_ghi_de") or None
+    loai_lap = request.form.get("loai_lap", "MOT_LAN")
 
     if not ngay or not ly_do:
         flash("Vui lòng nhập ngày và lý do áp dụng.", "canh_bao")
         return redirect(url_for("cau_hinh.khung_gio"))
 
     try:
-        them_ngay_dac_biet(ngay, ly_do, cam_su_dung, khoa_ghi_de)
+        them_ngay_dac_biet(ngay, ly_do, cam_su_dung, khoa_ghi_de, loai_lap)
         flash("Đã cấu hình ngày đặc biệt thành công.", "thanh_cong")
     except Exception as e:
         flash(f"Lỗi cấu hình: {str(e)}", "nguy_hiem")
@@ -121,13 +132,14 @@ def sua_ngay(id):
     ly_do = request.form.get("ly_do")
     cam_su_dung = 1 if request.form.get("cam_su_dung") == "1" else 0
     khoa_ghi_de = request.form.get("khoa_cau_hinh_ghi_de") or None
+    loai_lap = request.form.get("loai_lap", "MOT_LAN")
 
     if not ngay or not ly_do:
         flash("Vui lòng nhập ngày và lý do áp dụng.", "canh_bao")
         return redirect(url_for("cau_hinh.khung_gio"))
 
     try:
-        sua_ngay_dac_biet(id, ngay, ly_do, cam_su_dung, khoa_ghi_de)
+        sua_ngay_dac_biet(id, ngay, ly_do, cam_su_dung, khoa_ghi_de, loai_lap)
         flash("Đã cập nhật ngày đặc biệt thành công.", "thanh_cong")
     except Exception as e:
         flash(f"Lỗi cập nhật: {str(e)}", "nguy_hiem")
@@ -161,13 +173,17 @@ def phan_quyen():
 
     quyen_list = lay_danh_sach_quyen()
     quan_nhan_list = lay_tat_ca_quan_nhan()
+    don_vi_list = lay_danh_sach_don_vi()
+    tu_list = lay_danh_sach_tu()
 
     return render_template(
         "cau_hinh/phan_quyen.html",
         tai_khoan_list=tai_khoan_list,
         vai_tro_list=vai_tro_list,
         quyen_list=quyen_list,
-        quan_nhan_list=quan_nhan_list
+        quan_nhan_list=quan_nhan_list,
+        don_vi_list=don_vi_list,
+        tu_list=tu_list
     )
 
 @cau_hinh_bp.route("/tai-khoan/them", methods=["POST"])
@@ -182,7 +198,38 @@ def them_tk():
     ho_ten = request.form.get("ho_ten", "").strip()
     khoa_vt = request.form.get("khoa_vai_tro")
     khoa_qn = request.form.get("khoa_quan_nhan") or None
+    pham_vi_chon = request.form.get("pham_vi_chon", "").strip()
     pham_vi = request.form.get("pham_vi_loai", "TOAN_BO")
+    pham_vi_khoa = None
+
+    if pham_vi_chon:
+        if ":" in pham_vi_chon:
+            p_loai, p_id = pham_vi_chon.split(":", 1)
+            pham_vi = p_loai
+            try:
+                pham_vi_khoa = int(p_id) if p_id and p_id != "0" else None
+            except ValueError:
+                pham_vi_khoa = None
+        else:
+            pham_vi = pham_vi_chon
+            pham_vi_khoa = None
+    elif pham_vi == "DON_VI":
+        pv_list = request.form.getlist("pham_vi_khoa_don_vi")
+        if pv_list:
+            clean_list = [str(x).strip() for x in pv_list if str(x).strip().isdigit()]
+            if clean_list:
+                pham_vi_khoa = ",".join(clean_list)
+        if not pham_vi_khoa:
+            pv_val = request.form.get("pham_vi_khoa_don_vi")
+            if pv_val:
+                pham_vi_khoa = str(pv_val).strip()
+    elif pham_vi == "TU":
+        pv_val = request.form.get("pham_vi_khoa_tu")
+        if pv_val:
+            try:
+                pham_vi_khoa = int(pv_val)
+            except ValueError:
+                pass
 
     if not ten_dang_nhap or not mat_khau or not ho_ten or not khoa_vt:
         flash("Vui lòng điền đầy đủ các thông tin tài khoản bắt buộc.", "canh_bao")
@@ -196,7 +243,7 @@ def them_tk():
             return redirect(url_for("cau_hinh.phan_quyen"))
 
     try:
-        them_tai_khoan(ten_dang_nhap, mat_khau, ho_ten, khoa_vt, khoa_qn, pham_vi)
+        them_tai_khoan(ten_dang_nhap, mat_khau, ho_ten, khoa_vt, khoa_qn, pham_vi, pham_vi_khoa)
         flash(f"Đã tạo tài khoản {ten_dang_nhap} thành công.", "thanh_cong")
     except Exception as e:
         flash(f"Lỗi tạo tài khoản (có thể tên đăng nhập đã tồn tại): {str(e)}", "nguy_hiem")
@@ -212,7 +259,7 @@ def sua_tk(id):
 
     target_user = lay_chi_tiet_tai_khoan(id)
     if not target_user:
-        flash("Tài khoản không tồn tại.", "nguy_hiem")
+        flash("Tài khoản này không tồn tại hoặc đã được xóa trước đó.", "thong_tin")
         return redirect(url_for("cau_hinh.phan_quyen"))
 
     target_ten_dn = target_user.get("ten_dang_nhap")
@@ -229,8 +276,39 @@ def sua_tk(id):
     ho_ten = request.form.get("ho_ten", "").strip()
     mat_khau_moi = request.form.get("mat_khau_moi", "").strip()
     khoa_vt = request.form.get("khoa_vai_tro")
+    pham_vi_chon = request.form.get("pham_vi_chon", "").strip()
     pham_vi = request.form.get("pham_vi_loai", "TOAN_BO")
     dang_dung = 1 if request.form.get("dang_dung") == "1" else 0
+
+    pham_vi_khoa = None
+    if pham_vi_chon:
+        if ":" in pham_vi_chon:
+            p_loai, p_id = pham_vi_chon.split(":", 1)
+            pham_vi = p_loai
+            try:
+                pham_vi_khoa = int(p_id) if p_id and p_id != "0" else None
+            except ValueError:
+                pham_vi_khoa = None
+        else:
+            pham_vi = pham_vi_chon
+            pham_vi_khoa = None
+    elif pham_vi == "DON_VI":
+        pv_list = request.form.getlist("pham_vi_khoa_don_vi")
+        if pv_list:
+            clean_list = [str(x).strip() for x in pv_list if str(x).strip().isdigit()]
+            if clean_list:
+                pham_vi_khoa = ",".join(clean_list)
+        if not pham_vi_khoa:
+            pv_val = request.form.get("pham_vi_khoa_don_vi")
+            if pv_val:
+                pham_vi_khoa = str(pv_val).strip()
+    elif pham_vi == "TU":
+        pv_val = request.form.get("pham_vi_khoa_tu")
+        if pv_val:
+            try:
+                pham_vi_khoa = int(pv_val)
+            except ValueError:
+                pass
 
     if not ho_ten or not khoa_vt:
         flash("Vui lòng điền đủ họ tên và vai trò cán bộ.", "canh_bao")
@@ -244,7 +322,7 @@ def sua_tk(id):
             return redirect(url_for("cau_hinh.phan_quyen"))
 
     try:
-        sua_tai_khoan(id, ho_ten, mat_khau_moi, khoa_vt, pham_vi, dang_dung, nguoi_thuc_hien=user_ten_dn)
+        sua_tai_khoan(id, ho_ten, mat_khau_moi, khoa_vt, pham_vi, dang_dung, nguoi_thuc_hien=user_ten_dn, pham_vi_khoa=pham_vi_khoa)
         flash("Đã cập nhật thông tin tài khoản thành công.", "thanh_cong")
     except Exception as e:
         flash(f"Lỗi cập nhật tài khoản: {str(e)}", "nguy_hiem")
@@ -260,7 +338,7 @@ def xoa_tk(id):
 
     target_user = lay_chi_tiet_tai_khoan(id)
     if not target_user:
-        flash("Tài khoản không tồn tại.", "nguy_hiem")
+        flash("Tài khoản này không tồn tại hoặc đã được xóa trước đó.", "thong_tin")
         return redirect(url_for("cau_hinh.phan_quyen"))
 
     target_ten_dn = target_user.get("ten_dang_nhap")
@@ -313,3 +391,71 @@ def cap_nhat_quyen(id):
         flash(f"Lỗi cập nhật quyền: {str(e)}", "nguy_hiem")
 
     return redirect(url_for("cau_hinh.phan_quyen"))
+@cau_hinh_bp.route("/phan-doi")
+@yeu_cau_quyen("QUANTRI.HETHONG", "CAUHINH.QUANNHAN")
+def danh_sach_phan_doi():
+    don_vi_list = lay_tat_ca_don_vi()
+    goi_y = lay_goi_y_phan_doi_tiep_theo()
+    return render_template(
+        "cau_hinh/phan_doi.html",
+        don_vi_list=don_vi_list,
+        goi_y=goi_y
+    )
+
+@cau_hinh_bp.route("/phan-doi/them", methods=["POST"])
+@yeu_cau_quyen("QUANTRI.HETHONG", "CAUHINH.QUANNHAN")
+def them_phan_doi():
+    ma_dv = request.form.get("ma_don_vi", "").strip().upper()
+    ten_dv = request.form.get("ten_don_vi", "").strip()
+    thu_tu = request.form.get("thu_tu", "").strip()
+    thu_tu_val = int(thu_tu) if thu_tu and thu_tu.isdigit() else None
+
+    if not ma_dv or not ten_dv:
+        flash("Vui lòng điền đầy đủ mã và tên phân đội.", "canh_bao")
+        return redirect(url_for("cau_hinh.danh_sach_phan_doi"))
+
+    try:
+        them_don_vi(ma_dv, ten_dv, thu_tu=thu_tu_val)
+        flash(f"Đã thêm phân đội {ten_dv} ({ma_dv}) thành công.", "thanh_cong")
+    except ValueError as e:
+        flash(str(e), "nguy_hiem")
+    except Exception as e:
+        flash(f"Lỗi thêm phân đội: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.danh_sach_phan_doi"))
+
+@cau_hinh_bp.route("/phan-doi/sua/<int:id>", methods=["POST"])
+@yeu_cau_quyen("QUANTRI.HETHONG", "CAUHINH.QUANNHAN")
+def sua_phan_doi(id):
+    ma_dv = request.form.get("ma_don_vi", "").strip().upper()
+    ten_dv = request.form.get("ten_don_vi", "").strip()
+    thu_tu = request.form.get("thu_tu", "").strip()
+    dang_dung = 1 if request.form.get("dang_dung") == "1" else 0
+    thu_tu_val = int(thu_tu) if thu_tu and thu_tu.isdigit() else None
+
+    if not ma_dv or not ten_dv:
+        flash("Vui lòng điền đầy đủ mã và tên phân đội.", "canh_bao")
+        return redirect(url_for("cau_hinh.danh_sach_phan_doi"))
+
+    try:
+        sua_don_vi(id, ma_dv, ten_dv, thu_tu=thu_tu_val, dang_dung=dang_dung)
+        flash(f"Đã cập nhật thông tin phân đội {ten_dv} thành công.", "thanh_cong")
+    except ValueError as e:
+        flash(str(e), "nguy_hiem")
+    except Exception as e:
+        flash(f"Lỗi cập nhật phân đội: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.danh_sach_phan_doi"))
+
+@cau_hinh_bp.route("/phan-doi/xoa/<int:id>", methods=["POST"])
+@yeu_cau_quyen("QUANTRI.HETHONG", "CAUHINH.QUANNHAN")
+def xoa_phan_doi(id):
+    try:
+        xoa_don_vi(id)
+        flash("Đã xóa phân đội thành công.", "thanh_cong")
+    except ValueError as e:
+        flash(str(e), "nguy_hiem")
+    except Exception as e:
+        flash(f"Lỗi xóa phân đội: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.danh_sach_phan_doi"))

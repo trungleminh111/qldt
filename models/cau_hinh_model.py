@@ -85,6 +85,24 @@ def xoa_khung_gio(ma_tu_sinh):
     ket_noi.commit()
     ket_noi.close()
 
+def lay_mo_ta_loai_lap(loai_lap, ngay_str):
+    if not loai_lap or loai_lap == "MOT_LAN":
+        return "Một lần"
+    try:
+        from datetime import datetime
+        dt = datetime.strptime(ngay_str, "%Y-%m-%d")
+        if loai_lap == "HANG_NAM":
+            return f"Hàng năm ({dt.strftime('%d/%m')})"
+        elif loai_lap == "HANG_THANG":
+            return f"Hàng tháng (Ngày {dt.strftime('%d')})"
+        elif loai_lap == "HANG_TUAN":
+            thu_so = dt.weekday() + 2
+            ten_thu = "Chủ Nhật" if thu_so == 8 else f"Thứ {thu_so}"
+            return f"Hàng tuần ({ten_thu})"
+    except Exception:
+        pass
+    return loai_lap
+
 def lay_danh_sach_ngay_dac_biet():
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
@@ -96,29 +114,31 @@ def lay_danh_sach_ngay_dac_biet():
         ORDER BY ndb.ngay DESC
     """)
     ket_qua = [dict(row) for row in con_tro.fetchall()]
+    for item in ket_qua:
+        item["mo_ta_loai_lap"] = lay_mo_ta_loai_lap(item.get("loai_lap"), item["ngay"])
     ket_noi.close()
     return ket_qua
 
-def them_ngay_dac_biet(ngay, ly_do, cam_su_dung=0, khoa_cau_hinh_ghi_de=None):
+def them_ngay_dac_biet(ngay, ly_do, cam_su_dung=0, khoa_cau_hinh_ghi_de=None, loai_lap="MOT_LAN"):
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
     con_tro.execute("""
-        INSERT INTO ngay_dac_biet (ngay, pham_vi_loai, cam_su_dung, ly_do, khoa_cau_hinh_ghi_de)
-        VALUES (?, 'TOAN_BO', ?, ?, ?)
-    """, (ngay, cam_su_dung, ly_do, khoa_cau_hinh_ghi_de))
+        INSERT INTO ngay_dac_biet (ngay, pham_vi_loai, cam_su_dung, ly_do, khoa_cau_hinh_ghi_de, loai_lap)
+        VALUES (?, 'TOAN_BO', ?, ?, ?, ?)
+    """, (ngay, cam_su_dung, ly_do, khoa_cau_hinh_ghi_de, loai_lap or "MOT_LAN"))
     id_moi = con_tro.lastrowid
     ket_noi.commit()
     ket_noi.close()
     return id_moi
 
-def sua_ngay_dac_biet(ma_tu_sinh, ngay, ly_do, cam_su_dung=0, khoa_cau_hinh_ghi_de=None):
+def sua_ngay_dac_biet(ma_tu_sinh, ngay, ly_do, cam_su_dung=0, khoa_cau_hinh_ghi_de=None, loai_lap="MOT_LAN"):
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
     con_tro.execute("""
         UPDATE ngay_dac_biet
-        SET ngay = ?, ly_do = ?, cam_su_dung = ?, khoa_cau_hinh_ghi_de = ?
+        SET ngay = ?, ly_do = ?, cam_su_dung = ?, khoa_cau_hinh_ghi_de = ?, loai_lap = ?
         WHERE ma_tu_sinh = ?
-    """, (ngay, ly_do, cam_su_dung, khoa_cau_hinh_ghi_de, ma_tu_sinh))
+    """, (ngay, ly_do, cam_su_dung, khoa_cau_hinh_ghi_de, loai_lap or "MOT_LAN", ma_tu_sinh))
     ket_noi.commit()
     ket_noi.close()
 
