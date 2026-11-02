@@ -22,7 +22,7 @@
 
 Trong thư mục dự án, tất cả các tệp cần thiết cho Vercel đã được tạo sẵn:
 
-1. **`vercel.json`**: Định tuyến toàn bộ yêu cầu web về hàm Serverless tại `api/index.py`, đồng thời định tuyến thư mục `/static` phục vụ tài nguyên tĩnh qua CDN tốc độ cao.
+1. **`vercel.json`**: Định tuyến toàn bộ yêu cầu web (bao gồm cả static files và routes) về hàm Serverless tại `api/index.py` theo cơ chế `rewrites` chuẩn của Vercel.
 2. **`api/index.py`**: Điểm vào (Entrypoint) khởi tạo ứng dụng Flask WSGI cho runtime của Vercel.
 3. **`requirements.txt`**: Danh sách thư viện Python cần thiết (`Flask`, `Werkzeug`, `openpyxl`, `Jinja2`).
 4. **`.vercelignore`**: Loại trừ các tệp kiểm thử tự động, cache, nhật ký để quá trình build và tải lên diễn ra nhanh nhất.
@@ -119,7 +119,10 @@ Khi truy cập vào đường dẫn trang web trên Vercel, bạn sử dụng c�
 
 ## VI. MỘT SỐ LƯU Ý KHI GẶP VẤN ĐỀ (TROUBLESHOOTING)
 
-1. **Lỗi 500 FUNCTION_INVOCATION_TIMEOUT:**
+1. **Lỗi mất CSS / Giao diện vỡ (404 Not Found trên tệp `/static/...`):**
+   * **Nguyên nhân:** Vercel mặc định chặn các đường dẫn static trước khi request đến Flask nếu cấu hình routes tĩnh không khớp.
+   * **Cách xử lý:** Hệ thống đã được chuyển sang cơ chế `rewrites` chuẩn tại `vercel.json` và cố định đường dẫn tuyệt đối cho `static_folder` trong `app.py`. Bạn chỉ cần đẩy lại mã nguồn (`git push` hoặc `vercel --prod`) và chọn **Redeploy** trên Vercel.
+2. **Lỗi 500 FUNCTION_INVOCATION_TIMEOUT:**
    * Do Serverless Function khởi động lạnh quá thời gian quy định. Vercel gói miễn phí mặc định timeout là 10 giây. Với cấu hình tối ưu của QLDT, thời gian khởi động chỉ mất dưới 1.5 giây.
 2. **Lỗi Read-only File System:**
    * Mã nguồn `config.py` đã tự động chuyển sang ghi tại `/tmp/qldt.db` và `/tmp/uploads`. Nếu bạn tự thêm tính năng ghi tệp mới, luôn đảm bảo đường dẫn lưu tệp bắt đầu bằng `/tmp/`.

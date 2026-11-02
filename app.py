@@ -13,7 +13,9 @@ from controllers.cau_hinh_controller import cau_hinh_bp
 from controllers.bao_cao_controller import bao_cao_bp
 
 def tao_ung_dung():
-    app = Flask(__name__, template_folder="templates", static_folder="static")
+    templates_path = os.path.join(config.BASE_DIR, "templates")
+    static_path = os.path.join(config.BASE_DIR, "static")
+    app = Flask(__name__, template_folder=templates_path, static_folder=static_path)
     app.config["SECRET_KEY"] = config.SECRET_KEY
     app.config["UPLOAD_FOLDER"] = config.UPLOAD_FOLDER
 
