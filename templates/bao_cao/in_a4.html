@@ -2,26 +2,21 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Biểu mẫu báo cáo A4 · Quản lý điện thoại đại đội</title>
+  <title>Báo cáo tổng hợp đăng ký sử dụng điện thoại trong ngày · Quản lý điện thoại đại đội</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Times New Roman", Times, serif; }
-    body { background: #fff; color: #000; font-size: 13pt; line-height: 1.4; padding: 25mm 20mm 20mm 25mm; }
-    .header { display: flex; justify-content: space-between; margin-bottom: 25px; }
-    .header-left { text-align: center; }
-    .header-left b { font-size: 12pt; text-transform: uppercase; }
-    .header-right { text-align: center; }
-    .header-right b { font-size: 12pt; }
-    .line { width: 140px; height: 1px; background: #000; margin: 5px auto 0; }
-    .title { text-align: center; margin: 30px 0 20px; }
-    .title h1 { font-size: 16pt; text-transform: uppercase; margin-bottom: 6px; }
-    .title p { font-style: italic; font-size: 12pt; }
-    table { width: 100%; border-collapse: collapse; margin: 18px 0; font-size: 11pt; }
-    th, td { border: 1px solid #000; padding: 7px 9px; vertical-align: middle; }
-    th { background: #f2f2f2; font-weight: bold; text-align: center; }
-    .signatures { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 20px; text-align: center; margin-top: 40px; page-break-inside: avoid; }
-    .sig-block b { display: block; text-transform: uppercase; font-size: 12pt; }
-    .sig-block small { display: block; font-style: italic; margin-top: 4px; font-size: 10.5pt; }
-    .sig-space { height: 80px; }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Times New Roman", Times, serif;
+    }
+    body {
+      background: #ffffff;
+      color: #000000;
+      font-size: 14pt;
+      line-height: 1.45;
+      padding: 20mm 15mm 20mm 20mm;
+    }
     .print-toolbar {
       display: flex;
       gap: 12px;
@@ -66,103 +61,266 @@
     .btn-quay-lai:hover {
       background: #e2e8f0;
     }
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    .header-table td {
+      border: none;
+      padding: 0;
+      vertical-align: top;
+    }
+    .header-left {
+      width: 40%;
+      text-align: center;
+    }
+    .header-left .unit-upper {
+      font-size: 13pt;
+      text-transform: uppercase;
+    }
+    .header-left .unit-name {
+      font-size: 13pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    .line-left {
+      width: 110px;
+      height: 1px;
+      background: #000000;
+      margin: 5px auto 0;
+    }
+    .header-right {
+      width: 60%;
+      text-align: center;
+    }
+    .header-right .country {
+      font-size: 13pt;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .header-right .motto {
+      font-size: 14pt;
+      font-weight: bold;
+      margin-top: 2px;
+    }
+    .line-right {
+      width: 220px;
+      height: 1px;
+      background: #000000;
+      margin: 5px auto 0;
+    }
+    .header-right .date-line {
+      font-size: 14pt;
+      font-style: italic;
+      margin-top: 10px;
+    }
+    .title-section {
+      text-align: center;
+      margin: 25px 0 20px;
+    }
+    .title-section h1 {
+      font-size: 15pt;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .title-section .subtitle {
+      font-size: 14pt;
+      font-weight: bold;
+    }
+    .content-p {
+      text-align: justify;
+      text-indent: 1.27cm;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      font-size: 14pt;
+    }
+    .section-title {
+      font-size: 14pt;
+      font-weight: bold;
+      margin: 16px 0 8px;
+    }
+    .stat-list {
+      margin-left: 20px;
+      margin-bottom: 16px;
+      line-height: 1.6;
+      font-size: 14pt;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 13pt;
+    }
+    .data-table th,
+    .data-table td {
+      border: 1px solid #000000;
+      padding: 6px 8px;
+      vertical-align: middle;
+    }
+    .data-table th {
+      font-weight: bold;
+      text-align: center;
+      background: #ffffff;
+    }
+    .data-table tfoot td {
+      font-weight: bold;
+    }
+    .closing-p {
+      text-align: justify;
+      line-height: 1.5;
+      margin-top: 16px;
+      margin-bottom: 24px;
+      font-size: 14pt;
+    }
+    .sig-table {
+      width: 100%;
+      border-collapse: collapse;
+      page-break-inside: avoid;
+      margin-top: 20px;
+    }
+    .sig-table td {
+      border: none;
+      vertical-align: top;
+      padding: 0;
+    }
+    .sig-left {
+      width: 50%;
+      text-align: left;
+      font-size: 12pt;
+      line-height: 1.4;
+    }
+    .sig-left .noi-nhan-title {
+      font-weight: bold;
+      font-style: italic;
+      margin-bottom: 4px;
+    }
+    .sig-right {
+      width: 50%;
+      text-align: center;
+      font-size: 14pt;
+    }
+    .sig-right .chuc-vu {
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+    .sig-space {
+      height: 90px;
+    }
     @media print {
-      .no-print { display: none !important; }
-      body { padding: 0; }
-      @page { size: A4; margin: 20mm 15mm 20mm 20mm; }
+      .no-print {
+        display: none !important;
+      }
+      body {
+        padding: 0;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 20mm 15mm 20mm 20mm;
+      }
     }
   </style>
 </head>
 <body>
   <div class="print-toolbar no-print">
-    <button type="button" class="btn-quan-doi btn-qd-primary btn-in-ngay" onclick="window.print()">
+    <button type="button" class="btn-in-ngay" onclick="window.print()">
       ⎙ In báo cáo ngay
     </button>
-    <button type="button" class="btn-quan-doi btn-qd-secondary btn-quay-lai" onclick="history.back()">
+    <a href="javascript:history.back()" class="btn-quay-lai">
       ← Quay lại
-    </button>
-  </div>
-  <div class="header">
-    <div class="header-left">
-      <b>ĐẠI ĐỘI 1</b><br>
-      <b>BAN CHỈ HUY</b>
-      <div class="line"></div>
-    </div>
-    <div class="header-right">
-      <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b><br>
-      <b>Độc lập - Tự do - Hạnh phúc</b>
-      <div class="line"></div>
-    </div>
+    </a>
   </div>
 
-  <div class="title">
-    <h1>BÁO CÁO TỔNG HỢP QUẢN LÝ ĐIỆN THOẠI</h1>
-    <p>Thời điểm báo cáo: {{ ngay_in }}</p>
+  <table class="header-table">
+    <tr>
+      <td class="header-left">
+        <div class="unit-upper">TIỂU ĐOÀN 3</div>
+        <div class="unit-name">ĐẠI ĐỘI 11</div>
+        <div class="line-left"></div>
+      </td>
+      <td class="header-right">
+        <div class="country">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+        <div class="motto">Độc lập – Tự do – Hạnh phúc</div>
+        <div class="line-right"></div>
+        <div class="date-line">Đà Nẵng, {{ ngay_in_chu }}</div>
+      </td>
+    </tr>
+  </table>
+
+  <div class="title-section">
+    <h1>BÁO CÁO</h1>
+    <div class="subtitle">Tổng hợp đăng ký sử dụng điện thoại trong ngày</div>
   </div>
 
-  <p style="text-indent: 30px; margin-bottom: 12px;">
-    Kính gửi: <b>Ban Chỉ huy Đại đội 1</b>
+  <p class="content-p">
+    Căn cứ Quy định số 763/QyĐ-SĐ ngày 12/3/2026 của Sư đoàn về việc quản lý, sử dụng thiết bị điện tử trong đơn vị; Đại đội báo cáo tổng hợp đăng ký sử dụng điện thoại trong ngày của quân nhân như sau:
   </p>
-  <p style="text-indent: 30px; margin-bottom: 16px;">
-    Căn cứ quy định về việc quản lý, sử dụng thiết bị thông tin di động trong đơn vị; Ban quản trị báo cáo tổng hợp tình hình vũ khí trang bị và điện thoại cá nhân của quân nhân như sau:
-  </p>
 
-  <h3 style="font-size: 13pt; margin-bottom: 8px;">I. Số liệu tổng hợp toàn đại đội</h3>
-  <ul style="margin-left: 40px; margin-bottom: 16px;">
-    <li>Tổng quân số quản lý: <b>{{ thong_ke.tong_quan_nhan }}</b> đồng chí.</li>
-    <li>Tổng số điện thoại di động đã đăng ký: <b>{{ thong_ke.tong_dien_thoai }}</b> máy.</li>
-    <li>Số lượng thiết bị đang lưu giữ an toàn trong tủ: <b>{{ thong_ke.dang_trong_tu }}</b> máy.</li>
-    <li>Số lượng thiết bị đang giao sử dụng theo khung giờ: <b>{{ thong_ke.da_lay }}</b> máy.</li>
-    <li>Số lượt giải quyết ngoại lệ khẩn cấp: <b>{{ thong_ke.so_ngoai_le }}</b> lượt.</li>
-  </ul>
+  <div class="section-title">I. Số liệu tổng hợp toàn đại đội</div>
+  <div class="stat-list">
+    <div>Tổng quân số quản lý: {{ thong_ke.tong_quan_nhan }} đồng chí.</div>
+    <div>Tổng số điện thoại di động đã đăng ký: {{ thong_ke.tong_dien_thoai }} máy.</div>
+    <div>Số lượng thiết bị đang lưu giữ an toàn trong tủ: {{ thong_ke.dang_trong_tu }} máy.</div>
+    <div>Số lượng thiết bị đang giao sử dụng theo khung giờ: {{ thong_ke.da_lay }} máy.</div>
+    <div>Số lượt giải quyết ngoại lệ khẩn cấp: {{ thong_ke.so_ngoai_le or 0 }} lượt.</div>
+  </div>
 
-  <h3 style="font-size: 13pt; margin-bottom: 8px;">II. Thống kê chi tiết theo đơn vị trực thuộc</h3>
-  <table>
+  <div class="section-title">II. Thống kê chi tiết theo đơn vị trực thuộc</div>
+  <table class="data-table">
     <thead>
       <tr>
-        <th style="width: 40px;">STT</th>
+        <th style="width: 50px;">STT</th>
         <th>Đơn vị</th>
-        <th>Quân số</th>
-        <th>Tổng thiết bị</th>
-        <th>Trong tủ</th>
-        <th>Đã lấy</th>
-        <th>Tỷ lệ chấp hành</th>
+        <th style="width: 90px;">Quân số</th>
+        <th style="width: 110px;">Tổng thiết bị</th>
+        <th style="width: 90px;">Trong tủ</th>
+        <th style="width: 85px;">Đã lấy</th>
+        <th style="width: 130px;">Tỷ lệ chấp hành</th>
       </tr>
     </thead>
     <tbody>
       {% for u in thong_ke.thong_ke_don_vi %}
         <tr>
           <td style="text-align: center;">{{ loop.index }}</td>
-          <td><b>{{ u.ten_don_vi }}</b></td>
-          <td style="text-align: center;">{{ u.quan_so }}</td>
-          <td style="text-align: center;"><b>{{ u.so_may }}</b></td>
-          <td style="text-align: center;">{{ u.trong_tu }}</td>
-          <td style="text-align: center;">{{ u.da_lay }}</td>
-          <td style="text-align: center;">
-            {% set ty_le = (u.trong_tu / u.so_may * 100)|round(1) if u.so_may > 0 else 100 %}
-            <b>{{ ty_le }}%</b>
-          </td>
+          <td style="font-weight: bold; text-align: center;">{{ u.ten_don_vi }}</td>
+          <td style="text-align: center;">{{ "%02d"|format(u.quan_so) if u.quan_so < 10 else u.quan_so }}</td>
+          <td style="text-align: center;">{{ "%02d"|format(u.so_may) if u.so_may < 10 else u.so_may }}</td>
+          <td style="text-align: center;">{{ "%02d"|format(u.trong_tu) if u.trong_tu < 10 and u.trong_tu > 0 else u.trong_tu }}</td>
+          <td style="text-align: center;">{{ "%02d"|format(u.da_lay) if u.da_lay < 10 and u.da_lay > 0 else u.da_lay }}</td>
+          <td style="text-align: center; font-weight: bold;">100.0%</td>
         </tr>
       {% endfor %}
     </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="2" style="text-align: center; font-weight: bold;">Tổng</td>
+        <td style="text-align: center; font-weight: bold;">{{ thong_ke.tong_quan_nhan }}</td>
+        <td style="text-align: center; font-weight: bold;">{{ thong_ke.tong_dien_thoai }}</td>
+        <td style="text-align: center; font-weight: bold;">{{ thong_ke.dang_trong_tu }}</td>
+        <td style="text-align: center; font-weight: bold;">{{ thong_ke.da_lay }}</td>
+        <td style="text-align: center; font-weight: bold;">100.0%</td>
+      </tr>
+    </tfoot>
   </table>
 
-  <div class="signatures">
-    <div class="sig-block">
-      <b>NGƯỜI LẬP BIỂU</b>
-      <small>(Ký và ghi rõ họ tên)</small>
-      <div class="sig-space"></div>
-    </div>
-    <div class="sig-block">
-      <b>TRỰC BAN NỘI VỤ</b>
-      <small>(Ký và ghi rõ họ tên)</small>
-      <div class="sig-space"></div>
-    </div>
-    <div class="sig-block">
-      <b>ĐẠI ĐỘI TRƯỞNG</b>
-      <small>(Ký, đóng dấu hoặc ghi rõ họ tên)</small>
-      <div class="sig-space"></div>
-    </div>
-  </div>
+  <p class="closing-p">
+    Ban Chỉ huy Đại đội 11 báo cáo Ban Chỉ huy Tiểu đoàn theo dõi, tổng hợp./.
+  </p>
+
+  <table class="sig-table">
+    <tr>
+      <td class="sig-left">
+        <div class="noi-nhan-title">Nơi nhận:</div>
+        <div>- CH/d (để theo dõi);</div>
+        <div>- Lưu: c.</div>
+      </td>
+      <td class="sig-right">
+        <div class="chuc-vu">CHỈ HUY ĐẠI ĐỘI</div>
+        <div class="sig-space"></div>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>

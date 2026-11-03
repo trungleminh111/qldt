@@ -74,9 +74,15 @@ def xuat_excel():
 def in_a4():
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     thong_ke = lay_thong_ke_tong_quan(khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
-    lich_su = danh_sach_lich_su(limit=100, khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
-    ngay_in = datetime.now().strftime("%d/%m/%Y %H:%M")
-    return render_template("bao_cao/in_a4.html", thong_ke=thong_ke, lich_su=lich_su, ngay_in=ngay_in)
+    now = datetime.now()
+    ngay_in_chu = f"ngày {now.day:02d} tháng {now.month:02d} năm {now.year}"
+    ngay_in = now.strftime("%d/%m/%Y %H:%M")
+    return render_template(
+        "bao_cao/in_a4.html",
+        thong_ke=thong_ke,
+        ngay_in=ngay_in,
+        ngay_in_chu=ngay_in_chu
+    )
 
 @bao_cao_bp.route("/bao-cao/in-ngay")
 @yeu_cau_dang_nhap

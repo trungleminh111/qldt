@@ -40,19 +40,31 @@ class KiemThuBaoCaoNgayVaDieuHuong(BaseTestCase):
         bc_sau_nop = lay_bao_cao_dang_ky_trong_ngay(ngay=ngay_hom_nay)
         self.assertGreaterEqual(bc_sau_nop["so_da_nop"], 1)
 
-    def test_trang_bao_cao_va_in_ngay(self):
+    def test_trang_bao_cao_va_in_a4_mau_2(self):
         with self.client:
             self.login("admin", "admin123")
             res = self.client.get("/bao-cao")
             self.assertEqual(res.status_code, 200)
-            self.assertIn("BÁO CÁO TỔNG HỢP ĐĂNG KÝ SỬ DỤNG ĐIỆN THOẠI TRONG NGÀY", res.get_data(as_text=True))
-            self.assertIn("/bao-cao/in-ngay", res.get_data(as_text=True))
-            self.assertIn("/bao-cao/xuat-excel-ngay", res.get_data(as_text=True))
+            html = res.get_data(as_text=True)
+            self.assertNotIn("BÁO CÁO TỔNG HỢP ĐĂNG KÝ SỬ DỤNG ĐIỆN THOẠI TRONG NGÀY", html)
+            self.assertIn("/bao-cao/in-a4", html)
+
+            res_in_a4 = self.client.get("/bao-cao/in-a4")
+            self.assertEqual(res_in_a4.status_code, 200)
+            html_a4 = res_in_a4.get_data(as_text=True)
+            self.assertIn("TIỂU ĐOÀN 3", html_a4)
+            self.assertIn("ĐẠI ĐỘI 11", html_a4)
+            self.assertIn("CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM", html_a4)
+            self.assertIn("Độc lập – Tự do – Hạnh phúc", html_a4)
+            self.assertIn("Quy định số 763/QyĐ-SĐ", html_a4)
+            self.assertIn("I. Số liệu tổng hợp toàn đại đội", html_a4)
+            self.assertIn("II. Thống kê chi tiết theo đơn vị trực thuộc", html_a4)
+            self.assertIn("Ban Chỉ huy Đại đội 11 báo cáo Ban Chỉ huy Tiểu đoàn theo dõi, tổng hợp./.", html_a4)
+            self.assertIn("CHỈ HUY ĐẠI ĐỘI", html_a4)
+            self.assertIn("Nơi nhận:", html_a4)
 
             res_in = self.client.get("/bao-cao/in-ngay")
             self.assertEqual(res_in.status_code, 200)
-            self.assertIn("BÁO CÁO TỔNG HỢP ĐĂNG KÝ SỬ DỤNG ĐIỆN THOẠI TRONG NGÀY", res_in.get_data(as_text=True))
-            self.assertIn("TRỰC BAN NỘI VỤ", res_in.get_data(as_text=True))
 
             res_excel = self.client.get("/bao-cao/xuat-excel-ngay")
             self.assertEqual(res_excel.status_code, 200)
