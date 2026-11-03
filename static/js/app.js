@@ -590,3 +590,15 @@ document.addEventListener("DOMContentLoaded", function() {
     setInterval(capNhatThoiGianGiaoNhanRealTime, 1000);
   }
 });
+
+document.addEventListener("click", function(e) {
+  const link = e.target.closest("a");
+  if (!link) return;
+  if (link.target === "_blank") return;
+  const href = link.getAttribute("href");
+  if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
+  if (link.origin === window.location.origin || href.startsWith("/")) {
+    e.preventDefault();
+    window.location.href = link.href;
+  }
+});

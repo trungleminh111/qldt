@@ -1,0 +1,9 @@
+{
+  "name": "Quản lý điện thoại đại đội",
+  "short_name": "QLĐT",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d1b2a",
+  "theme_color": "#1b2a47"
+}
