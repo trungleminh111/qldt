@@ -1,4 +1,8 @@
+import time
 from models.co_so_du_lieu import lay_ket_noi
+
+_cache_thong_tin_don_vi = None
+_cache_thong_tin_don_vi_time = 0
 
 def lay_tat_ca_cau_hinh_gio():
     ket_noi = lay_ket_noi()
@@ -149,7 +153,12 @@ def xoa_ngay_dac_biet(ma_tu_sinh):
     ket_noi.commit()
     ket_noi.close()
 
-def lay_thong_tin_don_vi():
+def lay_thong_tin_don_vi(force_refresh=False):
+    global _cache_thong_tin_don_vi, _cache_thong_tin_don_vi_time
+    now = time.time()
+    if not force_refresh and _cache_thong_tin_don_vi and (now - _cache_thong_tin_don_vi_time < 300.0):
+        return dict(_cache_thong_tin_don_vi)
+
     gia_tri_mac_dinh = {
         "don_vi_cap_tren": "TIỂU ĐOÀN 3",
         "ten_don_vi": "ĐẠI ĐỘI 11",
@@ -160,30 +169,33 @@ def lay_thong_tin_don_vi():
     }
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
-    con_tro.execute("""
-        CREATE TABLE IF NOT EXISTS thong_tin_don_vi (
-            khoa_thiet_lap TEXT PRIMARY KEY,
-            gia_tri TEXT
-        )
-    """)
-    con_tro.execute("SELECT khoa_thiet_lap, gia_tri FROM thong_tin_don_vi")
-    rows = con_tro.fetchall()
-    for row in rows:
-        if isinstance(row, dict):
-            k = row.get("khoa_thiet_lap")
-            v = row.get("gia_tri")
-        elif hasattr(row, "keys"):
-            k = row["khoa_thiet_lap"]
-            v = row["gia_tri"]
-        else:
-            k = row[0]
-            v = row[1]
-        if k in gia_tri_mac_dinh and v is not None and str(v).strip():
-            gia_tri_mac_dinh[k] = str(v).strip()
-    ket_noi.close()
+    try:
+        con_tro.execute("SELECT khoa_thiet_lap, gia_tri FROM thong_tin_don_vi")
+        rows = con_tro.fetchall()
+        for row in rows:
+            if isinstance(row, dict):
+                k = row.get("khoa_thiet_lap")
+                v = row.get("gia_tri")
+            elif hasattr(row, "keys"):
+                k = row["khoa_thiet_lap"]
+                v = row["gia_tri"]
+            else:
+                k = row[0]
+                v = row[1]
+            if k in gia_tri_mac_dinh and v is not None and str(v).strip():
+                gia_tri_mac_dinh[k] = str(v).strip()
+    except Exception:
+        pass
+    finally:
+        ket_noi.close()
+
+    _cache_thong_tin_don_vi = dict(gia_tri_mac_dinh)
+    _cache_thong_tin_don_vi_time = now
     return gia_tri_mac_dinh
 
 def cap_nhat_thong_tin_don_vi(du_lieu):
+    global _cache_thong_tin_don_vi
+    _cache_thong_tin_don_vi = None
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
     con_tro.execute("""

@@ -2,6 +2,8 @@ import os
 import re
 import sys
 import ssl
+import time
+import threading
 import sqlite3
 from urllib.parse import urlparse, unquote
 try:
@@ -109,7 +111,12 @@ class PostgresCursorWrapper:
         else:
             clean_params = [actual_params]
 
-        self._cur.execute(transformed, clean_params)
+        try:
+            self._cur.execute(transformed, clean_params)
+        except Exception:
+            if hasattr(self, "_parent_wrapper") and self._parent_wrapper:
+                self._parent_wrapper.danh_dau_hong()
+            raise
         if has_returning:
             row = self._cur.fetchone()
             if row:
@@ -162,12 +169,80 @@ class PostgresCursorWrapper:
     def close(self):
         self._cur.close()
 
+_pg_pool_lock = threading.Lock()
+_pg_pool = []
+_MAX_PG_POOL = 8
+
+def _tra_ket_noi_postgres(raw_conn, hong=False):
+    if raw_conn is None:
+        return
+    if hong:
+        try:
+            raw_conn.close()
+        except Exception:
+            pass
+        return
+    with _pg_pool_lock:
+        if len(_pg_pool) < _MAX_PG_POOL:
+            if getattr(raw_conn, "_transaction_status", None) == b"E":
+                try:
+                    raw_conn.rollback()
+                except Exception:
+                    pass
+            _pg_pool.append((raw_conn, time.time()))
+            return
+    try:
+        raw_conn.close()
+    except Exception:
+        pass
+
+def _lay_ket_noi_postgres_raw():
+    now = time.time()
+    with _pg_pool_lock:
+        while _pg_pool:
+            raw_conn, last_used = _pg_pool.pop()
+            if now - last_used < 30.0:
+                return raw_conn
+            try:
+                cur = raw_conn.cursor()
+                cur.execute("SELECT 1")
+                cur.fetchone()
+                return raw_conn
+            except Exception:
+                try:
+                    raw_conn.close()
+                except Exception:
+                    pass
+
+    db_url = getattr(config, "DATABASE_URL", None)
+    import pg8000.dbapi
+    p = urlparse(db_url)
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    pw = unquote(p.password) if p.password else ""
+    conn = pg8000.dbapi.connect(
+        user=p.username,
+        password=pw,
+        host=p.hostname,
+        port=p.port or 5432,
+        database=p.path.lstrip("/"),
+        ssl_context=ctx
+    )
+    conn.autocommit = True
+    return conn
+
 class PostgresConnectionWrapper:
-    def __init__(self, raw_conn):
+    def __init__(self, raw_conn, from_pool=True):
         self._raw = raw_conn
+        self._from_pool = from_pool
+        self._hong = False
+        self._closed = False
 
     def cursor(self):
-        return PostgresCursorWrapper(self._raw.cursor())
+        cw = PostgresCursorWrapper(self._raw.cursor())
+        cw._parent_wrapper = self
+        return cw
 
     def execute(self, query, params=None):
         cur = self.cursor()
@@ -180,8 +255,19 @@ class PostgresConnectionWrapper:
     def rollback(self):
         self._raw.rollback()
 
+    def danh_dau_hong(self):
+        self._hong = True
+
     def close(self):
-        self._raw.close()
+        if not self._closed:
+            self._closed = True
+            if self._from_pool:
+                _tra_ket_noi_postgres(self._raw, hong=self._hong)
+            else:
+                try:
+                    self._raw.close()
+                except Exception:
+                    pass
 
     def __enter__(self):
         return self
@@ -217,22 +303,8 @@ def nen_dung_postgres():
 
 def lay_ket_noi():
     if nen_dung_postgres():
-        db_url = getattr(config, "DATABASE_URL", None)
-        import pg8000.dbapi
-        p = urlparse(db_url)
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        pw = unquote(p.password) if p.password else ""
-        raw = pg8000.dbapi.connect(
-            user=p.username,
-            password=pw,
-            host=p.hostname,
-            port=p.port or 5432,
-            database=p.path.lstrip("/"),
-            ssl_context=ctx
-        )
-        return PostgresConnectionWrapper(raw)
+        raw = _lay_ket_noi_postgres_raw()
+        return PostgresConnectionWrapper(raw, from_pool=True)
 
     ket_noi = sqlite3.connect(config.DATABASE_PATH, timeout=30.0)
     ket_noi.row_factory = sqlite3.Row
@@ -242,23 +314,42 @@ def lay_ket_noi():
     ket_noi.execute("PRAGMA busy_timeout = 30000")
     return ket_noi
 
+def da_khoi_tao_schema():
+    if nen_dung_postgres():
+        try:
+            ket_noi = lay_ket_noi()
+            con_tro = ket_noi.cursor()
+            con_tro.execute("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'tai_khoan'")
+            co_bang = bool(con_tro.fetchone())
+            ket_noi.close()
+            return co_bang
+        except Exception:
+            return False
+    if not os.path.exists(config.DATABASE_PATH):
+        return False
+    try:
+        ket_noi = lay_ket_noi()
+        con_tro = ket_noi.cursor()
+        con_tro.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='tai_khoan'")
+        co_bang = bool(con_tro.fetchone())
+        ket_noi.close()
+        return co_bang
+    except Exception:
+        return False
+
 def kiem_tra_da_co_du_lieu():
     if nen_dung_postgres():
         try:
             ket_noi = lay_ket_noi()
             con_tro = ket_noi.cursor()
-            con_tro.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'tai_khoan'")
+            con_tro.execute("SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'tai_khoan'")
             if not con_tro.fetchone():
                 ket_noi.close()
                 return False
-            con_tro.execute("SELECT COUNT(*) FROM tai_khoan")
-            so_tk = con_tro.fetchone()[0]
-            con_tro.execute("SELECT COUNT(*) FROM quan_nhan")
-            so_qn = con_tro.fetchone()[0]
-            con_tro.execute("SELECT COUNT(*) FROM cap_bac")
-            so_cb = con_tro.fetchone()[0]
+            con_tro.execute("SELECT (SELECT COUNT(*) FROM tai_khoan) + (SELECT COUNT(*) FROM quan_nhan) + (SELECT COUNT(*) FROM cap_bac)")
+            tong = con_tro.fetchone()[0] or 0
             ket_noi.close()
-            return (so_tk > 0 or so_qn > 0 or so_cb > 0)
+            return tong > 0
         except Exception:
             return False
 
@@ -267,18 +358,14 @@ def kiem_tra_da_co_du_lieu():
     try:
         ket_noi = lay_ket_noi()
         con_tro = ket_noi.cursor()
-        con_tro.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='tai_khoan'")
+        con_tro.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='tai_khoan'")
         if not con_tro.fetchone():
             ket_noi.close()
             return False
-        con_tro.execute("SELECT COUNT(*) FROM tai_khoan")
-        so_tk = con_tro.fetchone()[0]
-        con_tro.execute("SELECT COUNT(*) FROM quan_nhan")
-        so_qn = con_tro.fetchone()[0]
-        con_tro.execute("SELECT COUNT(*) FROM cap_bac")
-        so_cb = con_tro.fetchone()[0]
+        con_tro.execute("SELECT (SELECT COUNT(*) FROM tai_khoan) + (SELECT COUNT(*) FROM quan_nhan) + (SELECT COUNT(*) FROM cap_bac)")
+        tong = con_tro.fetchone()[0] or 0
         ket_noi.close()
-        return (so_tk > 0 or so_qn > 0 or so_cb > 0)
+        return tong > 0
     except Exception:
         return False
 
@@ -338,6 +425,8 @@ def kiem_tra_thuoc_don_vi(khoa_don_vi, khoa_don_vi_gioi_han):
     return int(khoa_don_vi) in ds_id
 
 def khoi_tao_co_so_du_lieu():
+    if da_khoi_tao_schema():
+        return
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
 

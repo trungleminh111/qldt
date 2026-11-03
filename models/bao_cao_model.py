@@ -1,6 +1,26 @@
+import time
 from models.co_so_du_lieu import lay_ket_noi, tao_dieu_kien_don_vi
 
+_cache_thong_ke = {}
+
+def _chuyen_khoa_hashable(khoa):
+    if isinstance(khoa, list):
+        return tuple(khoa)
+    if isinstance(khoa, set):
+        return tuple(sorted(khoa))
+    return khoa
+
+def xoa_cache_thong_ke():
+    global _cache_thong_ke
+    _cache_thong_ke.clear()
+
 def lay_thong_ke_tong_quan(khoa_don_vi_gioi_han=None):
+    now = time.time()
+    cache_key = _chuyen_khoa_hashable(khoa_don_vi_gioi_han)
+    cached = _cache_thong_ke.get(cache_key)
+    if cached and (now - cached[0] < 5.0):
+        return cached[1]
+
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
 
@@ -184,7 +204,7 @@ def lay_thong_ke_tong_quan(khoa_don_vi_gioi_han=None):
 
     ket_noi.close()
 
-    return {
+    ket_qua = {
         "tong_quan_nhan": tong_quan_nhan,
         "tong_dien_thoai": tong_dien_thoai,
         "dang_trong_tu": dang_trong_tu,
@@ -196,6 +216,8 @@ def lay_thong_ke_tong_quan(khoa_don_vi_gioi_han=None):
         "thong_ke_don_vi": thong_ke_don_vi,
         "thong_ke_theo_ngay": thong_ke_theo_ngay
     }
+    _cache_thong_ke[cache_key] = (now, ket_qua)
+    return ket_qua
 
 def lay_bao_cao_dang_ky_trong_ngay(ngay=None, khoa_don_vi_gioi_han=None):
     if not ngay:

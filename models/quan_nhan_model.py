@@ -1,8 +1,31 @@
+import time
 import re
 import openpyxl
 from models.co_so_du_lieu import lay_ket_noi, tao_dieu_kien_don_vi, kiem_tra_thuoc_don_vi
 
+_cache_don_vi = {}
+_cache_cap_bac = None
+_cache_chuc_vu = None
+
+def _chuyen_khoa_hashable(khoa):
+    if isinstance(khoa, list):
+        return tuple(khoa)
+    if isinstance(khoa, set):
+        return tuple(sorted(khoa))
+    return khoa
+
+def xoa_cache_danh_muc():
+    global _cache_don_vi, _cache_cap_bac, _cache_chuc_vu
+    _cache_don_vi.clear()
+    _cache_cap_bac = None
+    _cache_chuc_vu = None
+
 def lay_danh_sach_don_vi(khoa_don_vi_gioi_han=None):
+    now = time.time()
+    cache_key = _chuyen_khoa_hashable(khoa_don_vi_gioi_han)
+    cached = _cache_don_vi.get(cache_key)
+    if cached and (now - cached[0] < 30.0):
+        return cached[1]
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
     cau_lenh = "SELECT ma_tu_sinh, ma_don_vi, ten_don_vi, khoa_don_vi_cha FROM don_vi WHERE dang_dung = 1"
@@ -11,17 +34,27 @@ def lay_danh_sach_don_vi(khoa_don_vi_gioi_han=None):
     con_tro.execute(cau_lenh, tham_so)
     ket_qua = [dict(row) for row in con_tro.fetchall()]
     ket_noi.close()
+    _cache_don_vi[cache_key] = (now, ket_qua)
     return ket_qua
 
 def lay_danh_sach_cap_bac():
+    global _cache_cap_bac
+    now = time.time()
+    if _cache_cap_bac and (now - _cache_cap_bac[0] < 60.0):
+        return _cache_cap_bac[1]
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
     con_tro.execute("SELECT ma_tu_sinh, ma_cap_bac, ten_cap_bac FROM cap_bac WHERE dang_dung = 1 ORDER BY thu_tu ASC")
     ket_qua = [dict(row) for row in con_tro.fetchall()]
     ket_noi.close()
+    _cache_cap_bac = (now, ket_qua)
     return ket_qua
 
 def lay_danh_sach_chuc_vu():
+    global _cache_chuc_vu
+    now = time.time()
+    if _cache_chuc_vu and (now - _cache_chuc_vu[0] < 60.0):
+        return _cache_chuc_vu[1]
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
     con_tro.execute("""
@@ -33,6 +66,7 @@ def lay_danh_sach_chuc_vu():
     """)
     ket_qua = [dict(row) for row in con_tro.fetchall()]
     ket_noi.close()
+    _cache_chuc_vu = (now, ket_qua)
     return ket_qua
 
 def lay_tat_ca_quan_nhan(tu_khoa=None, ma_don_vi=None, trang_thai=None, khoa_don_vi_gioi_han=None):
@@ -145,6 +179,7 @@ def them_quan_nhan(ma_quan_nhan, ho_ten, khoa_cap_bac, khoa_chuc_vu, khoa_don_vi
     id_moi = con_tro.lastrowid
     ket_noi.commit()
     ket_noi.close()
+    xoa_cache_danh_muc()
     return id_moi
 
 def sua_quan_nhan(ma_tu_sinh, ho_ten, khoa_cap_bac, khoa_chuc_vu, khoa_don_vi, ngay_sinh=None, ngay_nhap_ngu=None, ghi_chu=None):
@@ -332,6 +367,7 @@ def them_don_vi(ma_don_vi, ten_don_vi, khoa_don_vi_cha=1, thu_tu=None):
     id_moi = con_tro.lastrowid
     ket_noi.commit()
     ket_noi.close()
+    xoa_cache_danh_muc()
     return id_moi
 
 def sua_don_vi(ma_tu_sinh, ma_don_vi, ten_don_vi, thu_tu=None, dang_dung=1, khoa_don_vi_cha=None):
@@ -376,6 +412,7 @@ def sua_don_vi(ma_tu_sinh, ma_don_vi, ten_don_vi, thu_tu=None, dang_dung=1, khoa
 
     ket_noi.commit()
     ket_noi.close()
+    xoa_cache_danh_muc()
     return True
 
 def xoa_don_vi(ma_tu_sinh):
@@ -396,4 +433,5 @@ def xoa_don_vi(ma_tu_sinh):
     con_tro.execute("DELETE FROM don_vi WHERE ma_tu_sinh = ?", (ma_tu_sinh,))
     ket_noi.commit()
     ket_noi.close()
+    xoa_cache_danh_muc()
     return True

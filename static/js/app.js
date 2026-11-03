@@ -368,14 +368,21 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
+let dangChuyenTrang = false;
 document.addEventListener("click", function(e) {
   const link = e.target.closest("a");
   if (!link) return;
-  if (link.target === "_blank") return;
   const href = link.getAttribute("href");
-  if (!href || href.startsWith("#") || href.startsWith("javascript:")) return;
+  if (!href || href.startsWith("#") || href.startsWith("javascript:") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
+  if (link.target === "_blank") return;
   if (link.origin === window.location.origin || href.startsWith("/")) {
-    e.preventDefault();
-    window.location.href = link.href;
+    if (dangChuyenTrang) {
+      e.preventDefault();
+      return;
+    }
+    dangChuyenTrang = true;
+    setTimeout(function() {
+      dangChuyenTrang = false;
+    }, 3000);
   }
 });
