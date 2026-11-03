@@ -19,12 +19,17 @@ if os.path.exists(env_path):
     except Exception:
         pass
 
+DB_BACKEND = os.environ.get("DB_BACKEND", "auto").strip().lower()
 DATABASE_URL = os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL")
 
-if os.environ.get("VERCEL"):
+custom_sqlite = os.environ.get("SQLITE_PATH")
+if custom_sqlite:
+    DATABASE_PATH = os.path.abspath(custom_sqlite)
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(DATABASE_PATH), "uploads")
+elif os.environ.get("VERCEL"):
     DATABASE_PATH = "/tmp/qldt.db"
     UPLOAD_FOLDER = "/tmp/uploads"
-    if not DATABASE_URL:
+    if DB_BACKEND == "sqlite" or (DB_BACKEND == "auto" and not DATABASE_URL):
         source_db = os.path.join(BASE_DIR, "qldt.db")
         if os.path.exists(source_db):
             copy_needed = not os.path.exists(DATABASE_PATH)

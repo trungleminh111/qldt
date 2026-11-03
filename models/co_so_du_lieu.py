@@ -198,9 +198,22 @@ def la_moi_truong_test():
         return True
     return False
 
-def lay_ket_noi():
+def nen_dung_postgres():
+    if la_moi_truong_test():
+        return False
+    backend = getattr(config, "DB_BACKEND", "auto").strip().lower()
+    if backend == "sqlite":
+        return False
     db_url = getattr(config, "DATABASE_URL", None)
-    if db_url and not la_moi_truong_test():
+    if backend == "postgres":
+        if not db_url:
+            raise ValueError("DB_BACKEND duoc cau hinh la 'postgres' nhung khong tim thay DATABASE_URL hoac POSTGRES_URL")
+        return True
+    return bool(db_url)
+
+def lay_ket_noi():
+    if nen_dung_postgres():
+        db_url = getattr(config, "DATABASE_URL", None)
         import pg8000.dbapi
         p = urlparse(db_url)
         ctx = ssl.create_default_context()
@@ -223,8 +236,7 @@ def lay_ket_noi():
     return ket_noi
 
 def kiem_tra_da_co_du_lieu():
-    db_url = getattr(config, "DATABASE_URL", None)
-    if db_url and not la_moi_truong_test():
+    if nen_dung_postgres():
         try:
             ket_noi = lay_ket_noi()
             con_tro = ket_noi.cursor()

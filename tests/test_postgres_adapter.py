@@ -1,5 +1,5 @@
 import unittest
-from models.co_so_du_lieu import PostgresRow, PostgresCursorWrapper, lay_ket_noi
+from models.co_so_du_lieu import PostgresRow, PostgresCursorWrapper, nen_dung_postgres
 import config
 
 class MockRawCursor:
@@ -58,6 +58,42 @@ class TestPostgresAdapter(unittest.TestCase):
         t4, p4, r4 = wrapper._transform_query(q4)
         self.assertIn("information_schema.columns", t4)
         self.assertEqual(p4, ["ban_giao_ca"])
+
+    def test_db_backend_toggle(self):
+        import sys
+        orig_backend = getattr(config, "DB_BACKEND", "auto")
+        orig_url = getattr(config, "DATABASE_URL", None)
+        saved_argv = list(sys.argv)
+        saved_testing = getattr(config, "TESTING", False)
+        saved_db_path = config.DATABASE_PATH
+        try:
+            config.DB_BACKEND = "sqlite"
+            config.DATABASE_URL = "postgresql://user:pass@localhost:5432/db"
+            self.assertFalse(nen_dung_postgres())
+
+            sys.argv = ["app.py"]
+            config.TESTING = False
+            config.DATABASE_PATH = "/tmp/real_prod.db"
+
+            config.DB_BACKEND = "postgres"
+            config.DATABASE_URL = None
+            with self.assertRaises(ValueError):
+                nen_dung_postgres()
+
+            config.DATABASE_URL = "postgresql://user:pass@localhost:5432/db"
+            self.assertTrue(nen_dung_postgres())
+
+            config.DB_BACKEND = "auto"
+            self.assertTrue(nen_dung_postgres())
+
+            config.DATABASE_URL = None
+            self.assertFalse(nen_dung_postgres())
+        finally:
+            config.DB_BACKEND = orig_backend
+            config.DATABASE_URL = orig_url
+            sys.argv = saved_argv
+            config.TESTING = saved_testing
+            config.DATABASE_PATH = saved_db_path
 
     def test_live_postgres_connection_if_configured(self):
         if not getattr(config, "DATABASE_URL", None):
