@@ -1,10 +1,20 @@
 import os
+import sys
 import shutil
 from datetime import timedelta
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+if getattr(sys, "frozen", False):
+    DATA_DIR = os.path.dirname(sys.executable)
+    RESOURCE_DIR = getattr(sys, "_MEIPASS", BASE_DIR)
+else:
+    DATA_DIR = BASE_DIR
+    RESOURCE_DIR = BASE_DIR
 
-env_path = os.path.join(BASE_DIR, ".env")
+env_path = os.path.join(DATA_DIR, ".env")
+if not os.path.exists(env_path):
+    env_path = os.path.join(BASE_DIR, ".env")
+
 if os.path.exists(env_path):
     try:
         with open(env_path, "r", encoding="utf-8") as f:
@@ -44,8 +54,8 @@ elif os.environ.get("VERCEL"):
                 except Exception:
                     pass
 else:
-    DATABASE_PATH = os.path.join(BASE_DIR, "qldt.db")
-    UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
+    DATABASE_PATH = os.path.join(DATA_DIR, "qldt.db")
+    UPLOAD_FOLDER = os.path.join(DATA_DIR, "uploads")
 
 SECRET_KEY = os.environ.get("SECRET_KEY", "qldt_dai_doi_secret_key_2026")
 DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1")

@@ -17,8 +17,8 @@ mimetypes.add_type("text/css", ".css")
 mimetypes.add_type("application/javascript", ".js")
 
 def tao_ung_dung():
-    templates_path = os.path.join(config.BASE_DIR, "templates")
-    static_path = os.path.join(config.BASE_DIR, "static")
+    templates_path = os.path.join(config.RESOURCE_DIR, "templates")
+    static_path = os.path.join(config.RESOURCE_DIR, "static")
     app = Flask(__name__, template_folder=templates_path, static_folder=static_path)
     app.config["SECRET_KEY"] = config.SECRET_KEY
     app.config["UPLOAD_FOLDER"] = config.UPLOAD_FOLDER
