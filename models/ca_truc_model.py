@@ -139,9 +139,11 @@ def lay_so_lieu_kiem_ke(khoa_don_vi_gioi_han=None):
         "bat_thuong": 0
     }
 
-def thuc_hien_ban_giao_ca(khoa_ca, khoa_nguoi_ban_giao, khoa_nguoi_nhan, ghi_chu=None, du_lieu_snapshot=None, so_qua_han=0, khoa_don_vi_gioi_han=None, ma_tu_snapshot=None, ten_ngan_snapshot=None):
+def thuc_hien_ban_giao_ca(khoa_ca, khoa_nguoi_ban_giao, khoa_nguoi_nhan, ghi_chu=None, du_lieu_snapshot=None, so_qua_han=0, khoa_don_vi_gioi_han=None, ma_tu_snapshot=None, ten_ngan_snapshot=None, bat_thuong=None):
     so_lieu = lay_so_lieu_kiem_ke(khoa_don_vi_gioi_han)
     ngay_truc = datetime.now().strftime("%Y-%m-%d")
+
+    so_bat_thuong = bat_thuong if bat_thuong is not None else 0
 
     snapshot_str = None
     if du_lieu_snapshot is not None:
@@ -150,6 +152,10 @@ def thuc_hien_ban_giao_ca(khoa_ca, khoa_nguoi_ban_giao, khoa_nguoi_nhan, ghi_chu
                 so_qua_han = du_lieu_snapshot["so_qua_han"]
             elif not so_qua_han and "so_lieu" in du_lieu_snapshot and isinstance(du_lieu_snapshot["so_lieu"], dict):
                 so_qua_han = du_lieu_snapshot["so_lieu"].get("so_qua_han", 0)
+            if so_bat_thuong == 0 and "bat_thuong" in du_lieu_snapshot:
+                so_bat_thuong = du_lieu_snapshot["bat_thuong"]
+            elif so_bat_thuong == 0 and "so_lieu" in du_lieu_snapshot and isinstance(du_lieu_snapshot["so_lieu"], dict):
+                so_bat_thuong = du_lieu_snapshot["so_lieu"].get("bat_thuong", 0)
             if not ma_tu_snapshot and "ma_tu_snapshot" in du_lieu_snapshot:
                 ma_tu_snapshot = du_lieu_snapshot["ma_tu_snapshot"]
             if not ten_ngan_snapshot and "ten_ngan_snapshot" in du_lieu_snapshot:
@@ -164,6 +170,10 @@ def thuc_hien_ban_giao_ca(khoa_ca, khoa_nguoi_ban_giao, khoa_nguoi_nhan, ghi_chu
                         so_qua_han = parsed["so_qua_han"]
                     elif not so_qua_han and "so_lieu" in parsed and isinstance(parsed["so_lieu"], dict):
                         so_qua_han = parsed["so_lieu"].get("so_qua_han", 0)
+                    if so_bat_thuong == 0 and "bat_thuong" in parsed:
+                        so_bat_thuong = parsed["bat_thuong"]
+                    elif so_bat_thuong == 0 and "so_lieu" in parsed and isinstance(parsed["so_lieu"], dict):
+                        so_bat_thuong = parsed["so_lieu"].get("bat_thuong", 0)
                     if not ma_tu_snapshot and "ma_tu_snapshot" in parsed:
                         ma_tu_snapshot = parsed["ma_tu_snapshot"]
                     if not ten_ngan_snapshot and "ten_ngan_snapshot" in parsed:
@@ -186,7 +196,7 @@ def thuc_hien_ban_giao_ca(khoa_ca, khoa_nguoi_ban_giao, khoa_nguoi_nhan, ghi_chu
     """, (
         khoa_ca, ngay_truc, khoa_nguoi_ban_giao, khoa_nguoi_nhan,
         so_lieu["tong_thiet_bi"], so_lieu["dang_trong_tu"], so_lieu["da_lay"],
-        so_lieu["chua_nop"], so_lieu["bat_thuong"], ghi_chu,
+        so_lieu["chua_nop"], so_bat_thuong, ghi_chu,
         snapshot_str, ma_tu_snapshot, ten_ngan_snapshot, so_qua_han
     ))
     id_moi = con_tro.lastrowid

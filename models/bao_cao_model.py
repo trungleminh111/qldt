@@ -68,8 +68,8 @@ def lay_thong_ke_tong_quan(khoa_don_vi_gioi_han=None):
             SELECT dv.ten_don_vi,
                    COUNT(qn.ma_tu_sinh) AS quan_so,
                    COUNT(dt.ma_tu_sinh) AS so_may,
-                   SUM(CASE WHEN gn.loai = 'LAY_RA' THEN 1 ELSE 0 END) AS da_lay,
-                   SUM(CASE WHEN gn.loai = 'NOP_VAO' OR gn.loai IS NULL THEN 1 ELSE 0 END) AS trong_tu
+                   SUM(CASE WHEN dt.ma_tu_sinh IS NOT NULL AND gn.loai = 'LAY_RA' THEN 1 ELSE 0 END) AS da_lay,
+                   SUM(CASE WHEN dt.ma_tu_sinh IS NOT NULL AND (gn.loai = 'NOP_VAO' OR gn.loai IS NULL) THEN 1 ELSE 0 END) AS trong_tu
             FROM don_vi dv
             LEFT JOIN quan_nhan qn ON qn.khoa_don_vi = dv.ma_tu_sinh AND qn.da_xoa = 0
             LEFT JOIN dien_thoai dt ON dt.khoa_quan_nhan = qn.ma_tu_sinh AND dt.da_xoa = 0
@@ -150,8 +150,8 @@ def lay_thong_ke_tong_quan(khoa_don_vi_gioi_han=None):
             SELECT dv.ten_don_vi,
                    COUNT(qn.ma_tu_sinh) AS quan_so,
                    COUNT(dt.ma_tu_sinh) AS so_may,
-                   SUM(CASE WHEN gn.loai = 'LAY_RA' THEN 1 ELSE 0 END) AS da_lay,
-                   SUM(CASE WHEN gn.loai = 'NOP_VAO' OR gn.loai IS NULL THEN 1 ELSE 0 END) AS trong_tu
+                   SUM(CASE WHEN dt.ma_tu_sinh IS NOT NULL AND gn.loai = 'LAY_RA' THEN 1 ELSE 0 END) AS da_lay,
+                   SUM(CASE WHEN dt.ma_tu_sinh IS NOT NULL AND (gn.loai = 'NOP_VAO' OR gn.loai IS NULL) THEN 1 ELSE 0 END) AS trong_tu
             FROM don_vi dv
             LEFT JOIN quan_nhan qn ON qn.khoa_don_vi = dv.ma_tu_sinh AND qn.da_xoa = 0
             LEFT JOIN dien_thoai dt ON dt.khoa_quan_nhan = qn.ma_tu_sinh AND dt.da_xoa = 0

@@ -97,7 +97,7 @@
               {% endif %}
             </td>
             <td style="text-align: right; white-space: nowrap;">
-              <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" onclick="moModalSuaPhanDoi('{{ dv.ma_tu_sinh }}', '{{ dv.ma_don_vi }}', '{{ dv.ten_don_vi }}', '{{ dv.thu_tu }}', '{{ dv.dang_dung }}')" style="margin-right: 4px;">
+              <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm" onclick="moModalSuaPhanDoi('{{ dv.ma_tu_sinh }}', '{{ dv.ma_don_vi }}', '{{ dv.ten_don_vi }}', '{{ dv.thu_tu }}', '{{ dv.dang_dung }}', '{{ dv.khoa_don_vi_cha or '' }}')" style="margin-right: 4px;">
                 ✎ Sửa
               </button>
               {% if dv.khoa_don_vi_cha %}
@@ -128,8 +128,15 @@
       <button class="modal-close" onclick="dongModal('modalThemPhanDoi')">✕</button>
     </div>
     <form method="POST" action="{{ url_for('cau_hinh.them_phan_doi') }}">
-      <div style="background: #f1f5f9; padding: 12px; border-radius: 8px; margin-bottom: 14px; font-size: 13px;">
-        <span style="font-weight: 700; color: var(--navy);">Đơn vị cấp trên:</span> Đại đội 1 (C1)
+      <div style="margin-bottom: 14px;">
+        <label for="them_khoa_cha">Đơn vị cấp trên trực tiếp</label>
+        <select id="them_khoa_cha" name="khoa_don_vi_cha">
+          {% for dv in don_vi_list %}
+            <option value="{{ dv.ma_tu_sinh }}" {% if dv.ma_don_vi == 'C1' or not dv.khoa_don_vi_cha %}selected{% endif %}>
+              {{ dv.ten_don_vi }} ({{ dv.ma_don_vi }})
+            </option>
+          {% endfor %}
+        </select>
       </div>
 
       <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 12px;">
@@ -163,6 +170,17 @@
       <button class="modal-close" onclick="dongModal('modalSuaPhanDoi')">✕</button>
     </div>
     <form id="formSuaPhanDoi" method="POST" action="">
+      <div style="margin-bottom: 14px;">
+        <label for="sua_khoa_cha">Đơn vị cấp trên trực tiếp</label>
+        <select id="sua_khoa_cha" name="khoa_don_vi_cha">
+          {% for dv in don_vi_list %}
+            <option value="{{ dv.ma_tu_sinh }}">
+              {{ dv.ten_don_vi }} ({{ dv.ma_don_vi }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
       <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 12px;">
         <div>
           <label for="sua_ma_dv">Mã phân đội *</label>
@@ -197,7 +215,7 @@
 </div>
 
 <script>
-function moModalSuaPhanDoi(id, maDv, tenDv, thuTu, dangDung) {
+function moModalSuaPhanDoi(id, maDv, tenDv, thuTu, dangDung, khoaCha) {
   const form = document.getElementById("formSuaPhanDoi");
   if (form) {
     form.action = "{{ url_for('cau_hinh.danh_sach_phan_doi') }}/sua/" + id;
@@ -206,6 +224,10 @@ function moModalSuaPhanDoi(id, maDv, tenDv, thuTu, dangDung) {
   document.getElementById("sua_ten_dv").value = tenDv || "";
   document.getElementById("sua_thu_tu").value = thuTu || "10";
   document.getElementById("sua_dang_dung").value = String(dangDung) === "1" ? "1" : "0";
+  const selCha = document.getElementById("sua_khoa_cha");
+  if (selCha && khoaCha) {
+    selCha.value = String(khoaCha);
+  }
   moModal("modalSuaPhanDoi");
 }
 

@@ -2,7 +2,7 @@ from datetime import datetime
 from io import BytesIO
 import openpyxl
 from flask import Blueprint, render_template, send_file
-from controllers import yeu_cau_dang_nhap, lay_don_vi_gioi_han
+from controllers import yeu_cau_dang_nhap, yeu_cau_quyen, lay_don_vi_gioi_han
 from models.bao_cao_model import lay_thong_ke_tong_quan
 from models.giao_nhan_model import danh_sach_lich_su
 
@@ -10,6 +10,7 @@ bao_cao_bp = Blueprint("bao_cao", __name__)
 
 @bao_cao_bp.route("/bao-cao")
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("BAOCAO.XEM")
 def index():
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     thong_ke = lay_thong_ke_tong_quan(khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
@@ -18,6 +19,7 @@ def index():
 
 @bao_cao_bp.route("/bao-cao/xuat-excel")
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("BAOCAO.XUAT", "BAOCAO.XEM")
 def xuat_excel():
     wb = openpyxl.Workbook()
     ws = wb.active
@@ -60,6 +62,7 @@ def xuat_excel():
 
 @bao_cao_bp.route("/bao-cao/in-a4")
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("BAOCAO.XEM", "BAOCAO.XUAT")
 def in_a4():
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     thong_ke = lay_thong_ke_tong_quan(khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)

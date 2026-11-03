@@ -150,6 +150,17 @@ def them_quan_nhan(ma_quan_nhan, ho_ten, khoa_cap_bac, khoa_chuc_vu, khoa_don_vi
 def sua_quan_nhan(ma_tu_sinh, ho_ten, khoa_cap_bac, khoa_chuc_vu, khoa_don_vi, ngay_sinh=None, ngay_nhap_ngu=None, ghi_chu=None):
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
+    con_tro.execute("SELECT khoa_don_vi FROM quan_nhan WHERE ma_tu_sinh = ?", (ma_tu_sinh,))
+    old_row = con_tro.fetchone()
+    if old_row and str(old_row["khoa_don_vi"]) != str(khoa_don_vi):
+        con_tro.execute("""
+            UPDATE ngan
+            SET khoa_quan_nhan = NULL
+            WHERE khoa_quan_nhan = ?
+              AND khoa_tu IN (
+                  SELECT ma_tu_sinh FROM tu WHERE khoa_don_vi_quan_ly != ?
+              )
+        """, (ma_tu_sinh, khoa_don_vi))
     con_tro.execute("""
         UPDATE quan_nhan
         SET ho_ten = ?, khoa_cap_bac = ?, khoa_chuc_vu = ?, khoa_don_vi = ?, ngay_sinh = ?, ngay_nhap_ngu = ?, ghi_chu = ?, ngay_sua = datetime('now', 'localtime')
@@ -161,9 +172,29 @@ def sua_quan_nhan(ma_tu_sinh, ho_ten, khoa_cap_bac, khoa_chuc_vu, khoa_don_vi, n
 def xoa_quan_nhan(ma_tu_sinh):
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
+    con_tro.execute("""
+        SELECT COUNT(dt.ma_tu_sinh) AS dang_giu
+        FROM dien_thoai dt
+        JOIN (
+            SELECT gn1.khoa_dien_thoai, gn1.loai
+            FROM lich_su_giao_nhan gn1
+            INNER JOIN (
+                SELECT khoa_dien_thoai, MAX(ma_tu_sinh) AS max_id
+                FROM lich_su_giao_nhan
+                GROUP BY khoa_dien_thoai
+            ) gn2 ON gn1.ma_tu_sinh = gn2.max_id
+        ) gn ON gn.khoa_dien_thoai = dt.ma_tu_sinh
+        WHERE dt.khoa_quan_nhan = ? AND dt.da_xoa = 0 AND gn.loai = 'LAY_RA'
+    """, (ma_tu_sinh,))
+    row = con_tro.fetchone()
+    if row and row["dang_giu"] > 0:
+        ket_noi.close()
+        raise ValueError("Quân nhân đang giữ thiết bị ngoài tủ. Vui lòng thu hồi thiết bị trước khi xóa hồ sơ.")
+
     con_tro.execute("UPDATE quan_nhan SET da_xoa = 1 WHERE ma_tu_sinh = ?", (ma_tu_sinh,))
     con_tro.execute("UPDATE ngan SET khoa_quan_nhan = NULL WHERE khoa_quan_nhan = ?", (ma_tu_sinh,))
     con_tro.execute("UPDATE dien_thoai SET da_xoa = 1 WHERE khoa_quan_nhan = ?", (ma_tu_sinh,))
+    con_tro.execute("UPDATE tai_khoan SET dang_dung = 0 WHERE khoa_quan_nhan = ?", (ma_tu_sinh,))
     ket_noi.commit()
     ket_noi.close()
 
@@ -303,7 +334,7 @@ def them_don_vi(ma_don_vi, ten_don_vi, khoa_don_vi_cha=1, thu_tu=None):
     ket_noi.close()
     return id_moi
 
-def sua_don_vi(ma_tu_sinh, ma_don_vi, ten_don_vi, thu_tu=None, dang_dung=1):
+def sua_don_vi(ma_tu_sinh, ma_don_vi, ten_don_vi, thu_tu=None, dang_dung=1, khoa_don_vi_cha=None):
     ma_don_vi = (ma_don_vi or "").strip().upper()
     ten_don_vi = (ten_don_vi or "").strip()
     if not ma_don_vi or not ten_don_vi:
@@ -322,11 +353,18 @@ def sua_don_vi(ma_tu_sinh, ma_don_vi, ten_don_vi, thu_tu=None, dang_dung=1):
     else:
         thu_tu = int(thu_tu)
 
-    con_tro.execute("""
-        UPDATE don_vi
-        SET ma_don_vi = ?, ten_don_vi = ?, thu_tu = ?, dang_dung = ?
-        WHERE ma_tu_sinh = ?
-    """, (ma_don_vi, ten_don_vi, thu_tu, dang_dung, ma_tu_sinh))
+    if khoa_don_vi_cha is not None and str(khoa_don_vi_cha).strip() != "":
+        con_tro.execute("""
+            UPDATE don_vi
+            SET ma_don_vi = ?, ten_don_vi = ?, thu_tu = ?, dang_dung = ?, khoa_don_vi_cha = ?
+            WHERE ma_tu_sinh = ?
+        """, (ma_don_vi, ten_don_vi, thu_tu, dang_dung, int(khoa_don_vi_cha), ma_tu_sinh))
+    else:
+        con_tro.execute("""
+            UPDATE don_vi
+            SET ma_don_vi = ?, ten_don_vi = ?, thu_tu = ?, dang_dung = ?
+            WHERE ma_tu_sinh = ?
+        """, (ma_don_vi, ten_don_vi, thu_tu, dang_dung, ma_tu_sinh))
     ket_noi.commit()
     ket_noi.close()
     return True

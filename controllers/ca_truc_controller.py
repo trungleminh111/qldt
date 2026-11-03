@@ -16,6 +16,7 @@ from models.co_so_du_lieu import ghi_nhat_ky
 
 ca_truc_bp = Blueprint("ca_truc", __name__)
 
+@ca_truc_bp.route("/ban-giao-ca")
 @ca_truc_bp.route("/ca-truc")
 @yeu_cau_dang_nhap
 @yeu_cau_quyen("CATRUC.BANGIAO")
@@ -140,7 +141,8 @@ def xac_nhan_ban_giao():
             so_qua_han=so_qua_han,
             khoa_don_vi_gioi_han=don_vi_gioi_han,
             ma_tu_snapshot=ma_tu_snapshot,
-            ten_ngan_snapshot=ten_ngan_snapshot
+            ten_ngan_snapshot=ten_ngan_snapshot,
+            bat_thuong=int(request.form.get("bat_thuong", 0) or 0)
         )
         ghi_nhat_ky(
             khoa_tai_khoan=nguoi_dung.get("ma_tu_sinh"),
@@ -182,6 +184,7 @@ def api_chi_tiet(id):
     return jsonify({"thanh_cong": True, "ban_giao": ban_giao, "snapshot": ban_giao.get("snapshot", {})})
 
 @ca_truc_bp.route("/ca-truc/thu-hoi-nhanh", methods=["POST"])
+@ca_truc_bp.route("/api/ca-truc/thu-hoi-nhanh", methods=["POST"])
 @yeu_cau_dang_nhap
 @yeu_cau_quyen("CATRUC.BANGIAO")
 def thu_hoi_nhanh():

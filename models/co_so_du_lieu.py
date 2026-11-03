@@ -32,40 +32,60 @@ def kiem_tra_da_co_du_lieu():
     except Exception:
         return False
 
+def lay_danh_sach_don_vi_truc_thuoc(khoa_don_vi):
+    if not khoa_don_vi:
+        return []
+    if isinstance(khoa_don_vi, (list, tuple, set)):
+        ds_ban_dau = [int(x) for x in khoa_don_vi if str(x).isdigit()]
+    elif isinstance(khoa_don_vi, str) and "," in khoa_don_vi:
+        ds_ban_dau = [int(x.strip()) for x in khoa_don_vi.split(",") if x.strip().isdigit()]
+    else:
+        try:
+            ds_ban_dau = [int(khoa_don_vi)]
+        except (ValueError, TypeError):
+            return []
+
+    if not ds_ban_dau:
+        return []
+
+    try:
+        ket_noi = lay_ket_noi()
+        con_tro = ket_noi.cursor()
+        placeholders = ",".join("?" for _ in ds_ban_dau)
+        con_tro.execute(f"""
+            WITH RECURSIVE cay_don_vi AS (
+                SELECT ma_tu_sinh FROM don_vi WHERE ma_tu_sinh IN ({placeholders})
+                UNION ALL
+                SELECT dv.ma_tu_sinh FROM don_vi dv
+                JOIN cay_don_vi c ON dv.khoa_don_vi_cha = c.ma_tu_sinh
+                WHERE dv.dang_dung = 1
+            )
+            SELECT DISTINCT ma_tu_sinh FROM cay_don_vi
+        """, ds_ban_dau)
+        ket_qua = [r[0] for r in con_tro.fetchall()]
+        ket_noi.close()
+        return ket_qua or ds_ban_dau
+    except Exception:
+        return ds_ban_dau
+
 def tao_dieu_kien_don_vi(cot_don_vi, khoa_don_vi_gioi_han):
     if not khoa_don_vi_gioi_han:
         return "", []
-    if isinstance(khoa_don_vi_gioi_han, (list, tuple, set)):
-        ds_id = [int(x) for x in khoa_don_vi_gioi_han if str(x).isdigit()]
-        if not ds_id:
-            return "", []
-        if len(ds_id) == 1:
-            return f" AND {cot_don_vi} = ?", [ds_id[0]]
-        placeholders = ",".join("?" for _ in ds_id)
-        return f" AND {cot_don_vi} IN ({placeholders})", ds_id
-    if isinstance(khoa_don_vi_gioi_han, str) and "," in khoa_don_vi_gioi_han:
-        ds_id = [int(x.strip()) for x in khoa_don_vi_gioi_han.split(",") if x.strip().isdigit()]
-        if not ds_id:
-            return "", []
-        placeholders = ",".join("?" for _ in ds_id)
-        return f" AND {cot_don_vi} IN ({placeholders})", ds_id
-    try:
-        val = int(khoa_don_vi_gioi_han)
-        return f" AND {cot_don_vi} = ?", [val]
-    except (ValueError, TypeError):
-        return "", []
+    ds_id = lay_danh_sach_don_vi_truc_thuoc(khoa_don_vi_gioi_han)
+    if not ds_id:
+        return f" AND {cot_don_vi} = -1", []
+    if len(ds_id) == 1:
+        return f" AND {cot_don_vi} = ?", [ds_id[0]]
+    placeholders = ",".join("?" for _ in ds_id)
+    return f" AND {cot_don_vi} IN ({placeholders})", ds_id
 
 def kiem_tra_thuoc_don_vi(khoa_don_vi, khoa_don_vi_gioi_han):
     if not khoa_don_vi_gioi_han:
         return True
     if not khoa_don_vi:
         return False
-    if isinstance(khoa_don_vi_gioi_han, (list, tuple, set)):
-        return int(khoa_don_vi) in [int(x) for x in khoa_don_vi_gioi_han]
-    if isinstance(khoa_don_vi_gioi_han, str) and "," in khoa_don_vi_gioi_han:
-        ds_id = [int(x.strip()) for x in khoa_don_vi_gioi_han.split(",") if x.strip().isdigit()]
-        return int(khoa_don_vi) in ds_id
-    return int(khoa_don_vi) == int(khoa_don_vi_gioi_han)
+    ds_id = lay_danh_sach_don_vi_truc_thuoc(khoa_don_vi_gioi_han)
+    return int(khoa_don_vi) in ds_id
 
 def khoi_tao_co_so_du_lieu():
     ket_noi = lay_ket_noi()

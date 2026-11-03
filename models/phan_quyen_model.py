@@ -283,7 +283,6 @@ def xoa_tai_khoan(ma_tu_sinh):
         raise PermissionError("Tuyệt đối không được phép xóa tài khoản quản trị tối cao (admin).")
 
     con_tro.execute("DELETE FROM tai_khoan_vai_tro WHERE khoa_tai_khoan = ?", (ma_tu_sinh,))
-    con_tro.execute("DELETE FROM nhat_ky WHERE khoa_tai_khoan = ?", (ma_tu_sinh,))
     con_tro.execute("DELETE FROM tai_khoan WHERE ma_tu_sinh = ?", (ma_tu_sinh,))
     ket_noi.commit()
     ket_noi.close()

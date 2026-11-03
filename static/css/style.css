@@ -47,6 +47,7 @@ body {
   font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 button, input, select, textarea {
@@ -136,6 +137,8 @@ button {
   display: flex;
   min-height: 100vh;
   position: relative;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .sidebar {
@@ -347,6 +350,7 @@ button {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
   transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -620,8 +624,32 @@ tbody tr:hover {
   background: #f8fafc;
 }
 
-.table-responsive {
+.table-responsive, .table-container {
+  width: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-container table {
+  min-width: 820px;
+}
+
+.table-container::-webkit-scrollbar, .table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-container::-webkit-scrollbar-track, .table-responsive::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb, .table-responsive::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.table-container::-webkit-scrollbar-thumb:hover, .table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .person-cell {
@@ -675,6 +703,42 @@ tbody tr:hover {
 
 .badge-gray { background: #f1f5f9; color: #475569; border: 1px solid var(--border); }
 .badge-gray .badge-dot { background: #94a3b8; }
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--blue-50);
+  color: var(--blue-700);
+  border: 1px solid var(--blue-100);
+}
+
+.role-badge.quan-tri, .role-badge[data-role="QUAN_TRI"] {
+  background: var(--red-light);
+  color: var(--red);
+  border-color: var(--red-border);
+}
+
+.role-badge.chi-huy, .role-badge[data-role="CHI_HUY"] {
+  background: var(--blue-50);
+  color: var(--blue-700);
+  border-color: var(--blue-100);
+}
+
+.role-badge.nguoi-truc, .role-badge[data-role="NGUOI_TRUC"] {
+  background: var(--amber-light);
+  color: var(--amber);
+  border-color: var(--amber-border);
+}
+
+.role-badge.quan-nhan, .role-badge[data-role="QUAN_NHAN"] {
+  background: var(--green-light);
+  color: var(--green);
+  border-color: var(--green-border);
+}
 
 .slot-badge {
   display: inline-flex;

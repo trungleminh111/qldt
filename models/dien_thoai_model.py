@@ -98,6 +98,11 @@ def them_dien_thoai(ma_thiet_bi, ten_dien_thoai, hang_san_xuat, model, so_imei, 
     id_moi = con_tro.lastrowid
 
     if ma_ngan:
+        con_tro.execute("SELECT khoa_quan_nhan FROM ngan WHERE ma_ngan = ? AND dang_dung = 1", (ma_ngan,))
+        ngan_row = con_tro.fetchone()
+        if ngan_row and ngan_row["khoa_quan_nhan"] and str(ngan_row["khoa_quan_nhan"]) != str(khoa_quan_nhan):
+            ket_noi.close()
+            raise ValueError(f"Ngăn {ma_ngan} hiện đang có quân nhân khác sử dụng.")
         con_tro.execute("UPDATE ngan SET khoa_quan_nhan = NULL WHERE khoa_quan_nhan = ?", (khoa_quan_nhan,))
         con_tro.execute("UPDATE ngan SET khoa_quan_nhan = ? WHERE ma_ngan = ?", (khoa_quan_nhan, ma_ngan))
 
@@ -115,6 +120,11 @@ def sua_dien_thoai(ma_tu_sinh, ten_dien_thoai, hang_san_xuat, model, so_imei, so
     """, (ten_dien_thoai, hang_san_xuat, model, so_imei, so_dien_thoai, khoa_quan_nhan, ma_tu_sinh))
 
     if ma_ngan:
+        con_tro.execute("SELECT khoa_quan_nhan FROM ngan WHERE ma_ngan = ? AND dang_dung = 1", (ma_ngan,))
+        ngan_row = con_tro.fetchone()
+        if ngan_row and ngan_row["khoa_quan_nhan"] and str(ngan_row["khoa_quan_nhan"]) != str(khoa_quan_nhan):
+            ket_noi.close()
+            raise ValueError(f"Ngăn {ma_ngan} hiện đang có quân nhân khác sử dụng.")
         con_tro.execute("UPDATE ngan SET khoa_quan_nhan = NULL WHERE khoa_quan_nhan = ?", (khoa_quan_nhan,))
         con_tro.execute("UPDATE ngan SET khoa_quan_nhan = ? WHERE ma_ngan = ?", (khoa_quan_nhan, ma_ngan))
 

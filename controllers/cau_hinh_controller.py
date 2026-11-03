@@ -37,6 +37,7 @@ from models.dien_thoai_model import lay_danh_sach_tu
 
 cau_hinh_bp = Blueprint("cau_hinh", __name__)
 
+@cau_hinh_bp.route("/khung-gio")
 @cau_hinh_bp.route("/cau-hinh-gio")
 @yeu_cau_quyen("CAUHINH.GIO")
 def khung_gio():
@@ -431,8 +432,11 @@ def them_phan_doi():
         flash("Vui lòng điền đầy đủ mã và tên phân đội.", "canh_bao")
         return redirect(url_for("cau_hinh.danh_sach_phan_doi"))
 
+    khoa_cha = request.form.get("khoa_don_vi_cha")
+    khoa_cha_val = int(khoa_cha) if khoa_cha and khoa_cha.isdigit() else 1
+
     try:
-        them_don_vi(ma_dv, ten_dv, thu_tu=thu_tu_val)
+        them_don_vi(ma_dv, ten_dv, khoa_don_vi_cha=khoa_cha_val, thu_tu=thu_tu_val)
         flash(f"Đã thêm phân đội {ten_dv} ({ma_dv}) thành công.", "thanh_cong")
     except ValueError as e:
         flash(str(e), "nguy_hiem")
@@ -449,13 +453,15 @@ def sua_phan_doi(id):
     thu_tu = request.form.get("thu_tu", "").strip()
     dang_dung = 1 if request.form.get("dang_dung") == "1" else 0
     thu_tu_val = int(thu_tu) if thu_tu and thu_tu.isdigit() else None
+    khoa_cha = request.form.get("khoa_don_vi_cha")
+    khoa_cha_val = int(khoa_cha) if khoa_cha and khoa_cha.isdigit() else None
 
     if not ma_dv or not ten_dv:
         flash("Vui lòng điền đầy đủ mã và tên phân đội.", "canh_bao")
         return redirect(url_for("cau_hinh.danh_sach_phan_doi"))
 
     try:
-        sua_don_vi(id, ma_dv, ten_dv, thu_tu=thu_tu_val, dang_dung=dang_dung)
+        sua_don_vi(id, ma_dv, ten_dv, thu_tu=thu_tu_val, dang_dung=dang_dung, khoa_don_vi_cha=khoa_cha_val)
         flash(f"Đã cập nhật thông tin phân đội {ten_dv} thành công.", "thanh_cong")
     except ValueError as e:
         flash(str(e), "nguy_hiem")

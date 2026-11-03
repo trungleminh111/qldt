@@ -37,10 +37,17 @@
       <tbody>
         {% for tk in tai_khoan_list %}
           <tr>
-            <td><b>{{ tk.ho_ten }}</b></td>
+            <td>
+              <div class="person-cell">
+                <div class="person-avatar">{{ tk.ho_ten[:2]|upper }}</div>
+                <div>
+                  <b style="color: var(--navy-900);">{{ tk.ho_ten }}</b>
+                </div>
+              </div>
+            </td>
             <td><code>{{ tk.ten_dang_nhap }}</code></td>
             <td>
-              <span class="role-badge">{{ tk.ten_vai_tro or 'Chưa gán vai trò' }}</span>
+              <span class="role-badge" data-role="{{ tk.ma_vai_tro }}">{{ tk.ten_vai_tro or 'Chưa gán vai trò' }}</span>
             </td>
             <td>
               {% if tk.pham_vi_loai == 'TOAN_BO' %}
@@ -102,7 +109,7 @@
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
           <div>
             <b style="font-size: 15px; color: var(--navy);">{{ vt.ten_vai_tro }}</b>
-            <span class="badge badge-blue" style="margin-left: 8px;">{{ vt.ma_vai_tro }}</span>
+            <span class="role-badge" data-role="{{ vt.ma_vai_tro }}" style="margin-left: 8px;">{{ vt.ma_vai_tro }}</span>
             <small style="display: block; color: var(--muted); margin-top: 2px;">{{ vt.mo_ta or 'Quy định chức trách' }}</small>
           </div>
           <div style="display: flex; gap: 6px;">

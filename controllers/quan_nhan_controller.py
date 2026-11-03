@@ -3,7 +3,7 @@ import openpyxl
 from io import BytesIO
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file
 import config
-from controllers import yeu_cau_dang_nhap, lay_don_vi_gioi_han
+from controllers import yeu_cau_dang_nhap, yeu_cau_quyen, lay_don_vi_gioi_han
 from models.quan_nhan_model import (
     lay_tat_ca_quan_nhan,
     lay_chi_tiet_quan_nhan,
@@ -21,6 +21,7 @@ quan_nhan_bp = Blueprint("quan_nhan", __name__)
 
 @quan_nhan_bp.route("/quan-nhan")
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("QUANNHAN.XEM", "QUANNHAN.SUA")
 def danh_sach():
     tu_khoa = request.args.get("tu_khoa", "")
     ma_don_vi = request.args.get("don_vi", "TAT_CA")
@@ -51,6 +52,7 @@ def danh_sach():
 
 @quan_nhan_bp.route("/quan-nhan/chi-tiet/<int:id>")
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("QUANNHAN.XEM", "QUANNHAN.SUA")
 def chi_tiet(id):
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     qn = lay_chi_tiet_quan_nhan(id, khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
@@ -73,6 +75,7 @@ def chi_tiet(id):
 
 @quan_nhan_bp.route("/quan-nhan/them", methods=["POST"])
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("QUANNHAN.SUA", "QUANNHAN.XEM")
 def them():
     ma_qn = request.form.get("ma_quan_nhan", "").strip()
     ho_ten = request.form.get("ho_ten", "").strip()
@@ -85,7 +88,17 @@ def them():
 
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     if khoa_don_vi_gioi_han:
-        khoa_dv = khoa_don_vi_gioi_han
+        if isinstance(khoa_don_vi_gioi_han, list):
+            try:
+                khoa_dv_int = int(khoa_dv)
+            except (ValueError, TypeError):
+                khoa_dv_int = None
+            if not khoa_dv_int or khoa_dv_int not in khoa_don_vi_gioi_han:
+                khoa_dv = khoa_don_vi_gioi_han[0]
+            else:
+                khoa_dv = khoa_dv_int
+        else:
+            khoa_dv = khoa_don_vi_gioi_han
 
     if not ma_qn or not ho_ten or not khoa_cb or not khoa_cv or not khoa_dv:
         flash("Vui lòng điền đầy đủ các thông tin bắt buộc.", "canh_bao")
@@ -110,6 +123,7 @@ def them():
 
 @quan_nhan_bp.route("/quan-nhan/sua/<int:id>", methods=["POST"])
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("QUANNHAN.SUA", "QUANNHAN.XEM")
 def sua(id):
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     qn_kiem_tra = lay_chi_tiet_quan_nhan(id, khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
@@ -129,7 +143,17 @@ def sua(id):
     ghi_chu = request.form.get("ghi_chu", "").strip()
 
     if khoa_don_vi_gioi_han:
-        khoa_dv = khoa_don_vi_gioi_han
+        if isinstance(khoa_don_vi_gioi_han, list):
+            try:
+                khoa_dv_int = int(khoa_dv)
+            except (ValueError, TypeError):
+                khoa_dv_int = None
+            if not khoa_dv_int or khoa_dv_int not in khoa_don_vi_gioi_han:
+                khoa_dv = qn_kiem_tra["khoa_don_vi"]
+            else:
+                khoa_dv = khoa_dv_int
+        else:
+            khoa_dv = khoa_don_vi_gioi_han
 
     try:
         sua_quan_nhan(
@@ -150,6 +174,7 @@ def sua(id):
 
 @quan_nhan_bp.route("/quan-nhan/xoa/<int:id>", methods=["POST"])
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("QUANNHAN.SUA", "QUANNHAN.XEM")
 def xoa(id):
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     qn_kiem_tra = lay_chi_tiet_quan_nhan(id, khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
@@ -160,6 +185,8 @@ def xoa(id):
     try:
         xoa_quan_nhan(id)
         flash("Đã xóa quân nhân khỏi danh sách đơn vị.", "thanh_cong")
+    except ValueError as e:
+        flash(str(e), "canh_bao")
     except Exception as e:
         flash(f"Lỗi khi xóa: {str(e)}", "nguy_hiem")
 
@@ -167,6 +194,7 @@ def xoa(id):
 
 @quan_nhan_bp.route("/quan-nhan/import-excel", methods=["POST"])
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("QUANNHAN.SUA", "QUANNHAN.XEM")
 def import_excel():
     tep_tin = request.files.get("file_excel")
     if not tep_tin or tep_tin.filename == "":
@@ -190,6 +218,7 @@ def import_excel():
 
 @quan_nhan_bp.route("/quan-nhan/mau-excel")
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("QUANNHAN.XEM", "QUANNHAN.SUA")
 def tai_mau_excel():
     wb = openpyxl.Workbook()
     ws = wb.active

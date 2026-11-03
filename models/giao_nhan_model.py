@@ -166,7 +166,7 @@ def kiem_tra_khung_gio(khoa_quan_nhan, thoi_diem=None):
             "khung_hien_tai": None
         }
 
-def thuc_hien_lay_dien_thoai(khoa_quan_nhan, khoa_nguoi_thuc_hien, ten_nguoi_thuc_hien, thoi_gian=None, la_ngoai_le=False, ly_do=None, ghi_chu=None, han_nop=None, khoa_don_vi_gioi_han=None):
+def thuc_hien_lay_dien_thoai(khoa_quan_nhan, khoa_nguoi_thuc_hien, ten_nguoi_thuc_hien, thoi_gian=None, la_ngoai_le=False, ly_do=None, ghi_chu=None, han_nop=None, khoa_don_vi_gioi_han=None, khoa_nguoi_duyet=None):
     if not thoi_gian:
         thoi_gian = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -213,10 +213,18 @@ def thuc_hien_lay_dien_thoai(khoa_quan_nhan, khoa_nguoi_thuc_hien, ten_nguoi_thu
     if la_ngoai_le:
         ket_qua = "NGOAI_LE"
         den_gio_val = f"{thoi_gian[:10]} {han_nop}:00" if han_nop else thoi_gian
+        if khoa_nguoi_duyet:
+            trang_thai_nl = "DA_DUYET"
+            nguoi_duyet_id = khoa_nguoi_duyet
+            tg_duyet = thoi_gian
+        else:
+            trang_thai_nl = "CHO_DUYET"
+            nguoi_duyet_id = None
+            tg_duyet = None
         con_tro.execute("""
-            INSERT INTO ngoai_le (khoa_quan_nhan, tu_gio, den_gio, loai_ngoai_le, ly_do, khoa_nguoi_de_nghi, trang_thai)
-            VALUES (?, ?, ?, 'KHAN_CAP', ?, ?, 'DA_DUYET')
-        """, (khoa_quan_nhan, thoi_gian, den_gio_val, ly_do or "Mượn ngoài giờ", khoa_nguoi_thuc_hien))
+            INSERT INTO ngoai_le (khoa_quan_nhan, tu_gio, den_gio, loai_ngoai_le, ly_do, khoa_nguoi_de_nghi, khoa_nguoi_duyet, trang_thai, thoi_gian_duyet)
+            VALUES (?, ?, ?, 'KHAN_CAP', ?, ?, ?, ?, ?)
+        """, (khoa_quan_nhan, thoi_gian, den_gio_val, ly_do or "Mượn ngoài giờ", khoa_nguoi_thuc_hien, nguoi_duyet_id, trang_thai_nl, tg_duyet))
         khoa_nl = con_tro.lastrowid
 
     con_tro.execute("""
@@ -227,6 +235,20 @@ def thuc_hien_lay_dien_thoai(khoa_quan_nhan, khoa_nguoi_thuc_hien, ten_nguoi_thu
     ket_noi.commit()
     ket_noi.close()
     return True, "Đã ghi nhận giao điện thoại thành công."
+
+def duyet_ngoai_le(khoa_ngoai_le, khoa_nguoi_duyet, thoi_gian=None):
+    if not thoi_gian:
+        thoi_gian = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    con_tro.execute("""
+        UPDATE ngoai_le
+        SET trang_thai = 'DA_DUYET', khoa_nguoi_duyet = ?, thoi_gian_duyet = ?
+        WHERE ma_tu_sinh = ?
+    """, (khoa_nguoi_duyet, thoi_gian, khoa_ngoai_le))
+    ket_noi.commit()
+    ket_noi.close()
+    return True
 
 def thuc_hien_nop_dien_thoai(khoa_quan_nhan, khoa_nguoi_thuc_hien, ten_nguoi_thuc_hien, thoi_gian=None, ghi_chu=None, khoa_don_vi_gioi_han=None):
     if not thoi_gian:
@@ -288,7 +310,8 @@ def danh_sach_chua_nop(khoa_don_vi_gioi_han=None):
         SELECT qn.ma_tu_sinh AS qn_id, qn.ma_quan_nhan, qn.ho_ten, cb.ten_cap_bac, cv.ten_chuc_vu, dv.ten_don_vi,
                dt.ma_tu_sinh AS dt_id, dt.ma_thiet_bi, dt.ten_dien_thoai, dt.hang_san_xuat, dt.model,
                ng.ma_ngan, ng.ten_ngan, t.ma_tu, t.ten_tu,
-               gn.thoi_gian AS gio_lay, gn.ten_nguoi_thuc_hien, gn.ket_qua, gn.ghi_chu
+               gn.thoi_gian AS gio_lay, gn.ten_nguoi_thuc_hien, gn.ket_qua, gn.ghi_chu,
+               nl.den_gio AS han_ngoai_le
         FROM dien_thoai dt
         JOIN quan_nhan qn ON dt.khoa_quan_nhan = qn.ma_tu_sinh
         JOIN cap_bac cb ON qn.khoa_cap_bac = cb.ma_tu_sinh
@@ -297,7 +320,7 @@ def danh_sach_chua_nop(khoa_don_vi_gioi_han=None):
         LEFT JOIN ngan ng ON ng.khoa_quan_nhan = qn.ma_tu_sinh
         LEFT JOIN tu t ON ng.khoa_tu = t.ma_tu_sinh
         INNER JOIN (
-            SELECT gn1.khoa_dien_thoai, gn1.loai, gn1.thoi_gian, gn1.ten_nguoi_thuc_hien, gn1.ket_qua, gn1.ghi_chu
+            SELECT gn1.khoa_dien_thoai, gn1.loai, gn1.thoi_gian, gn1.ten_nguoi_thuc_hien, gn1.ket_qua, gn1.ghi_chu, gn1.khoa_ngoai_le
             FROM lich_su_giao_nhan gn1
             INNER JOIN (
                 SELECT khoa_dien_thoai, MAX(ma_tu_sinh) AS max_id
@@ -305,6 +328,7 @@ def danh_sach_chua_nop(khoa_don_vi_gioi_han=None):
                 GROUP BY khoa_dien_thoai
             ) gn2 ON gn1.ma_tu_sinh = gn2.max_id
         ) gn ON gn.khoa_dien_thoai = dt.ma_tu_sinh
+        LEFT JOIN ngoai_le nl ON gn.khoa_ngoai_le = nl.ma_tu_sinh
         WHERE gn.loai = 'LAY_RA' AND dt.da_xoa = 0
     """
     tham_so = []
@@ -323,15 +347,37 @@ def danh_sach_chua_nop(khoa_don_vi_gioi_han=None):
             thoi_gian_lay = datetime.strptime(item["gio_lay"], "%Y-%m-%d %H:%M:%S")
             phut_da_qua = int((bay_gio - thoi_gian_lay).total_seconds() / 60)
             item["phut_da_qua"] = phut_da_qua
-            if phut_da_qua > 120:
-                item["muc_do"] = "QUA_HAN"
-                item["nhan_trang_thai"] = f"Quá hạn {phut_da_qua - 120} phút"
-            elif phut_da_qua > 90:
-                item["muc_do"] = "SAP_DEN_HAN"
-                item["nhan_trang_thai"] = f"Còn {120 - phut_da_qua} phút"
+
+            han_ngoai_le = item.get("han_ngoai_le")
+            han_dt = None
+            if han_ngoai_le:
+                try:
+                    han_dt = datetime.strptime(han_ngoai_le, "%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    try:
+                        han_dt = datetime.strptime(han_ngoai_le, "%Y-%m-%d %H:%M")
+                    except Exception:
+                        han_dt = None
+
+            if han_dt:
+                if bay_gio > han_dt:
+                    phut_qh = int((bay_gio - han_dt).total_seconds() / 60)
+                    item["muc_do"] = "QUA_HAN"
+                    item["nhan_trang_thai"] = f"Quá hạn ngoại lệ {phut_qh} phút"
+                else:
+                    phut_cl = int((han_dt - bay_gio).total_seconds() / 60)
+                    item["muc_do"] = "SAP_DEN_HAN" if phut_cl <= 30 else "BINH_THUONG"
+                    item["nhan_trang_thai"] = f"Còn {phut_cl} phút (ngoại lệ)"
             else:
-                item["muc_do"] = "BINH_THUONG"
-                item["nhan_trang_thai"] = "Chưa nộp"
+                if phut_da_qua > 120:
+                    item["muc_do"] = "QUA_HAN"
+                    item["nhan_trang_thai"] = f"Quá hạn {phut_da_qua - 120} phút"
+                elif phut_da_qua > 90:
+                    item["muc_do"] = "SAP_DEN_HAN"
+                    item["nhan_trang_thai"] = f"Còn {120 - phut_da_qua} phút"
+                else:
+                    item["muc_do"] = "BINH_THUONG"
+                    item["nhan_trang_thai"] = "Chưa nộp"
         except Exception:
             item["phut_da_qua"] = 0
             item["muc_do"] = "BINH_THUONG"

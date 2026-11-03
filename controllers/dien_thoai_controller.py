@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from controllers import yeu_cau_dang_nhap, lay_don_vi_gioi_han
+from controllers import yeu_cau_dang_nhap, yeu_cau_quyen, lay_don_vi_gioi_han
 from models.dien_thoai_model import (
     lay_tat_ca_dien_thoai,
     lay_chi_tiet_dien_thoai,
@@ -37,6 +37,7 @@ def kiem_tra_quyen_quan_ly_tu():
 
 @dien_thoai_bp.route("/dien-thoai")
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("DIENTHOAI.XEM", "DIENTHOAI.SUA")
 def danh_sach():
     tu_khoa = request.args.get("tu_khoa", "")
     ma_don_vi = request.args.get("don_vi", "TAT_CA")
@@ -73,6 +74,7 @@ def danh_sach():
 
 @dien_thoai_bp.route("/dien-thoai/chi-tiet/<int:id>")
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("DIENTHOAI.XEM", "DIENTHOAI.SUA")
 def chi_tiet(id):
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     dt = lay_chi_tiet_dien_thoai(id, khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
@@ -94,6 +96,7 @@ def chi_tiet(id):
 
 @dien_thoai_bp.route("/dien-thoai/them", methods=["POST"])
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("DIENTHOAI.SUA", "DIENTHOAI.XEM")
 def them():
     ma_tb = request.form.get("ma_thiet_bi", "").strip()
     ten_dt = request.form.get("ten_dien_thoai", "").strip()
@@ -134,6 +137,7 @@ def them():
 
 @dien_thoai_bp.route("/dien-thoai/sua/<int:id>", methods=["POST"])
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("DIENTHOAI.SUA", "DIENTHOAI.XEM")
 def sua(id):
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     if khoa_don_vi_gioi_han:
@@ -175,6 +179,7 @@ def sua(id):
 
 @dien_thoai_bp.route("/dien-thoai/gan-ngan/<int:id>", methods=["POST"])
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("DIENTHOAI.SUA", "DIENTHOAI.XEM")
 def gan_ngan_nhanh(id):
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     dt = lay_chi_tiet_dien_thoai(id, khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
@@ -207,6 +212,7 @@ def gan_ngan_nhanh(id):
 
 @dien_thoai_bp.route("/tu-dien-thoai")
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("DIENTHOAI.XEM", "DIENTHOAI.SUA")
 def danh_sach_tu():
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
     danh_sach_tu_data = lay_danh_sach_tu(khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
@@ -223,6 +229,7 @@ def danh_sach_tu():
 
 @dien_thoai_bp.route("/tu-dien-thoai/them", methods=["POST"])
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("DIENTHOAI.SUA", "CAUHINH.DANHMUC", "CHI_HUY", "CAN_BO")
 def them_tu_moi():
     if not kiem_tra_quyen_quan_ly_tu():
         flash("Đồng chí không có thẩm quyền thêm tủ bảo quản mới.", "nguy_hiem")
@@ -274,6 +281,7 @@ def them_tu_moi():
 
 @dien_thoai_bp.route("/tu-dien-thoai/<ma_tu>")
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("DIENTHOAI.XEM", "DIENTHOAI.SUA")
 def so_do_tu(ma_tu):
     ma_tu = (ma_tu or "").strip().upper()
     khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
@@ -282,7 +290,9 @@ def so_do_tu(ma_tu):
     if not tu_hien_tai:
         tat_ca_tu = lay_danh_sach_tu(khoa_don_vi_gioi_han=None)
         tu_ton_tai = next((t for t in tat_ca_tu if t["ma_tu"].upper() == ma_tu), None)
-        if tu_ton_tai and not khoa_don_vi_gioi_han:
+        nguoi_dung = session.get("nguoi_dung", {})
+        la_admin = (nguoi_dung.get("ten_dang_nhap") == "admin") or (nguoi_dung.get("ma_vai_tro") in ["QUAN_TRI", "CHI_HUY"])
+        if tu_ton_tai and (not khoa_don_vi_gioi_han or la_admin):
             tu_hien_tai = tu_ton_tai
             cac_tu = tat_ca_tu
         elif not tu_ton_tai:
@@ -309,6 +319,7 @@ def so_do_tu(ma_tu):
 
 @dien_thoai_bp.route("/ngan-tu/them", methods=["POST"])
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("DIENTHOAI.SUA", "CAUHINH.DANHMUC", "CHI_HUY", "CAN_BO")
 def them_ngan_moi():
     ma_tu = request.form.get("ma_tu", "").strip()
     if not kiem_tra_quyen_quan_ly_tu():
@@ -351,6 +362,7 @@ def them_ngan_moi():
 
 @dien_thoai_bp.route("/tu-dien-thoai/xoa", methods=["POST"])
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("DIENTHOAI.SUA", "CAUHINH.DANHMUC", "CHI_HUY", "CAN_BO")
 def xoa_tu_moi():
     if not kiem_tra_quyen_quan_ly_tu():
         flash("Đồng chí không có thẩm quyền xóa tủ bảo quản.", "nguy_hiem")
@@ -373,6 +385,7 @@ def xoa_tu_moi():
 
 @dien_thoai_bp.route("/ngan-tu/xoa", methods=["POST"])
 @yeu_cau_dang_nhap
+@yeu_cau_quyen("DIENTHOAI.SUA", "CAUHINH.DANHMUC", "CHI_HUY", "CAN_BO")
 def xoa_ngan_moi():
     ma_tu_redirect = request.form.get("ma_tu", "").strip().upper()
     if not kiem_tra_quyen_quan_ly_tu():
