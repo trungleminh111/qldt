@@ -22,9 +22,13 @@ def tao_ung_dung():
     app.config["SECRET_KEY"] = config.SECRET_KEY
     app.config["UPLOAD_FOLDER"] = config.UPLOAD_FOLDER
 
-    khoi_tao_co_so_du_lieu()
-    if not kiem_tra_da_co_du_lieu():
-        nap_du_lieu_mau()
+    try:
+        khoi_tao_co_so_du_lieu()
+        if not kiem_tra_da_co_du_lieu():
+            nap_du_lieu_mau()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
 
     @app.after_request
     def xu_ly_phan_hoi(phan_hoi):

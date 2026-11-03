@@ -1,13 +1,19 @@
 import os
 import sys
 import mimetypes
+import traceback
 
 mimetypes.add_type("text/css", ".css")
 mimetypes.add_type("application/javascript", ".js")
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import app
+app = None
+init_error = None
+try:
+    from app import app
+except Exception as e:
+    init_error = traceback.format_exc()
 
 class VercelPathFixMiddleware:
     def __init__(self, wsgi_app):
@@ -37,4 +43,10 @@ class VercelPathFixMiddleware:
         environ["PATH_INFO"] = matched
         return self.wsgi_app(environ, start_response)
 
-app.wsgi_app = VercelPathFixMiddleware(app.wsgi_app)
+if app is not None:
+    app.wsgi_app = VercelPathFixMiddleware(app.wsgi_app)
+else:
+    def error_app(environ, start_response):
+        start_response("500 Internal Server Error", [("Content-Type", "text/plain; charset=utf-8")])
+        return [f"Application Initialization Error:\n\n{init_error}".encode("utf-8")]
+    app = error_app
