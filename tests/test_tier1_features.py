@@ -223,22 +223,17 @@ class Tier1FeaturesTestCase(BaseTestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIn("chưa nộp".encode("utf-8"), res.data.lower())
 
-    def test_t1_21_shift_page_accessible(self):
+    def test_t1_21_history_transactions_accessible(self):
         self.login("admin", "admin123")
-        res = self.client.get("/ca-truc")
+        res = self.client.get("/lich-su")
         self.assertEqual(res.status_code, 200)
-        self.assertIn("bàn giao".encode("utf-8"), res.data.lower())
+        self.assertIn("lịch sử".encode("utf-8"), res.data.lower())
 
-    def test_t1_22_shift_handover_submission_success(self):
+    def test_t1_22_unreturned_devices_page_content(self):
         self.login("admin", "admin123")
-        post_data = {
-            "khoa_ca": "1",
-            "khoa_nguoi_nhan": "2",
-            "ghi_chu": "Bàn giao ca sáng đầy đủ quân số"
-        }
-        res = self.client.post("/ca-truc/xac-nhan", data=post_data, follow_redirects=True)
+        res = self.client.get("/chua-nop")
         self.assertEqual(res.status_code, 200)
-        self.assertIn("thành công".encode("utf-8"), res.data)
+        self.assertIn("danh sách".encode("utf-8"), res.data.lower())
 
     def test_t1_23_general_report_page_accessible(self):
         self.login("admin", "admin123")

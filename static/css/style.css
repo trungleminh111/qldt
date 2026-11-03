@@ -534,6 +534,13 @@ button {
   box-shadow: var(--shadow-md);
 }
 
+.stat-card-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
 .stat-card-info span {
   display: block;
   color: var(--muted);

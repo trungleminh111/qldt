@@ -9,7 +9,7 @@ class Tier3SecurityTestCase(BaseTestCase):
             "/quan-nhan",
             "/dien-thoai",
             "/giao-nhan",
-            "/ca-truc",
+            "/chua-nop",
             "/cau-hinh-gio",
             "/tai-khoan-phan-quyen",
             "/bao-cao"

@@ -55,12 +55,12 @@ class Tier4MilitaryPersonasTestCase(BaseTestCase):
         self.assertEqual(cur.fetchone()[0], "NOP_VAO")
         conn.close()
 
-    def test_p1_03_duty_officer_shift_handover_unreturned_warning(self):
+    def test_p1_03_duty_officer_unreturned_devices_list(self):
         self.login("tuananh", "12345678")
-        res = self.client.get("/ca-truc")
+        res = self.client.get("/chua-nop")
         self.assertEqual(res.status_code, 200)
         page_html = res.data.decode("utf-8")
-        has_warning = ("canhBaoChuaNop" in page_html) or ("chưa nộp" in page_html) or ("chưa thu hồi" in page_html) or ("cảnh báo" in page_html.lower())
+        has_warning = ("chưa nộp" in page_html.lower()) or ("danh sách" in page_html.lower())
         self.assertTrue(has_warning)
 
     def test_p2_01_platoon_officer_sees_only_own_platoon_personnel(self):

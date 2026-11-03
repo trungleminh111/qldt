@@ -3,7 +3,7 @@ import re
 import sys
 import ssl
 import sqlite3
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 try:
     import pg8000.dbapi
 except ImportError:
@@ -91,7 +91,7 @@ class PostgresCursorWrapper:
             m = re.match(r"INSERT\s+INTO\s+([a-zA-Z0-9_]+)", clean, re.IGNORECASE)
             if m:
                 tbl = m.group(1).lower()
-                if tbl != "vai_tro_quyen":
+                if tbl not in ("vai_tro_quyen", "thong_tin_don_vi"):
                     clean = clean.rstrip("; \t\r\n") + " RETURNING ma_tu_sinh"
                     has_returning = True
 
@@ -221,9 +221,12 @@ def lay_ket_noi():
         import pg8000.dbapi
         p = urlparse(db_url)
         ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        pw = unquote(p.password) if p.password else ""
         raw = pg8000.dbapi.connect(
             user=p.username,
-            password=p.password,
+            password=pw,
             host=p.hostname,
             port=p.port or 5432,
             database=p.path.lstrip("/"),
@@ -522,40 +525,6 @@ def khoi_tao_co_so_du_lieu():
     """)
 
     con_tro.execute("""
-    CREATE TABLE IF NOT EXISTS ca_truc (
-        ma_tu_sinh INTEGER PRIMARY KEY AUTOINCREMENT,
-        ma_ca TEXT UNIQUE NOT NULL,
-        ten_ca TEXT NOT NULL,
-        gio_bat_dau TEXT NOT NULL,
-        gio_ket_thuc TEXT NOT NULL,
-        dang_dung INTEGER DEFAULT 1
-    )
-    """)
-
-    con_tro.execute("""
-    CREATE TABLE IF NOT EXISTS ban_giao_ca (
-        ma_tu_sinh INTEGER PRIMARY KEY AUTOINCREMENT,
-        khoa_ca_truc INTEGER NOT NULL,
-        ngay_truc TEXT NOT NULL,
-        khoa_nguoi_ban_giao INTEGER NOT NULL,
-        khoa_nguoi_nhan INTEGER NOT NULL,
-        tong_thiet_bi INTEGER DEFAULT 0,
-        dang_trong_tu INTEGER DEFAULT 0,
-        da_lay INTEGER DEFAULT 0,
-        chua_nop INTEGER DEFAULT 0,
-        bat_thuong INTEGER DEFAULT 0,
-        ghi_chu_ban_giao TEXT,
-        thoi_gian_ban_giao TEXT DEFAULT (datetime('now', 'localtime')),
-        trang_thai TEXT DEFAULT 'DA_BAN_GIAO',
-        du_lieu_snapshot TEXT,
-        ma_tu_snapshot TEXT,
-        ten_ngan_snapshot TEXT,
-        so_qua_han INTEGER DEFAULT 0,
-        FOREIGN KEY (khoa_ca_truc) REFERENCES ca_truc(ma_tu_sinh)
-    )
-    """)
-
-    con_tro.execute("""
     CREATE TABLE IF NOT EXISTS tai_khoan (
         ma_tu_sinh INTEGER PRIMARY KEY AUTOINCREMENT,
         ten_dang_nhap TEXT UNIQUE NOT NULL,
@@ -665,27 +634,15 @@ def khoi_tao_co_so_du_lieu():
 
     ket_noi.commit()
     ket_noi.close()
-    kiem_tra_va_nang_cap_bang_ban_giao()
+    kiem_tra_va_nang_cap_bang_ngay_dac_biet()
 
-def kiem_tra_va_nang_cap_bang_ban_giao():
+def kiem_tra_va_nang_cap_bang_ngay_dac_biet():
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
-    con_tro.execute("PRAGMA table_info(ban_giao_ca)")
-    cot_hien_co = [row["name"] for row in con_tro.fetchall()]
-    if "du_lieu_snapshot" not in cot_hien_co:
-        con_tro.execute("ALTER TABLE ban_giao_ca ADD COLUMN du_lieu_snapshot TEXT")
-    if "ma_tu_snapshot" not in cot_hien_co:
-        con_tro.execute("ALTER TABLE ban_giao_ca ADD COLUMN ma_tu_snapshot TEXT")
-    if "ten_ngan_snapshot" not in cot_hien_co:
-        con_tro.execute("ALTER TABLE ban_giao_ca ADD COLUMN ten_ngan_snapshot TEXT")
-    if "so_qua_han" not in cot_hien_co:
-        con_tro.execute("ALTER TABLE ban_giao_ca ADD COLUMN so_qua_han INTEGER DEFAULT 0")
-
     con_tro.execute("PRAGMA table_info(ngay_dac_biet)")
     cot_ndb = [row["name"] for row in con_tro.fetchall()]
     if cot_ndb and "loai_lap" not in cot_ndb:
         con_tro.execute("ALTER TABLE ngay_dac_biet ADD COLUMN loai_lap TEXT DEFAULT 'MOT_LAN'")
-
     ket_noi.commit()
     ket_noi.close()
 

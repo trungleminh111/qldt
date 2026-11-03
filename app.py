@@ -9,7 +9,6 @@ from controllers.dashboard_controller import dashboard_bp
 from controllers.giao_nhan_controller import giao_nhan_bp
 from controllers.quan_nhan_controller import quan_nhan_bp
 from controllers.dien_thoai_controller import dien_thoai_bp
-from controllers.ca_truc_controller import ca_truc_bp
 from controllers.cau_hinh_controller import cau_hinh_bp
 from controllers.bao_cao_controller import bao_cao_bp
 
@@ -61,7 +60,6 @@ def tao_ung_dung():
     app.register_blueprint(giao_nhan_bp)
     app.register_blueprint(quan_nhan_bp)
     app.register_blueprint(dien_thoai_bp)
-    app.register_blueprint(ca_truc_bp)
     app.register_blueprint(cau_hinh_bp)
     app.register_blueprint(bao_cao_bp)
 

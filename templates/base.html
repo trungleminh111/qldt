@@ -20,7 +20,7 @@
         </div>
         <div class="brand-text">
           <b>QUẢN LÝ ĐIỆN THOẠI</b>
-          <small>QUẢN LÝ NỘI BỘ</small>
+          <small>{{ thong_tin_don_vi.ten_don_vi if thong_tin_don_vi and thong_tin_don_vi.ten_don_vi else 'QUẢN LÝ NỘI BỘ' }}</small>
         </div>
         <button type="button" class="btn-sidebar-close" id="btnCloseSidebar" aria-label="Đóng menu">✕</button>
       </div>
@@ -44,7 +44,7 @@
           <span class="nav-icon">◴</span> Lịch sử hoạt động
         </a>
 
-        <div class="nav-group-title">QUẢN LÝ QUÂN SỰ</div>
+        <div class="nav-group-title">Quản lý</div>
         <a href="{{ url_for('quan_nhan.danh_sach') }}" class="nav-link {% if request.endpoint.startswith('quan_nhan.') %}active{% endif %}">
           <span class="nav-icon">♙</span> Hồ sơ quân nhân
         </a>

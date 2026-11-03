@@ -172,13 +172,6 @@ def nap_du_lieu_mau(ep_buoc=False):
     ]
     con_tro.executemany("INSERT INTO dien_thoai (ma_thiet_bi, ten_dien_thoai, hang_san_xuat, model, so_imei, so_dien_thoai, khoa_quan_nhan) VALUES (?, ?, ?, ?, ?, ?, ?)", danh_sach_dt)
 
-    cac_ca = [
-        ("CA_SANG", "Ca sáng", "07:00", "11:30"),
-        ("CA_CHIEU", "Ca chiều", "13:30", "17:00"),
-        ("CA_TOI", "Ca tối", "18:00", "22:00"),
-    ]
-    con_tro.executemany("INSERT INTO ca_truc (ma_ca, ten_ca, gio_bat_dau, gio_ket_thuc) VALUES (?, ?, ?, ?)", cac_ca)
-
     cac_quyen = [
         ("GIAONHAN.GHI", "GIAONHAN", "Ghi giao nhận điện thoại", "Cho phép lấy ra và nộp vào"),
         ("GIAONHAN.XEM", "GIAONHAN", "Xem lịch sử giao nhận", "Xem danh sách và nhật ký"),
@@ -189,7 +182,6 @@ def nap_du_lieu_mau(ep_buoc=False):
         ("QUANNHAN.SUA", "QUANNHAN", "Thêm/sửa quân nhân", "Quản lý hồ sơ và Import"),
         ("DIENTHOAI.XEM", "DIENTHOAI", "Xem danh sách điện thoại", "Tra cứu thiết bị và sơ đồ tủ"),
         ("DIENTHOAI.SUA", "DIENTHOAI", "Thêm/sửa điện thoại", "Cập nhật thiết bị và gán ngăn"),
-        ("CATRUC.BANGIAO", "CATRUC", "Bàn giao ca trực", "Lập và ký biên bản bàn giao ca"),
         ("CAUHINH.GIO", "CAUHINH", "Cấu hình khung giờ", "Điều chỉnh giờ sử dụng theo đối tượng"),
         ("CAUHINH.DANHMUC", "CAUHINH", "Quản lý danh mục", "Cơ cấu đơn vị, chức vụ, cấp bậc"),
         ("BAOCAO.XEM", "BAOCAO", "Xem báo cáo thống kê", "Xem số liệu tổng hợp"),
@@ -201,7 +193,7 @@ def nap_du_lieu_mau(ep_buoc=False):
     cac_vai_tro = [
         ("QUAN_TRI", "Quản trị hệ thống", "Toàn quyền quản trị phần mềm", 1),
         ("CHI_HUY", "Chỉ huy đại đội", "Theo dõi tổng thể, duyệt ngoại lệ, xem báo cáo", 1),
-        ("NGUOI_TRUC", "Cán bộ trực ca", "Ghi nhận giao nhận, kiểm tủ, bàn giao ca", 1),
+        ("NGUOI_TRUC", "Cán bộ trực ca", "Ghi nhận giao nhận, kiểm tủ", 1),
         ("QUAN_NHAN", "Quân nhân", "Tự xem thông tin và lịch sử của bản thân", 1),
     ]
     con_tro.executemany("INSERT INTO vai_tro (ma_vai_tro, ten_vai_tro, mo_ta, la_he_thong) VALUES (?, ?, ?, ?)", cac_vai_tro)
@@ -214,11 +206,11 @@ def nap_du_lieu_mau(ep_buoc=False):
     for k_qh in map_qh.values():
         con_tro.execute("INSERT INTO vai_tro_quyen (khoa_vai_tro, khoa_quyen) VALUES (?, ?)", (map_vt["QUAN_TRI"], k_qh))
 
-    quyen_chi_huy = ["GIAONHAN.XEM", "NGOAILE.DUYET", "QUANNHAN.XEM", "DIENTHOAI.XEM", "CATRUC.BANGIAO", "BAOCAO.XEM", "BAOCAO.XUAT"]
+    quyen_chi_huy = ["GIAONHAN.XEM", "NGOAILE.DUYET", "QUANNHAN.XEM", "DIENTHOAI.XEM", "BAOCAO.XEM", "BAOCAO.XUAT"]
     for q in quyen_chi_huy:
         con_tro.execute("INSERT INTO vai_tro_quyen (khoa_vai_tro, khoa_quyen) VALUES (?, ?)", (map_vt["CHI_HUY"], map_qh[q]))
 
-    quyen_nguoi_truc = ["GIAONHAN.GHI", "GIAONHAN.XEM", "NGOAILE.TAO", "QUANNHAN.XEM", "DIENTHOAI.XEM", "CATRUC.BANGIAO", "BAOCAO.XEM"]
+    quyen_nguoi_truc = ["GIAONHAN.GHI", "GIAONHAN.XEM", "NGOAILE.TAO", "QUANNHAN.XEM", "DIENTHOAI.XEM", "BAOCAO.XEM"]
     for q in quyen_nguoi_truc:
         con_tro.execute("INSERT INTO vai_tro_quyen (khoa_vai_tro, khoa_quyen) VALUES (?, ?)", (map_vt["NGUOI_TRUC"], map_qh[q]))
 

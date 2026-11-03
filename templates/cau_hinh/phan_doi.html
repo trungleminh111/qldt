@@ -137,6 +137,7 @@
       <div style="margin-bottom: 14px;">
         <label for="them_khoa_cha">Đơn vị cấp trên trực tiếp</label>
         <select id="them_khoa_cha" name="khoa_don_vi_cha">
+          <option value="">-- Cấp cao nhất / Cấp đại đội (Gốc) --</option>
           {% for dv in don_vi_list %}
             <option value="{{ dv.ma_tu_sinh }}" {% if dv.ma_don_vi == 'C1' or not dv.khoa_don_vi_cha %}selected{% endif %}>
               {{ dv.ten_don_vi }} ({{ dv.ma_don_vi }})
@@ -179,6 +180,7 @@
       <div style="margin-bottom: 14px;">
         <label for="sua_khoa_cha">Đơn vị cấp trên trực tiếp</label>
         <select id="sua_khoa_cha" name="khoa_don_vi_cha">
+          <option value="">-- Cấp cao nhất / Cấp đại đội (Gốc) --</option>
           {% for dv in don_vi_list %}
             <option value="{{ dv.ma_tu_sinh }}">
               {{ dv.ten_don_vi }} ({{ dv.ma_don_vi }})
@@ -231,8 +233,11 @@ function moModalSuaPhanDoi(id, maDv, tenDv, thuTu, dangDung, khoaCha) {
   document.getElementById("sua_thu_tu").value = thuTu || "10";
   document.getElementById("sua_dang_dung").value = String(dangDung) === "1" ? "1" : "0";
   const selCha = document.getElementById("sua_khoa_cha");
-  if (selCha && khoaCha) {
-    selCha.value = String(khoaCha);
+  if (selCha) {
+    selCha.value = khoaCha ? String(khoaCha) : "";
+    Array.from(selCha.options).forEach(opt => {
+      opt.disabled = (opt.value === String(id));
+    });
   }
   moModal("modalSuaPhanDoi");
 }

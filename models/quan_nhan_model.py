@@ -353,18 +353,27 @@ def sua_don_vi(ma_tu_sinh, ma_don_vi, ten_don_vi, thu_tu=None, dang_dung=1, khoa
     else:
         thu_tu = int(thu_tu)
 
+    cha_id = None
     if khoa_don_vi_cha is not None and str(khoa_don_vi_cha).strip() != "":
-        con_tro.execute("""
-            UPDATE don_vi
-            SET ma_don_vi = ?, ten_don_vi = ?, thu_tu = ?, dang_dung = ?, khoa_don_vi_cha = ?
-            WHERE ma_tu_sinh = ?
-        """, (ma_don_vi, ten_don_vi, thu_tu, dang_dung, int(khoa_don_vi_cha), ma_tu_sinh))
-    else:
-        con_tro.execute("""
-            UPDATE don_vi
-            SET ma_don_vi = ?, ten_don_vi = ?, thu_tu = ?, dang_dung = ?
-            WHERE ma_tu_sinh = ?
-        """, (ma_don_vi, ten_don_vi, thu_tu, dang_dung, ma_tu_sinh))
+        try:
+            val = int(khoa_don_vi_cha)
+            if val != int(ma_tu_sinh):
+                cha_id = val
+        except (ValueError, TypeError):
+            cha_id = None
+
+    con_tro.execute("""
+        UPDATE don_vi
+        SET ma_don_vi = ?, ten_don_vi = ?, thu_tu = ?, dang_dung = ?, khoa_don_vi_cha = ?
+        WHERE ma_tu_sinh = ?
+    """, (ma_don_vi, ten_don_vi, thu_tu, dang_dung, cha_id, ma_tu_sinh))
+
+    if cha_id is None:
+        try:
+            con_tro.execute("UPDATE thong_tin_don_vi SET gia_tri = ? WHERE khoa_thiet_lap = 'ten_don_vi'", (ten_don_vi,))
+        except Exception:
+            pass
+
     ket_noi.commit()
     ket_noi.close()
     return True

@@ -211,6 +211,15 @@ def cap_nhat_tt_don_vi():
             "chuc_danh_chi_huy": chuc_danh_chi_huy,
             "noi_nhan": noi_nhan
         })
+        try:
+            from models.co_so_du_lieu import lay_ket_noi
+            kn = lay_ket_noi()
+            ct = kn.cursor()
+            ct.execute("UPDATE don_vi SET ten_don_vi = ? WHERE khoa_don_vi_cha IS NULL", (ten_don_vi,))
+            kn.commit()
+            kn.close()
+        except Exception:
+            pass
         flash("Đã cập nhật thông tin đơn vị và tiêu đề biểu mẫu báo cáo thành công.", "thanh_cong")
     except Exception as e:
         flash(f"Lỗi cập nhật thông tin đơn vị: {str(e)}", "nguy_hiem")

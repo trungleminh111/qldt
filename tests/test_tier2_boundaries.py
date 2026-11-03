@@ -237,27 +237,15 @@ class Tier2BoundariesTestCase(BaseTestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIn("Vui lòng nhập ngày và lý do".encode("utf-8"), res.data)
 
-    def test_b19_shift_handover_missing_receiver_rejected(self):
+    def test_b19_unreturned_page_search_nonexistent(self):
         self.login("admin", "admin123")
-        post_data = {
-            "khoa_ca": "1",
-            "khoa_nguoi_nhan": "",
-            "ghi_chu": ""
-        }
-        res = self.client.post("/ca-truc/xac-nhan", data=post_data, follow_redirects=True)
+        res = self.client.get("/chua-nop?q=KHONG_TON_TAI_9999")
         self.assertEqual(res.status_code, 200)
-        self.assertIn("Vui lòng chọn ca trực".encode("utf-8"), res.data)
 
-    def test_b20_shift_handover_missing_shift_rejected(self):
+    def test_b20_history_search_invalid_date_handled(self):
         self.login("admin", "admin123")
-        post_data = {
-            "khoa_ca": "",
-            "khoa_nguoi_nhan": "2",
-            "ghi_chu": ""
-        }
-        res = self.client.post("/ca-truc/xac-nhan", data=post_data, follow_redirects=True)
+        res = self.client.get("/lich-su?ngay=9999-99-99")
         self.assertEqual(res.status_code, 200)
-        self.assertIn("Vui lòng chọn ca trực".encode("utf-8"), res.data)
 
     def test_b21_login_empty_credentials_rejected(self):
         res = self.login("", "")

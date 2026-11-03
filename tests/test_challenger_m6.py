@@ -134,7 +134,7 @@ class Milestone6ChallengerTestCase(BaseTestCase):
                 has_variant = any(c.startswith("btn-qd-") for c in classes)
                 self.assertTrue(has_variant, f"Missing btn-qd-* variant on {tag} in {rel} (classes: {classes})")
 
-        self.assertGreaterEqual(total_action_buttons, 70)
+        self.assertGreaterEqual(total_action_buttons, 60)
 
     def test_adv_06_rendered_endpoints_contain_ui_contracts(self):
         self.login("admin", "admin123")
@@ -143,7 +143,7 @@ class Milestone6ChallengerTestCase(BaseTestCase):
             "/giao-nhan",
             "/chua-nop",
             "/lich-su",
-            "/ca-truc",
+            "/phan-doi",
             "/quan-nhan",
             "/dien-thoai",
             "/tu-dien-thoai",

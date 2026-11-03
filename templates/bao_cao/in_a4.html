@@ -216,9 +216,7 @@
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
       }
-      .no-print {
-        display: none !important;
-      }
+      .no-print { display: none !important; }
       body {
         padding: 0;
       }
@@ -238,8 +236,7 @@
         display: block !important;
         margin: 5px auto 0 !important;
       }
-      @page {
-        size: A4 portrait;
+      @page { size: A4;
         margin: 20mm 15mm 20mm 20mm;
       }
     }
@@ -247,10 +244,10 @@
 </head>
 <body>
   <div class="print-toolbar no-print">
-    <button type="button" class="btn-in-ngay" onclick="window.print()">
+    <button type="button" class="btn-in-ngay btn-quan-doi btn-qd-primary" onclick="window.print()">
       ⎙ In báo cáo ngay
     </button>
-    <a href="javascript:history.back()" class="btn-quay-lai">
+    <a href="javascript:history.back()" class="btn-quay-lai btn-quan-doi btn-qd-secondary">
       ← Quay lại
     </a>
   </div>

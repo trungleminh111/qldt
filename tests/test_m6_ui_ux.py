@@ -75,7 +75,7 @@ class Milestone6UIUXTestCase(BaseTestCase):
             "auth/login.html",
             "bao_cao/in_a4.html",
             "bao_cao/index.html",
-            "ca_truc/index.html",
+            "cau_hinh/phan_doi.html",
             "cau_hinh/khung_gio.html",
             "cau_hinh/phan_quyen.html",
             "chua_nop/index.html",

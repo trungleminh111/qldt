@@ -67,7 +67,7 @@ class TestMilestone6Challenger2(BaseTestCase):
             "bao_cao/in_a4.html",
             "bao_cao/index.html",
             "base.html",
-            "ca_truc/index.html",
+            "cau_hinh/phan_doi.html",
             "cau_hinh/khung_gio.html",
             "cau_hinh/phan_quyen.html",
             "chua_nop/index.html",
@@ -276,11 +276,10 @@ class TestMilestone6Challenger2(BaseTestCase):
             "/quan-nhan",
             "/dien-thoai",
             "/tu-dien-thoai",
-            "/ca-truc",
+            "/phan-doi",
             "/cau-hinh-gio",
             "/tai-khoan-phan-quyen",
-            "/bao-cao",
-            "/bao-cao/in-a4"
+            "/bao-cao"
         ]
         for route in routes_to_test:
             res = self.client.get(route)

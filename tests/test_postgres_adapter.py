@@ -54,10 +54,10 @@ class TestPostgresAdapter(unittest.TestCase):
         self.assertTrue(r3)
         self.assertTrue(t3.endswith("RETURNING ma_tu_sinh"))
 
-        q4 = "PRAGMA table_info(ban_giao_ca)"
+        q4 = "PRAGMA table_info(lich_su_giao_nhan)"
         t4, p4, r4 = wrapper._transform_query(q4)
         self.assertIn("information_schema.columns", t4)
-        self.assertEqual(p4, ["ban_giao_ca"])
+        self.assertEqual(p4, ["lich_su_giao_nhan"])
 
     def test_db_backend_toggle(self):
         import sys
@@ -100,12 +100,15 @@ class TestPostgresAdapter(unittest.TestCase):
             self.skipTest("DATABASE_URL not configured")
         import pg8000.dbapi
         import ssl
-        from urllib.parse import urlparse
+        from urllib.parse import urlparse, unquote
         p = urlparse(config.DATABASE_URL)
         ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        pw = unquote(p.password) if p.password else ""
         raw = pg8000.dbapi.connect(
             user=p.username,
-            password=p.password,
+            password=pw,
             host=p.hostname,
             port=p.port or 5432,
             database=p.path.lstrip("/"),

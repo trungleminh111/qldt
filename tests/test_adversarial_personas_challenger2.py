@@ -47,27 +47,17 @@ class AdversarialPersonasChallenger2TestCase(BaseTestCase):
         self.assertIn("locTheoDonVi", html)
         self.assertIn("locDanhSachQuanNhan", html)
 
-    def test_p1_shift_handover_unreturned_warning_and_modal(self):
+    def test_p1_unreturned_warning_and_return_cycle(self):
         self.login("tuananh", "12345678")
 
         checkout_data = {
             "khoa_quan_nhan": "1",
             "la_ngoai_le": "1",
-            "ly_do": "Kiểm thử cảnh báo bàn giao",
+            "ly_do": "Kiểm thử cảnh báo chưa nộp",
             "ghi_chu": "Lấy máy phục vụ kiểm thử",
             "han_nop": "21:30"
         }
         self.client.post("/giao-nhan/lay", data=checkout_data, follow_redirects=True)
-
-        res_warning = self.client.get("/ca-truc")
-        self.assertEqual(res_warning.status_code, 200)
-        html_warning = res_warning.data.decode("utf-8")
-
-        self.assertIn("canhBaoChuaNop", html_warning)
-        self.assertIn("modalCanhBaoBanGiao", html_warning)
-        self.assertIn("kiemTraXacNhanBanGiao", html_warning)
-        self.assertIn("xacNhanGuiFormBanGiao", html_warning)
-        self.assertIn("tbodyChuaNopTrucBan", html_warning)
 
         res_chuanop = self.client.get("/chua-nop")
         self.assertEqual(res_chuanop.status_code, 200)
@@ -101,10 +91,8 @@ class AdversarialPersonasChallenger2TestCase(BaseTestCase):
         conn.commit()
         conn.close()
 
-        res_clean = self.client.get("/ca-truc")
+        res_clean = self.client.get("/chua-nop")
         self.assertEqual(res_clean.status_code, 200)
-        html_clean = res_clean.data.decode("utf-8")
-        self.assertNotIn("canhBaoChuaNop", html_clean)
 
     def test_p2_platoon_locker_24_compartments_and_isolation(self):
         self.login("vanbinh", "12345678")

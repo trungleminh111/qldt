@@ -19,7 +19,7 @@
           <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo Quân sự" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));">
         </div>
         <h1>QUẢN LÝ ĐIỆN THOẠI</h1>
-        <small>QUẢN LÝ NỘI BỘ ĐẠI ĐỘI</small>
+        <small>{{ thong_tin_don_vi.ten_don_vi if thong_tin_don_vi and thong_tin_don_vi.ten_don_vi else 'QUẢN LÝ NỘI BỘ' }}</small>
       </div>
 
       {% with messages = get_flashed_messages(with_categories=true) %}
@@ -34,20 +34,15 @@
 
       <form method="POST" action="{{ url_for('auth.dang_nhap') }}">
         <label for="ten_dang_nhap">Tên đăng nhập</label>
-        <input type="text" id="ten_dang_nhap" name="ten_dang_nhap" value="admin" required autofocus>
+        <input type="text" id="ten_dang_nhap" name="ten_dang_nhap" placeholder="Nhập tên đăng nhập" required autofocus>
 
         <label for="mat_khau">Mật khẩu</label>
-        <input type="password" id="mat_khau" name="mat_khau" value="admin123" required>
+        <input type="password" id="mat_khau" name="mat_khau" placeholder="Nhập mật khẩu" required>
 
         <button type="submit" class="btn-quan-doi btn-qd-primary btn-qd-lg btn-qd-block" style="margin-top: 20px;">
           Đăng nhập làm việc
         </button>
       </form>
-
-      <div style="margin-top: 24px; padding-top: 18px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b; text-align: center; line-height: 1.6;">
-        Tài khoản quản lý: <b>admin</b> / Mật khẩu: <b>admin123</b><br>
-        Tài khoản trực ban: <b>tuananh</b> / Mật khẩu: <b>12345678</b>
-      </div>
     </div>
   </div>
 </body>
