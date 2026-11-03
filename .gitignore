@@ -5,3 +5,4 @@ __pycache__/
 .agents/
 uploads/*
 !uploads/.gitkeep
+.env

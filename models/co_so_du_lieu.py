@@ -1,8 +1,219 @@
-import sqlite3
 import os
+import re
+import sys
+import ssl
+import sqlite3
+from urllib.parse import urlparse
 import config
 
+class PostgresRow:
+    def __init__(self, description, row_tuple):
+        self._cols = [col[0].lower() for col in description]
+        self._vals = list(row_tuple)
+        self._d = dict(zip(self._cols, self._vals))
+
+    def keys(self):
+        return self._cols
+
+    def values(self):
+        return self._vals
+
+    def items(self):
+        return self._d.items()
+
+    def get(self, key, default=None):
+        return self._d.get(key.lower(), default)
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self._vals[key]
+        return self._d[key.lower()]
+
+    def __contains__(self, key):
+        return key.lower() in self._d
+
+    def __len__(self):
+        return len(self._vals)
+
+    def __repr__(self):
+        return repr(self._d)
+
+class PostgresCursorWrapper:
+    def __init__(self, cursor):
+        self._cur = cursor
+        self.lastrowid = None
+
+    @property
+    def description(self):
+        return self._cur.description
+
+    @property
+    def rowcount(self):
+        return self._cur.rowcount
+
+    def _transform_query(self, query):
+        clean = query.strip()
+        upper = clean.upper()
+
+        if upper.startswith("PRAGMA "):
+            if "TABLE_INFO(" in upper:
+                m = re.search(r"TABLE_INFO\s*\(\s*([a-zA-Z0-9_]+)\s*\)", clean, re.IGNORECASE)
+                if m:
+                    tbl = m.group(1).lower()
+                    return ("SELECT column_name AS name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = %s", [tbl], False)
+            return (None, None, False)
+
+        if "SQLITE_MASTER" in upper:
+            clean = re.sub(r"sqlite_master\s+WHERE\s+type\s*=\s*'table'\s+AND\s+name\s*=\s*'([^']+)'",
+                           r"information_schema.tables WHERE table_schema = 'public' AND table_name = '\1'",
+                           clean, flags=re.IGNORECASE)
+
+        clean = clean.replace("INTEGER PRIMARY KEY AUTOINCREMENT", "SERIAL PRIMARY KEY")
+        clean = re.sub(r"datetime\s*\(\s*'now'\s*,\s*'localtime'\s*\)",
+                       "TO_CHAR(NOW() AT TIME ZONE 'Asia/Bangkok', 'YYYY-MM-DD HH24:MI:SS')",
+                       clean, flags=re.IGNORECASE)
+        clean = re.sub(r"datetime\s*\(\s*'now'\s*\)",
+                       "TO_CHAR(NOW() AT TIME ZONE 'Asia/Bangkok', 'YYYY-MM-DD HH24:MI:SS')",
+                       clean, flags=re.IGNORECASE)
+
+        if "ALTER TABLE " in upper and "ADD COLUMN " in upper and "IF NOT EXISTS" not in upper:
+            clean = re.sub(r"ADD\s+COLUMN\s+", "ADD COLUMN IF NOT EXISTS ", clean, flags=re.IGNORECASE)
+
+        clean = clean.replace("?", "%s")
+
+        has_returning = False
+        upper = clean.strip().upper()
+        if upper.startswith("INSERT INTO ") and " RETURNING " not in upper:
+            m = re.match(r"INSERT\s+INTO\s+([a-zA-Z0-9_]+)", clean, re.IGNORECASE)
+            if m:
+                tbl = m.group(1).lower()
+                if tbl != "vai_tro_quyen":
+                    clean = clean.rstrip("; \t\r\n") + " RETURNING ma_tu_sinh"
+                    has_returning = True
+
+        return (clean, None, has_returning)
+
+    def execute(self, query, params=None):
+        transformed, extra_params, has_returning = self._transform_query(query)
+        if transformed is None:
+            self.lastrowid = None
+            return self
+
+        actual_params = extra_params if extra_params is not None else (params or ())
+        if isinstance(actual_params, (list, tuple)):
+            clean_params = list(actual_params)
+        else:
+            clean_params = [actual_params]
+
+        self._cur.execute(transformed, clean_params)
+        if has_returning:
+            row = self._cur.fetchone()
+            if row:
+                self.lastrowid = row[0]
+        else:
+            self.lastrowid = None
+        return self
+
+    def executemany(self, query, params_seq):
+        seq = list(params_seq)
+        if not seq:
+            return self
+        transformed, _, _ = self._transform_query(query)
+        if transformed is None:
+            return self
+        clean_transformed = re.sub(r"\s+RETURNING\s+ma_tu_sinh", "", transformed, flags=re.IGNORECASE).strip()
+        m = re.match(r"(?i)^\s*(INSERT\s+INTO\s+[a-zA-Z0-9_]+\s*\([^)]+\)\s*VALUES\s*)\(([^)]+)\)\s*$", clean_transformed)
+        if m:
+            prefix = m.group(1)
+            row_ph = f"({m.group(2)})"
+            all_ph = ", ".join([row_ph] * len(seq))
+            full_sql = f"{prefix} {all_ph}"
+            flat_params = [val for row in seq for val in row]
+            self._cur.execute(full_sql, flat_params)
+        else:
+            for row in seq:
+                self._cur.execute(clean_transformed, list(row))
+        return self
+
+    def fetchone(self):
+        row = self._cur.fetchone()
+        if row is None:
+            return None
+        return PostgresRow(self._cur.description, row)
+
+    def fetchall(self):
+        rows = self._cur.fetchall()
+        if not rows:
+            return []
+        desc = self._cur.description
+        return [PostgresRow(desc, r) for r in rows]
+
+    def fetchmany(self, size=None):
+        rows = self._cur.fetchmany(size)
+        if not rows:
+            return []
+        desc = self._cur.description
+        return [PostgresRow(desc, r) for r in rows]
+
+    def close(self):
+        self._cur.close()
+
+class PostgresConnectionWrapper:
+    def __init__(self, raw_conn):
+        self._raw = raw_conn
+
+    def cursor(self):
+        return PostgresCursorWrapper(self._raw.cursor())
+
+    def execute(self, query, params=None):
+        cur = self.cursor()
+        cur.execute(query, params)
+        return cur
+
+    def commit(self):
+        self._raw.commit()
+
+    def rollback(self):
+        self._raw.rollback()
+
+    def close(self):
+        self._raw.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is None:
+            self.commit()
+        else:
+            self.rollback()
+
+def la_moi_truong_test():
+    if getattr(config, "TESTING", False):
+        return True
+    if any("test" in arg.lower() for arg in sys.argv):
+        return True
+    db_path = getattr(config, "DATABASE_PATH", "")
+    if isinstance(db_path, str) and ("qldt_case_" in db_path or "qldt_master_" in db_path):
+        return True
+    return False
+
 def lay_ket_noi():
+    db_url = getattr(config, "DATABASE_URL", None)
+    if db_url and not la_moi_truong_test():
+        import pg8000.dbapi
+        p = urlparse(db_url)
+        ctx = ssl.create_default_context()
+        raw = pg8000.dbapi.connect(
+            user=p.username,
+            password=p.password,
+            host=p.hostname,
+            port=p.port or 5432,
+            database=p.path.lstrip("/"),
+            ssl_context=ctx
+        )
+        return PostgresConnectionWrapper(raw)
+
     ket_noi = sqlite3.connect(config.DATABASE_PATH, timeout=30.0)
     ket_noi.row_factory = sqlite3.Row
     ket_noi.execute("PRAGMA foreign_keys = ON")
@@ -12,6 +223,26 @@ def lay_ket_noi():
     return ket_noi
 
 def kiem_tra_da_co_du_lieu():
+    db_url = getattr(config, "DATABASE_URL", None)
+    if db_url and not la_moi_truong_test():
+        try:
+            ket_noi = lay_ket_noi()
+            con_tro = ket_noi.cursor()
+            con_tro.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'tai_khoan'")
+            if not con_tro.fetchone():
+                ket_noi.close()
+                return False
+            con_tro.execute("SELECT COUNT(*) FROM tai_khoan")
+            so_tk = con_tro.fetchone()[0]
+            con_tro.execute("SELECT COUNT(*) FROM quan_nhan")
+            so_qn = con_tro.fetchone()[0]
+            con_tro.execute("SELECT COUNT(*) FROM cap_bac")
+            so_cb = con_tro.fetchone()[0]
+            ket_noi.close()
+            return (so_tk > 0 or so_qn > 0 or so_cb > 0)
+        except Exception:
+            return False
+
     if not os.path.exists(config.DATABASE_PATH):
         return False
     try:
@@ -451,4 +682,3 @@ def ghi_nhat_ky(khoa_tai_khoan=None, ten_nguoi_thao_tac=None, dia_chi_ip=None, t
     ket_noi.commit()
     ket_noi.close()
     return id_moi
-

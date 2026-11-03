@@ -4,22 +4,40 @@ from datetime import timedelta
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
+env_path = os.path.join(BASE_DIR, ".env")
+if os.path.exists(env_path):
+    try:
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    k = k.strip()
+                    v = v.strip().strip("'\"")
+                    if k and k not in os.environ:
+                        os.environ[k] = v
+    except Exception:
+        pass
+
+DATABASE_URL = os.environ.get("POSTGRES_URL") or os.environ.get("DATABASE_URL")
+
 if os.environ.get("VERCEL"):
     DATABASE_PATH = "/tmp/qldt.db"
     UPLOAD_FOLDER = "/tmp/uploads"
-    source_db = os.path.join(BASE_DIR, "qldt.db")
-    if os.path.exists(source_db):
-        copy_needed = not os.path.exists(DATABASE_PATH)
-        if not copy_needed:
-            try:
-                copy_needed = os.path.getmtime(source_db) > os.path.getmtime(DATABASE_PATH)
-            except OSError:
-                copy_needed = False
-        if copy_needed:
-            try:
-                shutil.copy2(source_db, DATABASE_PATH)
-            except Exception:
-                pass
+    if not DATABASE_URL:
+        source_db = os.path.join(BASE_DIR, "qldt.db")
+        if os.path.exists(source_db):
+            copy_needed = not os.path.exists(DATABASE_PATH)
+            if not copy_needed:
+                try:
+                    copy_needed = os.path.getmtime(source_db) > os.path.getmtime(DATABASE_PATH)
+                except OSError:
+                    copy_needed = False
+            if copy_needed:
+                try:
+                    shutil.copy2(source_db, DATABASE_PATH)
+                except Exception:
+                    pass
 else:
     DATABASE_PATH = os.path.join(BASE_DIR, "qldt.db")
     UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
@@ -34,4 +52,3 @@ SESSION_COOKIE_SAMESITE = "Lax"
 PERMANENT_SESSION_LIFETIME = timedelta(hours=8)
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
