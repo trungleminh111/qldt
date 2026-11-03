@@ -63,9 +63,16 @@ class KiemThuBaoCaoNgayVaDieuHuong(BaseTestCase):
             self.assertIn("Ban Chỉ huy Đại đội 11 báo cáo Ban Chỉ huy Tiểu đoàn theo dõi, tổng hợp./.", html_a4)
             self.assertIn("CHỈ HUY ĐẠI ĐỘI", html_a4)
             self.assertIn("Nơi nhận:", html_a4)
+            self.assertIn("Đà Nẵng", html_a4)
+            self.assertNotIn("Hà Nội", html_a4)
+            self.assertIn("border-top: 1.5px solid #000000", html_a4)
 
             res_in = self.client.get("/bao-cao/in-ngay")
             self.assertEqual(res_in.status_code, 200)
+            html_in = res_in.get_data(as_text=True)
+            self.assertIn("Đà Nẵng", html_in)
+            self.assertNotIn("Hà Nội", html_in)
+            self.assertIn("border-top: 1.5px solid #000000", html_in)
 
             res_excel = self.client.get("/bao-cao/xuat-excel-ngay")
             self.assertEqual(res_excel.status_code, 200)

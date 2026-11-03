@@ -87,8 +87,9 @@
     }
     .line-left {
       width: 110px;
-      height: 1px;
-      background: #000000;
+      height: 0;
+      border: none;
+      border-top: 1.5px solid #000000;
       margin: 5px auto 0;
     }
     .header-right {
@@ -107,8 +108,9 @@
     }
     .line-right {
       width: 220px;
-      height: 1px;
-      background: #000000;
+      height: 0;
+      border: none;
+      border-top: 1.5px solid #000000;
       margin: 5px auto 0;
     }
     .header-right .date-line {
@@ -210,11 +212,31 @@
       height: 90px;
     }
     @media print {
+      * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
       .no-print {
         display: none !important;
       }
       body {
         padding: 0;
+      }
+      .line-left {
+        width: 110px !important;
+        height: 0 !important;
+        border: none !important;
+        border-top: 1.5px solid #000000 !important;
+        display: block !important;
+        margin: 5px auto 0 !important;
+      }
+      .line-right {
+        width: 220px !important;
+        height: 0 !important;
+        border: none !important;
+        border-top: 1.5px solid #000000 !important;
+        display: block !important;
+        margin: 5px auto 0 !important;
       }
       @page {
         size: A4 portrait;
@@ -238,12 +260,12 @@
       <td class="header-left">
         <div class="unit-upper">TIỂU ĐOÀN 3</div>
         <div class="unit-name">ĐẠI ĐỘI 11</div>
-        <div class="line-left"></div>
+        <div class="line-left" style="width: 110px; height: 0; border: none; border-top: 1.5px solid #000000; margin: 5px auto 0;"></div>
       </td>
       <td class="header-right">
         <div class="country">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
         <div class="motto">Độc lập – Tự do – Hạnh phúc</div>
-        <div class="line-right"></div>
+        <div class="line-right" style="width: 220px; height: 0; border: none; border-top: 1.5px solid #000000; margin: 5px auto 0;"></div>
         <div class="date-line">Đà Nẵng, {{ ngay_in_chu }}</div>
       </td>
     </tr>
