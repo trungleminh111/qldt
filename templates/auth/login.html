@@ -4,14 +4,19 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Đăng nhập · Quản lý điện thoại đại đội</title>
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/icon-32x32.png') }}">
-  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
-  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}?v=2026">
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/icon-32x32.png') }}?v=2026">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='icons/icon-192x192.png') }}?v=2026">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}?v=2026">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}?v=2026">
 </head>
 <body>
+  <div id="appProgressBar" class="app-progress-bar"></div>
+  <div id="appLoadingPill" class="app-loading-pill">
+    <span class="app-spinner"></span>
+    <span id="appLoadingText">Đang tải dữ liệu...</span>
+  </div>
   <div class="login-shell">
     <div class="login-card">
       <div class="login-header">
@@ -45,5 +50,6 @@
       </form>
     </div>
   </div>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

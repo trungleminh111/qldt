@@ -1551,3 +1551,91 @@ input:focus, select:focus, textarea:focus {
   .content-body { padding: 0; }
   .panel { border: 1px solid #ccc; box-shadow: none; break-inside: avoid; }
 }
+
+.app-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, #d4af37, #e63946, #d4af37);
+  background-size: 200% 100%;
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.8), 0 0 4px #e63946;
+  z-index: 999999;
+  transition: width 0.25s ease-out, opacity 0.3s ease;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.app-progress-bar.is-active {
+  opacity: 1;
+  animation: appProgressGlow 1.5s infinite linear;
+}
+
+@keyframes appProgressGlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.app-loading-pill {
+  position: fixed;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: rgba(15, 36, 56, 0.95);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #f8fafc;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  border-radius: 9999px;
+  padding: 7px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(212, 175, 55, 0.2);
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 999999;
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+
+.app-loading-pill.is-active {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.app-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(212, 175, 55, 0.25);
+  border-top-color: #d4af37;
+  border-radius: 50%;
+  animation: appSpin 0.75s infinite linear;
+  flex-shrink: 0;
+}
+
+@keyframes appSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+button.btn-loading, a.btn-loading {
+  position: relative;
+  pointer-events: none !important;
+  opacity: 0.85;
+}
+
+button.btn-loading::after, a.btn-loading::after {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  vertical-align: middle;
+  animation: appSpin 0.7s infinite linear;
+}

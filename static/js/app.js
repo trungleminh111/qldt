@@ -358,6 +358,53 @@ function khoiTaoSidebarResponsive() {
   });
 }
 
+let dangChuyenTrang = false;
+let _tienTrinhTimer = null;
+
+function batDauTai(thongBao) {
+  const bar = document.getElementById("appProgressBar");
+  const pill = document.getElementById("appLoadingPill");
+  const txt = document.getElementById("appLoadingText");
+  if (txt && thongBao) {
+    txt.textContent = thongBao;
+  }
+  if (bar) {
+    bar.classList.add("is-active");
+    bar.style.width = "25%";
+    clearInterval(_tienTrinhTimer);
+    _tienTrinhTimer = setInterval(function() {
+      const cur = parseFloat(bar.style.width) || 25;
+      if (cur < 85) {
+        bar.style.width = (cur + Math.random() * 12) + "%";
+      }
+    }, 200);
+  }
+  if (pill) {
+    pill.classList.add("is-active");
+  }
+}
+
+function ketThucTai() {
+  clearInterval(_tienTrinhTimer);
+  const bar = document.getElementById("appProgressBar");
+  const pill = document.getElementById("appLoadingPill");
+  if (bar) {
+    bar.style.width = "100%";
+    setTimeout(function() {
+      bar.classList.remove("is-active");
+      bar.style.width = "0%";
+    }, 250);
+  }
+  if (pill) {
+    pill.classList.remove("is-active");
+  }
+  dangChuyenTrang = false;
+}
+
+window.addEventListener("pageshow", function() {
+  ketThucTai();
+});
+
 document.addEventListener("DOMContentLoaded", function() {
   khoiTaoSidebarResponsive();
   const inputNgay = document.getElementById("transNgay");
@@ -366,9 +413,9 @@ document.addEventListener("DOMContentLoaded", function() {
     kiemTraGioDong();
     setInterval(capNhatThoiGianGiaoNhanRealTime, 1000);
   }
+  ketThucTai();
 });
 
-let dangChuyenTrang = false;
 document.addEventListener("click", function(e) {
   const link = e.target.closest("a");
   if (!link) return;
@@ -381,8 +428,26 @@ document.addEventListener("click", function(e) {
       return;
     }
     dangChuyenTrang = true;
+    batDauTai("Đang tải dữ liệu...");
     setTimeout(function() {
       dangChuyenTrang = false;
-    }, 3000);
+      ketThucTai();
+    }, 4000);
   }
+});
+
+document.addEventListener("submit", function(e) {
+  const form = e.target;
+  if (!form) return;
+  const btn = form.querySelector("button[type='submit'], input[type='submit']");
+  if (btn) {
+    btn.classList.add("btn-loading");
+  }
+  batDauTai("Đang xử lý dữ liệu...");
+  setTimeout(function() {
+    ketThucTai();
+    if (btn) {
+      btn.classList.remove("btn-loading");
+    }
+  }, 6000);
 });
