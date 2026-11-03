@@ -17,32 +17,38 @@
   </div>
 </div>
 
-<div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
+<div class="stats-grid" style="margin-bottom: 24px;">
   <div class="stat-card">
-    <div class="stat-label">Tổng số phân đội</div>
-    <div class="stat-value">{{ don_vi_list|selectattr('khoa_don_vi_cha')|list|length }}</div>
-    <div class="stat-desc">Trung đội / Tiểu đội trực thuộc</div>
+    <div class="stat-card-info">
+      <span>Tổng số phân đội</span>
+      <b>{{ don_vi_list|selectattr('khoa_don_vi_cha')|list|length }}</b>
+      <small>Trung đội / Tiểu đội trực thuộc</small>
+    </div>
+    <div class="stat-icon blue">⛨</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Đang hoạt động</div>
-    <div class="stat-value" style="color: var(--green);">
-      {{ don_vi_list|selectattr('khoa_don_vi_cha')|selectattr('dang_dung')|list|length }}
+    <div class="stat-card-info">
+      <span>Đang hoạt động</span>
+      <b style="color: var(--green);">{{ don_vi_list|selectattr('khoa_don_vi_cha')|selectattr('dang_dung')|list|length }}</b>
+      <small>Sẵn sàng phân công quân nhân</small>
     </div>
-    <div class="stat-desc">Sẵn sàng phân công quân nhân</div>
+    <div class="stat-icon green">✓</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Tổng quân số quản lý</div>
-    <div class="stat-value" style="color: var(--navy);">
-      {{ don_vi_list|sum(attribute='so_quan_nhan') }}
+    <div class="stat-card-info">
+      <span>Tổng quân số quản lý</span>
+      <b style="color: var(--navy-900);">{{ don_vi_list|sum(attribute='so_quan_nhan') }}</b>
+      <small>Cán bộ, chiến sĩ trong biên chế</small>
     </div>
-    <div class="stat-desc">Cán bộ, chiến sĩ trong biên chế</div>
+    <div class="stat-icon blue">♙</div>
   </div>
   <div class="stat-card">
-    <div class="stat-label">Tủ bảo quản đã gán</div>
-    <div class="stat-value" style="color: var(--blue);">
-      {{ don_vi_list|sum(attribute='so_tu') }}
+    <div class="stat-card-info">
+      <span>Tủ bảo quản đã gán</span>
+      <b style="color: var(--blue);">{{ don_vi_list|sum(attribute='so_tu') }}</b>
+      <small>Tủ lưu trữ điện thoại phân đội</small>
     </div>
-    <div class="stat-desc">Tủ lưu trữ điện thoại phân đội</div>
+    <div class="stat-icon amber">▤</div>
   </div>
 </div>
 
