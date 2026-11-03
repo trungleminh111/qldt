@@ -27,4 +27,4 @@ if __name__ == "__main__":
     luong_mo_app.daemon = True
     luong_mo_app.start()
 
-    ung_dung.run(host="127.0.0.1", port=cong, debug=False)
+    ung_dung.run(host="127.0.0.1", port=cong, debug=False, threaded=True)
