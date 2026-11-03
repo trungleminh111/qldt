@@ -4,6 +4,10 @@ import sys
 import ssl
 import sqlite3
 from urllib.parse import urlparse
+try:
+    import pg8000.dbapi
+except ImportError:
+    pass
 import config
 
 class PostgresRow:

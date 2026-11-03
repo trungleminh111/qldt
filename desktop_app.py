@@ -5,8 +5,6 @@ import threading
 import time
 import webbrowser
 
-os.environ["DB_BACKEND"] = os.environ.get("DB_BACKEND", "sqlite")
-
 from app import tao_ung_dung
 import config
 

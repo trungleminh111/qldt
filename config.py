@@ -13,6 +13,8 @@ else:
 
 env_path = os.path.join(DATA_DIR, ".env")
 if not os.path.exists(env_path):
+    env_path = os.path.join(RESOURCE_DIR, ".env")
+if not os.path.exists(env_path):
     env_path = os.path.join(BASE_DIR, ".env")
 
 if os.path.exists(env_path):
