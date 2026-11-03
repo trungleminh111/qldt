@@ -65,7 +65,7 @@
             </td>
             <td style="text-align: right; white-space: nowrap;">
               <button type="button" class="btn-quan-doi btn-qd-secondary btn-qd-sm"
-                onclick="moModalSuaTK('{{ tk.ma_tu_sinh }}', '{{ tk.ho_ten }}', '{{ tk.khoa_vai_tro or '' }}', '{{ tk.pham_vi_loai }}', '{{ tk.dang_dung }}', '{{ tk.pham_vi_khoa or '' }}')"
+                onclick="moModalSuaTK('{{ tk.ma_tu_sinh }}', '{{ tk.ten_dang_nhap }}', '{{ tk.ho_ten }}', '{{ tk.khoa_vai_tro or '' }}', '{{ tk.pham_vi_loai }}', '{{ tk.dang_dung }}', '{{ tk.pham_vi_khoa or '' }}')"
                 style="margin-right: 4px;">
                 ✎ Sửa
               </button>
@@ -214,8 +214,17 @@
       <button class="modal-close" onclick="dongModal('modalSuaTaiKhoan')">✕</button>
     </div>
     <form id="formSuaTK" method="POST" action="">
-      <label for="sua_tk_hoten">Họ và tên cán bộ *</label>
-      <input type="text" id="sua_tk_hoten" name="ho_ten" required>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div>
+          <label for="sua_tk_tendn">Tên đăng nhập / Tên tài khoản *</label>
+          <input type="text" id="sua_tk_tendn" name="ten_dang_nhap" required>
+          <small id="sua_tk_tendn_note" style="display: none; color: var(--muted); font-size: 11px; margin-top: 2px;">Tài khoản admin tối cao không thể đổi tên đăng nhập</small>
+        </div>
+        <div>
+          <label for="sua_tk_hoten">Họ và tên cán bộ *</label>
+          <input type="text" id="sua_tk_hoten" name="ho_ten" required>
+        </div>
+      </div>
 
       <label for="sua_tk_matkhau" style="margin-top: 12px;">Đổi mật khẩu mới (để trống nếu giữ nguyên)</label>
       <input type="password" id="sua_tk_matkhau" name="mat_khau_moi" placeholder="Để trống nếu giữ nguyên mật khẩu cũ">
@@ -314,8 +323,20 @@ function moModalThemTK() {
   moModal("modalThemTaiKhoan");
 }
 
-function moModalSuaTK(id, hoTen, khoaVaiTro, phamViLoai, dangDung, phamViKhoa) {
+function moModalSuaTK(id, tenDangNhap, hoTen, khoaVaiTro, phamViLoai, dangDung, phamViKhoa) {
   document.getElementById("formSuaTK").action = `/tai-khoan/sua/${id}`;
+  const inputTenDn = document.getElementById("sua_tk_tendn");
+  const noteTenDn = document.getElementById("sua_tk_tendn_note");
+  inputTenDn.value = tenDangNhap;
+  if (tenDangNhap === "admin") {
+    inputTenDn.readOnly = true;
+    inputTenDn.style.backgroundColor = "#f1f5f9";
+    if (noteTenDn) noteTenDn.style.display = "block";
+  } else {
+    inputTenDn.readOnly = false;
+    inputTenDn.style.backgroundColor = "#fff";
+    if (noteTenDn) noteTenDn.style.display = "none";
+  }
   document.getElementById("sua_tk_hoten").value = hoTen;
   document.getElementById("sua_tk_matkhau").value = "";
   if (khoaVaiTro) {

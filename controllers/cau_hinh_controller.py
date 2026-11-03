@@ -273,6 +273,7 @@ def sua_tk(id):
         flash("Đồng chí không có thẩm quyền chỉnh sửa tài khoản cấp trên.", "nguy_hiem")
         return redirect(url_for("cau_hinh.phan_quyen"))
 
+    ten_dang_nhap = request.form.get("ten_dang_nhap", "").strip()
     ho_ten = request.form.get("ho_ten", "").strip()
     mat_khau_moi = request.form.get("mat_khau_moi", "").strip()
     khoa_vt = request.form.get("khoa_vai_tro")
@@ -321,8 +322,16 @@ def sua_tk(id):
             flash("Đồng chí không thể gán vai trò cao hơn cấp bậc của mình.", "nguy_hiem")
             return redirect(url_for("cau_hinh.phan_quyen"))
 
+    if target_ten_dn != "admin" and not ten_dang_nhap:
+        ten_dang_nhap = target_ten_dn
+
     try:
-        sua_tai_khoan(id, ho_ten, mat_khau_moi, khoa_vt, pham_vi, dang_dung, nguoi_thuc_hien=user_ten_dn, pham_vi_khoa=pham_vi_khoa)
+        ten_dn_cap_nhat = sua_tai_khoan(id, ho_ten, mat_khau_moi, khoa_vt, pham_vi, dang_dung, nguoi_thuc_hien=user_ten_dn, pham_vi_khoa=pham_vi_khoa, ten_dang_nhap=ten_dang_nhap)
+        if user_ten_dn == target_ten_dn:
+            user["ten_dang_nhap"] = ten_dn_cap_nhat
+            user["ho_ten"] = ho_ten
+            session["nguoi_dung"] = user
+            session.modified = True
         flash("Đã cập nhật thông tin tài khoản thành công.", "thanh_cong")
     except Exception as e:
         flash(f"Lỗi cập nhật tài khoản: {str(e)}", "nguy_hiem")

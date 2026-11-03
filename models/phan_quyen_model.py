@@ -199,11 +199,11 @@ def them_tai_khoan(ten_dang_nhap, mat_khau, ho_ten, khoa_vai_tro, khoa_quan_nhan
     ket_noi.close()
     return tk_id
 
-def sua_tai_khoan(ma_tu_sinh, ho_ten, mat_khau_moi=None, khoa_vai_tro=None, pham_vi_loai="TOAN_BO", dang_dung=1, nguoi_thuc_hien=None, pham_vi_khoa=None):
+def sua_tai_khoan(ma_tu_sinh, ho_ten, mat_khau_moi=None, khoa_vai_tro=None, pham_vi_loai="TOAN_BO", dang_dung=1, nguoi_thuc_hien=None, pham_vi_khoa=None, ten_dang_nhap=None):
     ket_noi = lay_ket_noi()
     con_tro = ket_noi.cursor()
 
-    con_tro.execute("SELECT ma_tu_sinh, ten_dang_nhap FROM tai_khoan WHERE ma_tu_sinh = ?", (ma_tu_sinh,))
+    con_tro.execute("SELECT ma_tu_sinh, ten_dang_nhap, khoa_quan_nhan FROM tai_khoan WHERE ma_tu_sinh = ?", (ma_tu_sinh,))
     tk_target = con_tro.fetchone()
     if not tk_target:
         ket_noi.close()
@@ -215,20 +215,35 @@ def sua_tai_khoan(ma_tu_sinh, ho_ten, mat_khau_moi=None, khoa_vai_tro=None, pham
             ket_noi.close()
             raise PermissionError("Chỉ có tài khoản admin mới có quyền chỉnh sửa tài khoản admin.")
         dang_dung = 1
+        ten_dn_cap_nhat = "admin"
+    else:
+        ten_dn_cap_nhat = (ten_dang_nhap.strip() if (ten_dang_nhap and ten_dang_nhap.strip()) else tk_target["ten_dang_nhap"])
+        if ten_dn_cap_nhat != tk_target["ten_dang_nhap"]:
+            con_tro.execute("SELECT ma_tu_sinh FROM tai_khoan WHERE ten_dang_nhap = ? AND ma_tu_sinh != ?", (ten_dn_cap_nhat, ma_tu_sinh))
+            if con_tro.fetchone():
+                ket_noi.close()
+                raise ValueError(f"Tên đăng nhập '{ten_dn_cap_nhat}' đã tồn tại trong hệ thống.")
 
     if mat_khau_moi and mat_khau_moi.strip():
         mk_ma_hoa = ma_hoa_mat_khau(mat_khau_moi.strip())
         con_tro.execute("""
             UPDATE tai_khoan
-            SET ho_ten = ?, mat_khau_ma_hoa = ?, dang_dung = ?
+            SET ten_dang_nhap = ?, ho_ten = ?, mat_khau_ma_hoa = ?, dang_dung = ?
             WHERE ma_tu_sinh = ?
-        """, (ho_ten, mk_ma_hoa, dang_dung, ma_tu_sinh))
+        """, (ten_dn_cap_nhat, ho_ten, mk_ma_hoa, dang_dung, ma_tu_sinh))
     else:
         con_tro.execute("""
             UPDATE tai_khoan
-            SET ho_ten = ?, dang_dung = ?
+            SET ten_dang_nhap = ?, ho_ten = ?, dang_dung = ?
             WHERE ma_tu_sinh = ?
-        """, (ho_ten, dang_dung, ma_tu_sinh))
+        """, (ten_dn_cap_nhat, ho_ten, dang_dung, ma_tu_sinh))
+
+    if tk_target["khoa_quan_nhan"]:
+        con_tro.execute("""
+            UPDATE quan_nhan
+            SET ho_ten = ?
+            WHERE ma_tu_sinh = ?
+        """, (ho_ten, tk_target["khoa_quan_nhan"]))
 
     if khoa_vai_tro:
         if is_admin:
@@ -252,6 +267,7 @@ def sua_tai_khoan(ma_tu_sinh, ho_ten, mat_khau_moi=None, khoa_vai_tro=None, pham
 
     ket_noi.commit()
     ket_noi.close()
+    return ten_dn_cap_nhat
 
 def xoa_tai_khoan(ma_tu_sinh):
     ket_noi = lay_ket_noi()

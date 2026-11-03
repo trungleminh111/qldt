@@ -374,3 +374,64 @@ class TestThemTuNgan(unittest.TestCase):
         html = res_get.data.decode("utf-8")
         self.assertIn("checked", html)
 
+    def test_doi_ten_tai_khoan_mau_thanh_cong(self):
+        with self.client.session_transaction() as sess:
+            sess["nguoi_dung"] = {
+                "ma_tu_sinh": 1,
+                "ten_dang_nhap": "admin",
+                "ho_ten": "Quản trị viên",
+                "ten_vai_tro": "Quản trị",
+                "ma_vai_tro": "QUAN_TRI",
+                "cac_quyen": ["QUANTRI.TAIKHOAN"],
+                "danh_sach_quyen": ["QUANTRI.TAIKHOAN"]
+            }
+
+        res = self.client.post("/tai-khoan/sua/2", data={
+            "ten_dang_nhap": "tuananh_vip",
+            "ho_ten": "Phạm Tuấn Anh (Đã đổi tên)",
+            "khoa_vai_tro": "3",
+            "dang_dung": "1",
+            "pham_vi_loai": "TOAN_BO"
+        }, follow_redirects=True)
+        self.assertEqual(res.status_code, 200)
+
+        ket_noi = lay_ket_noi()
+        c = ket_noi.cursor()
+        c.execute("SELECT ten_dang_nhap, ho_ten, khoa_quan_nhan FROM tai_khoan WHERE ma_tu_sinh = 2")
+        tk_row = c.fetchone()
+        self.assertIsNotNone(tk_row)
+        self.assertEqual(tk_row["ten_dang_nhap"], "tuananh_vip")
+        self.assertEqual(tk_row["ho_ten"], "Phạm Tuấn Anh (Đã đổi tên)")
+
+        if tk_row["khoa_quan_nhan"]:
+            c.execute("SELECT ho_ten FROM quan_nhan WHERE ma_tu_sinh = ?", (tk_row["khoa_quan_nhan"],))
+            qn_row = c.fetchone()
+            self.assertIsNotNone(qn_row)
+            self.assertEqual(qn_row["ho_ten"], "Phạm Tuấn Anh (Đã đổi tên)")
+        ket_noi.close()
+
+        res_trang = self.client.get("/tai-khoan-phan-quyen")
+        html = res_trang.data.decode("utf-8")
+        self.assertIn("tuananh_vip", html)
+        self.assertIn("Phạm Tuấn Anh (Đã đổi tên)", html)
+
+    def test_doi_ten_tai_khoan_trung_lap_bi_tu_choi(self):
+        with self.client.session_transaction() as sess:
+            sess["nguoi_dung"] = {
+                "ma_tu_sinh": 1,
+                "ten_dang_nhap": "admin",
+                "ho_ten": "Quản trị viên",
+                "ten_vai_tro": "Quản trị",
+                "ma_vai_tro": "QUAN_TRI",
+                "cac_quyen": ["QUANTRI.TAIKHOAN"],
+                "danh_sach_quyen": ["QUANTRI.TAIKHOAN"]
+            }
+
+        res = self.client.post("/tai-khoan/sua/3", data={
+            "ten_dang_nhap": "admin",
+            "ho_ten": "Trần Văn Bình",
+            "khoa_vai_tro": "3",
+            "dang_dung": "1",
+            "pham_vi_loai": "TOAN_BO"
+        }, follow_redirects=True)
+        self.assertIn("đã tồn tại", res.data.decode("utf-8"))
