@@ -26,7 +26,7 @@ if os.path.exists(env_path):
                     k, v = line.split("=", 1)
                     k = k.strip()
                     v = v.strip().strip("'\"")
-                    if k and k not in os.environ:
+                    if k:
                         os.environ[k] = v
     except Exception:
         pass
@@ -53,7 +53,10 @@ if os.environ.get("VERCEL"):
                 except Exception:
                     pass
 elif custom_sqlite:
-    DATABASE_PATH = os.path.abspath(custom_sqlite)
+    if os.path.isabs(custom_sqlite):
+        DATABASE_PATH = os.path.abspath(custom_sqlite)
+    else:
+        DATABASE_PATH = os.path.join(DATA_DIR, custom_sqlite)
     UPLOAD_FOLDER = os.path.join(os.path.dirname(DATABASE_PATH), "uploads")
 else:
     DATABASE_PATH = os.path.join(DATA_DIR, "qldt.db")
