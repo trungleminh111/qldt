@@ -41,14 +41,14 @@
         <a href="{{ url_for('giao_nhan.giao_nhan') }}" class="nav-link {% if request.endpoint == 'giao_nhan.giao_nhan' %}active{% endif %}">
           <span class="nav-icon">⇄</span> Giao nhận điện thoại
         </a>
+        <a href="{{ url_for('giao_nhan.da_lay') }}" class="nav-link {% if request.endpoint == 'giao_nhan.da_lay' %}active{% endif %}">
+          <span class="nav-icon">📱</span> Đã lấy sử dụng
+        </a>
         <a href="{{ url_for('giao_nhan.chua_nop') }}" class="nav-link {% if request.endpoint == 'giao_nhan.chua_nop' %}active{% endif %}">
           <span class="nav-icon">⚠</span> Quân nhân chưa nộp
         </a>
         <a href="{{ url_for('giao_nhan.lich_su') }}" class="nav-link {% if request.endpoint == 'giao_nhan.lich_su' %}active{% endif %}">
           <span class="nav-icon">◴</span> Lịch sử hoạt động
-        </a>
-        <a href="{{ url_for('ca_truc.ban_giao') }}" class="nav-link {% if request.endpoint == 'ca_truc.ban_giao' %}active{% endif %}">
-          <span class="nav-icon">⇋</span> Bàn giao ca trực
         </a>
 
         <div class="nav-group-title">QUẢN LÝ QUÂN SỰ</div>

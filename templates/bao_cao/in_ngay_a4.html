@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Báo cáo tổng hợp đăng ký sử dụng điện thoại trong ngày · {{ ngay_chon }}</title>
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Times New Roman", Times, serif; }
+    body { background: #fff; color: #000; font-size: 11pt; line-height: 1.35; padding: 15mm 15mm 15mm 20mm; }
+    .header { display: flex; justify-content: space-between; margin-bottom: 18px; }
+    .header-left { text-align: center; }
+    .header-left b { font-size: 11.5pt; text-transform: uppercase; display: block; }
+    .header-right { text-align: center; }
+    .header-right b { font-size: 11.5pt; display: block; }
+    .line { width: 130px; height: 1px; background: #000; margin: 4px auto 0; }
+    .title { text-align: center; margin: 18px 0 14px; }
+    .title h1 { font-size: 14pt; text-transform: uppercase; margin-bottom: 4px; font-weight: bold; }
+    .title p { font-style: italic; font-size: 11pt; }
+    .summary-box { border: 1px dashed #000; padding: 8px 14px; margin-bottom: 14px; font-size: 10.5pt; }
+    .summary-box ul { list-style: none; display: flex; flex-wrap: wrap; gap: 18px; justify-content: space-between; }
+    table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 9.5pt; }
+    th, td { border: 1px solid #000; padding: 5px 6px; vertical-align: middle; }
+    th { background: #f2f2f2; font-weight: bold; text-align: center; }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .signatures { display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 15px; text-align: center; margin-top: 25px; page-break-inside: avoid; }
+    .sig-block b { display: block; text-transform: uppercase; font-size: 10.5pt; }
+    .sig-block small { display: block; font-style: italic; margin-top: 3px; font-size: 9.5pt; }
+    .sig-space { height: 65px; }
+    .print-toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 10px 18px;
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    .btn-in-ngay {
+      background: #1e3a8a;
+      color: #ffffff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 5px;
+      font-size: 10.5pt;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-quay-lai {
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #94a3b8;
+      padding: 8px 14px;
+      border-radius: 5px;
+      font-size: 10.5pt;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { padding: 0; }
+      @page { size: A4 portrait; margin: 15mm 12mm 15mm 18mm; }
+    }
+  </style>
+</head>
+<body>
+  <div class="print-toolbar no-print">
+    <button type="button" class="btn-in-ngay" onclick="window.print()">
+      ⎙ In biểu mẫu A4 ngay
+    </button>
+    <button type="button" class="btn-quay-lai" onclick="history.back()">
+      ← Quay lại
+    </button>
+  </div>
+
+  <div class="header">
+    <div class="header-left">
+      <b>ĐẠI ĐỘI 1</b>
+      <b>BAN CHỈ HUY</b>
+      <div class="line"></div>
+    </div>
+    <div class="header-right">
+      <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b>
+      <b>Độc lập - Tự do - Hạnh phúc</b>
+      <div class="line"></div>
+    </div>
+  </div>
+
+  <div class="title">
+    <h1>BÁO CÁO TỔNG HỢP ĐĂNG KÝ SỬ DỤNG ĐIỆN THOẠI TRONG NGÀY</h1>
+    <p>{{ ngay_in_chu }} (Xuất báo cáo lúc {{ thoi_diem_in }})</p>
+  </div>
+
+  <div class="summary-box">
+    <ul>
+      <li>Tổng lượt đăng ký/lấy máy: <b>{{ bao_cao.tong_so }}</b> lượt</li>
+      <li>Đã hoàn trả về tủ: <b>{{ bao_cao.so_da_nop }}</b> máy</li>
+      <li>Đang giữ sử dụng: <b>{{ bao_cao.so_dang_su_dung }}</b> máy</li>
+      <li>Mượn diện ngoại lệ: <b>{{ bao_cao.so_ngoai_le }}</b> lượt</li>
+    </ul>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 32px;">STT</th>
+        <th>Họ và tên</th>
+        <th style="width: 75px;">Cấp bậc</th>
+        <th style="width: 80px;">Đơn vị</th>
+        <th>Thiết bị & Số IMEI</th>
+        <th style="width: 75px;">Vị trí tủ</th>
+        <th style="width: 50px;">Giờ lấy</th>
+        <th style="width: 50px;">Giờ nộp</th>
+        <th style="width: 65px;">Phân loại</th>
+        <th style="width: 70px;">Trạng thái</th>
+        <th>Cán bộ trực</th>
+        <th style="width: 65px;">Ký nhận</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in bao_cao.danh_sach %}
+        <tr>
+          <td class="text-center">{{ p.stt }}</td>
+          <td><b>{{ p.ho_ten }}</b><br><small style="color: #444;">{{ p.ma_quan_nhan }}</small></td>
+          <td class="text-center">{{ p.ten_cap_bac }}</td>
+          <td>{{ p.ten_don_vi }}</td>
+          <td>{{ p.ten_dien_thoai }}<br><small style="font-family: monospace;">{{ p.so_imei }}</small></td>
+          <td class="text-center">{{ p.vi_tri_ngan }}</td>
+          <td class="text-center"><b>{{ p.gio_lay }}</b></td>
+          <td class="text-center">
+            {% if p.da_nop %}
+              <b>{{ p.gio_nop }}</b>
+            {% else %}
+              <i style="color: #666;">Chưa nộp</i>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if p.phan_loai == 'NGOAI_LE' %}
+              Ngoại lệ
+            {% else %}
+              Đúng giờ
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if p.da_nop %}
+              Đã nộp
+            {% else %}
+              <b>Đang giữ</b>
+            {% endif %}
+          </td>
+          <td class="text-center">{{ p.nguoi_thuc_hien }}</td>
+          <td class="text-center"></td>
+        </tr>
+      {% else %}
+        <tr>
+          <td colspan="12" class="text-center" style="padding: 16px;">
+            Không có lượt đăng ký hoặc sử dụng điện thoại nào trong ngày {{ ngay_chon }}.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="signatures">
+    <div class="sig-block">
+      <b>TRỰC BAN NỘI VỤ</b>
+      <small>(Ký và ghi rõ họ tên)</small>
+      <div class="sig-space"></div>
+    </div>
+    <div class="sig-block">
+      <b>TRUNG ĐỘI TRƯỞNG TRỰC</b>
+      <small>(Ký và ghi rõ họ tên)</small>
+      <div class="sig-space"></div>
+    </div>
+    <div class="sig-block">
+      <b>ĐẠI ĐỘI TRƯỞNG</b>
+      <small>(Ký và đóng dấu)</small>
+      <div class="sig-space"></div>
+    </div>
+  </div>
+</body>
+</html>

@@ -12,37 +12,36 @@
   </div>
   <div class="header-actions">
     <a href="{{ url_for('giao_nhan.giao_nhan') }}" class="btn-quan-doi btn-qd-primary">＋ Giao nhận điện thoại</a>
-    <a href="{{ url_for('ca_truc.ban_giao') }}" class="btn-quan-doi btn-qd-secondary">⇋ Bàn giao ca</a>
   </div>
 </div>
 
 <div class="stats-grid">
-  <div class="stat-card">
+  <a href="{{ url_for('dien_thoai.danh_sach') }}" class="stat-card" style="text-decoration: none; color: inherit; display: flex;">
     <div class="stat-card-info">
       <span>Tổng số điện thoại</span>
       <b>{{ thong_ke.tong_dien_thoai }}</b>
       <small>Quân số: {{ thong_ke.tong_quan_nhan }} đồng chí</small>
     </div>
     <div class="stat-icon blue">📱</div>
-  </div>
+  </a>
 
-  <div class="stat-card">
+  <a href="{{ url_for('dien_thoai.danh_sach_tu') }}" class="stat-card" style="text-decoration: none; color: inherit; display: flex;">
     <div class="stat-card-info">
       <span>Đang lưu trong tủ</span>
       <b>{{ thong_ke.dang_trong_tu }}</b>
       <small>Thiết bị an toàn trong tủ</small>
     </div>
     <div class="stat-icon green">▤</div>
-  </div>
+  </a>
 
-  <div class="stat-card">
+  <a href="{{ url_for('giao_nhan.da_lay') }}" class="stat-card" style="text-decoration: none; color: inherit; display: flex;">
     <div class="stat-card-info">
       <span>Đã lấy sử dụng</span>
       <b>{{ thong_ke.da_lay }}</b>
       <small>Đang trong thời gian dùng</small>
     </div>
     <div class="stat-icon amber">⇄</div>
-  </div>
+  </a>
 
   <a href="{{ url_for('giao_nhan.chua_nop') }}" class="stat-card" style="text-decoration: none; color: inherit; display: flex;">
     <div class="stat-card-info">

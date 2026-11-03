@@ -163,6 +163,20 @@ def nop_may():
         return redirect(url_chuyen_huong)
     return redirect(url_for("giao_nhan.giao_nhan", ma_qn=khoa_qn))
 
+@giao_nhan_bp.route("/da-lay")
+@yeu_cau_dang_nhap
+@yeu_cau_quyen("GIAONHAN.XEM", "GIAONHAN.GHI")
+def da_lay():
+    khoa_don_vi_gioi_han = lay_don_vi_gioi_han()
+    danh_sach = danh_sach_chua_nop(khoa_don_vi_gioi_han=khoa_don_vi_gioi_han)
+    return render_template("giao_nhan/da_lay.html", danh_sach=danh_sach)
+
+@giao_nhan_bp.route("/da-lay-su-dung")
+@yeu_cau_dang_nhap
+@yeu_cau_quyen("GIAONHAN.XEM", "GIAONHAN.GHI")
+def da_lay_su_dung():
+    return da_lay()
+
 @giao_nhan_bp.route("/chua-nop")
 @yeu_cau_dang_nhap
 @yeu_cau_quyen("GIAONHAN.XEM", "GIAONHAN.GHI")
