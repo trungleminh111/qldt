@@ -48,6 +48,7 @@ class KiemThuBaoCaoNgayVaDieuHuong(BaseTestCase):
             html = res.get_data(as_text=True)
             self.assertNotIn("BÁO CÁO TỔNG HỢP ĐĂNG KÝ SỬ DỤNG ĐIỆN THOẠI TRONG NGÀY", html)
             self.assertIn("/bao-cao/in-a4", html)
+            self.assertIn("Xuất báo cáo", html)
 
             res_in_a4 = self.client.get("/bao-cao/in-a4")
             self.assertEqual(res_in_a4.status_code, 200)

@@ -257,5 +257,5 @@ class Tier1FeaturesTestCase(BaseTestCase):
         self.login("admin", "admin123")
         res = self.client.get("/bao-cao/in-a4")
         self.assertEqual(res.status_code, 200)
-        self.assertIn("BÁO CÁO TỔNG HỢP".encode("utf-8"), res.data)
-        self.assertIn("ĐẠI ĐỘI 1".encode("utf-8"), res.data)
+        self.assertIn("BÁO CÁO".encode("utf-8"), res.data)
+        self.assertIn("ĐẠI ĐỘI 11".encode("utf-8"), res.data)

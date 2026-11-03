@@ -15,7 +15,9 @@
   <div class="app-shell">
     <aside class="sidebar" id="sidebarMenu">
       <div class="sidebar-brand">
-        <div class="brand-icon">📱</div>
+        <div class="brand-icon" style="background: transparent; border: none; box-shadow: none;">
+          <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Logo" style="width: 42px; height: 42px; object-fit: contain;">
+        </div>
         <div class="brand-text">
           <b>QUẢN LÝ ĐIỆN THOẠI</b>
           <small>QUẢN LÝ NỘI BỘ</small>
@@ -23,13 +25,7 @@
         <button type="button" class="btn-sidebar-close" id="btnCloseSidebar" aria-label="Đóng menu">✕</button>
       </div>
 
-      <div class="sidebar-unit-card">
-        <div class="unit-symbol">C</div>
-        <div class="unit-meta">
-          <small>ĐƠN VỊ QUẢN LÝ</small>
-          <b>Đại đội 1</b>
-        </div>
-      </div>
+      
 
       <nav class="sidebar-nav">
         <div class="nav-group-title">TỔNG QUAN</div>
@@ -89,9 +85,7 @@
           </div>
           <a href="{{ url_for('auth.dang_xuat') }}" class="btn-user-logout btn-quan-doi btn-qd-secondary btn-qd-sm" title="Đăng xuất" aria-label="Đăng xuất" style="font-size: 14px; color: #94a3b8; text-decoration: none; padding: 4px; display: inline-flex; align-items: center; justify-content: center;">↪</a>
         </div>
-        <div style="margin-top: 10px; text-align: center; color: #526a84; font-size: 10px; font-weight: 600;">
-          QLĐT Đại đội 1 · Phiên bản 2.0.0
-        </div>
+        
       </div>
     </aside>
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
