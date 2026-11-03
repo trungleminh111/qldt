@@ -79,23 +79,27 @@
         <div><span>Điện thoại</span><b>{{ qn_hien_tai.ten_dien_thoai or 'Chưa đăng ký' }}</b></div>
         <div>
           <span>Vị trí tủ lưu</span>
-          {% if qn_hien_tai.ma_tu and qn_hien_tai.ma_ngan %}
-            <span class="slot-badge">
-              <span class="cabinet-tag">{{ qn_hien_tai.ma_tu }}</span> Ngăn {{ qn_hien_tai.ten_ngan or qn_hien_tai.ma_ngan }}
-            </span>
-          {% else %}
-            <span class="badge badge-gray">Chưa phân ngăn</span>
-          {% endif %}
+          <div>
+            {% if qn_hien_tai.ma_tu and qn_hien_tai.ma_ngan %}
+              <span class="slot-badge">
+                <span class="cabinet-tag">{{ qn_hien_tai.ma_tu }}</span> Ngăn {{ qn_hien_tai.ten_ngan or qn_hien_tai.ma_ngan }}
+              </span>
+            {% else %}
+              <span class="badge badge-gray">Chưa phân ngăn</span>
+            {% endif %}
+          </div>
         </div>
         <div>
           <span>Trạng thái máy</span>
-          {% if qn_hien_tai.trang_thai_may == 'Đã lấy' %}
-            <span class="badge badge-amber"><span class="badge-dot"></span>Đã lấy sử dụng</span>
-          {% elif qn_hien_tai.trang_thai_may in ['Trong tủ', 'Đã nộp'] %}
-            <span class="badge badge-green"><span class="badge-dot"></span>Đang trong tủ</span>
-          {% else %}
-            <span class="badge badge-gray"><span class="badge-dot"></span>Chưa có thiết bị</span>
-          {% endif %}
+          <div>
+            {% if qn_hien_tai.trang_thai_may == 'Đã lấy' %}
+              <span class="badge badge-amber"><span class="badge-dot"></span>Đã lấy sử dụng</span>
+            {% elif qn_hien_tai.trang_thai_may in ['Trong tủ', 'Đã nộp'] %}
+              <span class="badge badge-green"><span class="badge-dot"></span>Đang trong tủ</span>
+            {% else %}
+              <span class="badge badge-gray"><span class="badge-dot"></span>Chưa có thiết bị</span>
+            {% endif %}
+          </div>
         </div>
       </div>
 
