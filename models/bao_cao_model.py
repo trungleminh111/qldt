@@ -50,7 +50,7 @@ def lay_thong_ke_tong_quan(khoa_don_vi_gioi_han=None):
             FROM don_vi dv
             LEFT JOIN quan_nhan qn ON qn.khoa_don_vi = dv.ma_tu_sinh AND qn.da_xoa = 0
             WHERE dv.dang_dung = 1 {dieu_kien_dv}
-            GROUP BY dv.ma_tu_sinh
+            GROUP BY dv.ma_tu_sinh, dv.ten_don_vi
         """, params_dv)
         quan_so_theo_don_vi = [dict(row) for row in con_tro.fetchall()]
 
@@ -83,7 +83,7 @@ def lay_thong_ke_tong_quan(khoa_don_vi_gioi_han=None):
                 ) gn2 ON gn1.ma_tu_sinh = gn2.max_id
             ) gn ON gn.khoa_dien_thoai = dt.ma_tu_sinh
             WHERE dv.dang_dung = 1 {dieu_kien_dv}
-            GROUP BY dv.ma_tu_sinh
+            GROUP BY dv.ma_tu_sinh, dv.ten_don_vi
         """, params_dv)
         thong_ke_don_vi = [dict(row) for row in con_tro.fetchall()]
 
@@ -132,7 +132,7 @@ def lay_thong_ke_tong_quan(khoa_don_vi_gioi_han=None):
             FROM don_vi dv
             LEFT JOIN quan_nhan qn ON qn.khoa_don_vi = dv.ma_tu_sinh AND qn.da_xoa = 0
             WHERE dv.khoa_don_vi_cha IS NOT NULL AND dv.dang_dung = 1
-            GROUP BY dv.ma_tu_sinh
+            GROUP BY dv.ma_tu_sinh, dv.ten_don_vi, dv.thu_tu
             ORDER BY dv.thu_tu ASC
         """)
         quan_so_theo_don_vi = [dict(row) for row in con_tro.fetchall()]
@@ -165,7 +165,7 @@ def lay_thong_ke_tong_quan(khoa_don_vi_gioi_han=None):
                 ) gn2 ON gn1.ma_tu_sinh = gn2.max_id
             ) gn ON gn.khoa_dien_thoai = dt.ma_tu_sinh
             WHERE dv.khoa_don_vi_cha IS NOT NULL AND dv.dang_dung = 1
-            GROUP BY dv.ma_tu_sinh
+            GROUP BY dv.ma_tu_sinh, dv.ten_don_vi, dv.thu_tu
             ORDER BY dv.thu_tu ASC
         """)
         thong_ke_don_vi = [dict(row) for row in con_tro.fetchall()]

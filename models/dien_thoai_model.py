@@ -150,7 +150,7 @@ def lay_danh_sach_tu(khoa_don_vi_gioi_han=None):
         cau_lenh += dieu_kien
         tham_so.extend(params)
     cau_lenh += """
-        GROUP BY t.ma_tu_sinh
+        GROUP BY t.ma_tu_sinh, t.ma_tu, t.ten_tu, t.vi_tri, t.so_ngan, t.khoa_don_vi_quan_ly, dv.ten_don_vi
         ORDER BY t.ma_tu ASC
     """
     con_tro.execute(cau_lenh, tham_so)

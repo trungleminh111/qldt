@@ -109,7 +109,10 @@ def lay_tat_ca_tai_khoan(bac_nguoi_xem=None):
         LEFT JOIN vai_tro vt ON tkv.khoa_vai_tro = vt.ma_tu_sinh
         LEFT JOIN don_vi dv ON (tkv.pham_vi_loai = 'DON_VI' AND tkv.pham_vi_khoa = dv.ma_tu_sinh)
         LEFT JOIN tu t ON (tkv.pham_vi_loai = 'TU' AND tkv.pham_vi_khoa = t.ma_tu_sinh)
-        GROUP BY tk.ma_tu_sinh
+        GROUP BY tk.ma_tu_sinh, tk.ten_dang_nhap, tk.ho_ten, tk.dang_dung, tk.dang_nhap_cuoi,
+                 vt.ma_tu_sinh, vt.ten_vai_tro, vt.ma_vai_tro,
+                 tkv.pham_vi_loai, tkv.pham_vi_khoa, qn.khoa_don_vi,
+                 dv.ten_don_vi, dv_qn.ten_don_vi, t.ten_tu
         ORDER BY tk.ma_tu_sinh ASC
     """)
     danh_sach = [dict(row) for row in con_tro.fetchall()]

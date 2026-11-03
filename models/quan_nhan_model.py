@@ -264,7 +264,7 @@ def lay_tat_ca_don_vi():
         LEFT JOIN don_vi cha ON dv.khoa_don_vi_cha = cha.ma_tu_sinh
         LEFT JOIN quan_nhan qn ON qn.khoa_don_vi = dv.ma_tu_sinh AND qn.da_xoa = 0
         LEFT JOIN tu t ON t.khoa_don_vi_quan_ly = dv.ma_tu_sinh AND t.dang_dung = 1
-        GROUP BY dv.ma_tu_sinh
+        GROUP BY dv.ma_tu_sinh, dv.ma_don_vi, dv.ten_don_vi, dv.khoa_don_vi_cha, dv.thu_tu, dv.dang_dung, cha.ten_don_vi
         ORDER BY dv.thu_tu ASC, dv.ma_tu_sinh ASC
     """)
     ket_qua = [dict(row) for row in con_tro.fetchall()]
