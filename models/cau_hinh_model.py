@@ -148,3 +148,57 @@ def xoa_ngay_dac_biet(ma_tu_sinh):
     con_tro.execute("DELETE FROM ngay_dac_biet WHERE ma_tu_sinh = ?", (ma_tu_sinh,))
     ket_noi.commit()
     ket_noi.close()
+
+def lay_thong_tin_don_vi():
+    gia_tri_mac_dinh = {
+        "don_vi_cap_tren": "TIỂU ĐOÀN 3",
+        "ten_don_vi": "ĐẠI ĐỘI 11",
+        "dia_diem": "Đà Nẵng",
+        "can_cu_quy_dinh": "Quy định số 763/QyĐ-SĐ ngày 12/3/2026 của Sư đoàn về việc quản lý, sử dụng thiết bị điện tử trong đơn vị",
+        "chuc_danh_chi_huy": "CHỈ HUY ĐẠI ĐỘI",
+        "noi_nhan": "- CH/d (để theo dõi);\n- Lưu: c."
+    }
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    con_tro.execute("""
+        CREATE TABLE IF NOT EXISTS thong_tin_don_vi (
+            khoa_thiet_lap TEXT PRIMARY KEY,
+            gia_tri TEXT
+        )
+    """)
+    con_tro.execute("SELECT khoa_thiet_lap, gia_tri FROM thong_tin_don_vi")
+    rows = con_tro.fetchall()
+    for row in rows:
+        if isinstance(row, dict):
+            k = row.get("khoa_thiet_lap")
+            v = row.get("gia_tri")
+        elif hasattr(row, "keys"):
+            k = row["khoa_thiet_lap"]
+            v = row["gia_tri"]
+        else:
+            k = row[0]
+            v = row[1]
+        if k in gia_tri_mac_dinh and v is not None and str(v).strip():
+            gia_tri_mac_dinh[k] = str(v).strip()
+    ket_noi.close()
+    return gia_tri_mac_dinh
+
+def cap_nhat_thong_tin_don_vi(du_lieu):
+    ket_noi = lay_ket_noi()
+    con_tro = ket_noi.cursor()
+    con_tro.execute("""
+        CREATE TABLE IF NOT EXISTS thong_tin_don_vi (
+            khoa_thiet_lap TEXT PRIMARY KEY,
+            gia_tri TEXT
+        )
+    """)
+    for k, v in du_lieu.items():
+        val = str(v).strip() if v is not None else ""
+        con_tro.execute("SELECT COUNT(*) FROM thong_tin_don_vi WHERE khoa_thiet_lap = ?", (k,))
+        ton_tai = con_tro.fetchone()[0] > 0
+        if ton_tai:
+            con_tro.execute("UPDATE thong_tin_don_vi SET gia_tri = ? WHERE khoa_thiet_lap = ?", (val, k))
+        else:
+            con_tro.execute("INSERT INTO thong_tin_don_vi (khoa_thiet_lap, gia_tri) VALUES (?, ?)", (k, val))
+    ket_noi.commit()
+    ket_noi.close()

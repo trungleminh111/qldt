@@ -18,6 +18,95 @@
 </div>
 
 <div class="panel" style="margin-bottom: 24px;">
+  <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+    <div>
+      <h2>🏢 Thông tin đơn vị &amp; Tiêu đề biểu mẫu báo cáo (Overview)</h2>
+      <p style="color: var(--muted); font-size: 12px; margin-top: 3px;">
+        Chỉnh sửa tiêu đề đơn vị cấp trên, tên đại đội, địa danh và căn cứ quy định in trên biểu mẫu A4 và biên bản bàn giao.
+      </p>
+    </div>
+  </div>
+
+  <form method="POST" action="{{ url_for('cau_hinh.cap_nhat_tt_don_vi') }}" style="padding: 18px 20px;">
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px 18px; margin-bottom: 18px;">
+      <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
+        Xem trước tiêu đề văn bản / báo cáo
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; font-family: 'Times New Roman', Times, serif;">
+        <div style="text-align: center;">
+          <div style="font-size: 13pt; text-transform: uppercase; color: #0f172a;">{{ thong_tin_don_vi.don_vi_cap_tren }}</div>
+          <div style="font-size: 13pt; font-weight: bold; text-transform: uppercase; color: #0f172a; margin-top: 2px;">{{ thong_tin_don_vi.ten_don_vi }}</div>
+          <div style="width: 100px; height: 0; border-top: 1.5px solid #000; margin: 4px auto 0;"></div>
+        </div>
+        <div style="text-align: center;">
+          <div style="font-size: 13pt; font-weight: bold; text-transform: uppercase; color: #0f172a;">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
+          <div style="font-size: 13.5pt; font-weight: bold; color: #0f172a; margin-top: 2px;">Độc lập – Tự do – Hạnh phúc</div>
+          <div style="width: 190px; height: 0; border-top: 1.5px solid #000; margin: 4px auto 0;"></div>
+          <div style="font-size: 13pt; font-style: italic; color: #334155; margin-top: 6px;">{{ thong_tin_don_vi.dia_diem }}, ngày ... tháng ... năm ...</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label for="tt_cap_tren" style="font-weight: 600; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;">
+          Đơn vị cấp trên (dòng 1) *
+        </label>
+        <input type="text" id="tt_cap_tren" name="don_vi_cap_tren" value="{{ thong_tin_don_vi.don_vi_cap_tren }}" placeholder="VD: TIỂU ĐOÀN 3" required style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-weight: 600;">
+        <small style="color: var(--muted); font-size: 11px;">Hiển thị ở dòng trên góc trái biểu mẫu</small>
+      </div>
+
+      <div>
+        <label for="tt_ten_dv" style="font-weight: 600; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;">
+          Tên đơn vị đại đội (dòng 2) *
+        </label>
+        <input type="text" id="tt_ten_dv" name="ten_don_vi" value="{{ thong_tin_don_vi.ten_don_vi }}" placeholder="VD: ĐẠI ĐỘI 11" required style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-weight: 700; color: #1e3a8a;">
+        <small style="color: var(--muted); font-size: 11px;">Hiển thị in đậm có gạch chân ở góc trái biểu mẫu</small>
+      </div>
+
+      <div>
+        <label for="tt_dia_diem" style="font-weight: 600; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;">
+          Địa danh / Địa phương ban hành *
+        </label>
+        <input type="text" id="tt_dia_diem" name="dia_diem" value="{{ thong_tin_don_vi.dia_diem }}" placeholder="VD: Đà Nẵng" required style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-weight: 600;">
+        <small style="color: var(--muted); font-size: 11px;">VD: Đà Nẵng, Quảng Nam, v.v.</small>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 16px;">
+      <div>
+        <label for="tt_can_cu" style="font-weight: 600; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;">
+          Căn cứ pháp lý / Quy định
+        </label>
+        <input type="text" id="tt_can_cu" name="can_cu_quy_dinh" value="{{ thong_tin_don_vi.can_cu_quy_dinh }}" placeholder="Quy định số 763/QyĐ-SĐ..." style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;">
+        <small style="color: var(--muted); font-size: 11px;">Nội dung căn cứ trích dẫn ở đầu báo cáo</small>
+      </div>
+
+      <div>
+        <label for="tt_chuc_danh" style="font-weight: 600; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;">
+          Chức danh chỉ huy ký duyệt
+        </label>
+        <input type="text" id="tt_chuc_danh" name="chuc_danh_chi_huy" value="{{ thong_tin_don_vi.chuc_danh_chi_huy }}" placeholder="VD: CHỈ HUY ĐẠI ĐỘI" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-weight: 600;">
+        <small style="color: var(--muted); font-size: 11px;">Hiển thị ở cột chữ ký bên phải</small>
+      </div>
+    </div>
+
+    <div style="margin-bottom: 18px;">
+      <label for="tt_noi_nhan" style="font-weight: 600; font-size: 13px; color: #334155; display: block; margin-bottom: 6px;">
+        Nơi nhận báo cáo (mỗi dòng một địa chỉ)
+      </label>
+      <textarea id="tt_noi_nhan" name="noi_nhan" rows="2" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-family: monospace; font-size: 13px;">{{ thong_tin_don_vi.noi_nhan }}</textarea>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end;">
+      <button type="submit" class="btn-quan-doi btn-qd-primary">
+        💾 Lưu thông tin đơn vị &amp; Biểu mẫu
+      </button>
+    </div>
+  </form>
+</div>
+
+<div class="panel" style="margin-bottom: 24px;">
   <div class="panel-header">
     <h2>Danh sách tài khoản cán bộ quản lý</h2>
   </div>

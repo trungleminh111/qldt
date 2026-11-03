@@ -644,6 +644,13 @@ def khoi_tao_co_so_du_lieu():
     )
     """)
 
+    con_tro.execute("""
+    CREATE TABLE IF NOT EXISTS thong_tin_don_vi (
+        khoa_thiet_lap TEXT PRIMARY KEY,
+        gia_tri TEXT
+    )
+    """)
+
     con_tro.execute("CREATE INDEX IF NOT EXISTS idx_qn_ma ON quan_nhan(ma_quan_nhan)")
     con_tro.execute("CREATE INDEX IF NOT EXISTS idx_qn_donvi ON quan_nhan(khoa_don_vi)")
     con_tro.execute("CREATE INDEX IF NOT EXISTS idx_dt_ma ON dien_thoai(ma_thiet_bi)")

@@ -88,15 +88,15 @@
 
   <div class="header">
     <div class="header-left">
-      <b>TIỂU ĐOÀN 3</b>
-      <b>ĐẠI ĐỘI 11</b>
+      <b>{{ thong_tin_don_vi.don_vi_cap_tren if thong_tin_don_vi else 'TIỂU ĐOÀN 3' }}</b>
+      <b>{{ thong_tin_don_vi.ten_don_vi if thong_tin_don_vi else 'ĐẠI ĐỘI 11' }}</b>
       <div class="line-left" style="width: 110px; height: 0; border: none; border-top: 1.5px solid #000000; margin: 4px auto 0;"></div>
     </div>
     <div class="header-right">
       <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b>
       <b>Độc lập – Tự do – Hạnh phúc</b>
       <div class="line-right" style="width: 180px; height: 0; border: none; border-top: 1.5px solid #000000; margin: 4px auto 0;"></div>
-      <p style="font-style: italic; font-size: 10.5pt; margin-top: 6px;">Đà Nẵng, {{ ngay_in_chu }}</p>
+      <p style="font-style: italic; font-size: 10.5pt; margin-top: 6px;">{{ thong_tin_don_vi.dia_diem if thong_tin_don_vi else 'Đà Nẵng' }}, {{ ngay_in_chu }}</p>
     </div>
   </div>
 

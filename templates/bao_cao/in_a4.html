@@ -258,15 +258,15 @@
   <table class="header-table">
     <tr>
       <td class="header-left">
-        <div class="unit-upper">TIỂU ĐOÀN 3</div>
-        <div class="unit-name">ĐẠI ĐỘI 11</div>
+        <div class="unit-upper">{{ thong_tin_don_vi.don_vi_cap_tren if thong_tin_don_vi else 'TIỂU ĐOÀN 3' }}</div>
+        <div class="unit-name">{{ thong_tin_don_vi.ten_don_vi if thong_tin_don_vi else 'ĐẠI ĐỘI 11' }}</div>
         <div class="line-left" style="width: 110px; height: 0; border: none; border-top: 1.5px solid #000000; margin: 5px auto 0;"></div>
       </td>
       <td class="header-right">
         <div class="country">CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</div>
         <div class="motto">Độc lập – Tự do – Hạnh phúc</div>
         <div class="line-right" style="width: 220px; height: 0; border: none; border-top: 1.5px solid #000000; margin: 5px auto 0;"></div>
-        <div class="date-line">Đà Nẵng, {{ ngay_in_chu }}</div>
+        <div class="date-line">{{ thong_tin_don_vi.dia_diem if thong_tin_don_vi else 'Đà Nẵng' }}, {{ ngay_in_chu }}</div>
       </td>
     </tr>
   </table>
@@ -277,7 +277,7 @@
   </div>
 
   <p class="content-p">
-    Căn cứ Quy định số 763/QyĐ-SĐ ngày 12/3/2026 của Sư đoàn về việc quản lý, sử dụng thiết bị điện tử trong đơn vị; Đại đội báo cáo tổng hợp đăng ký sử dụng điện thoại trong ngày của quân nhân như sau:
+    Căn cứ {{ thong_tin_don_vi.can_cu_quy_dinh if thong_tin_don_vi and thong_tin_don_vi.can_cu_quy_dinh else 'Quy định số 763/QyĐ-SĐ ngày 12/3/2026 của Sư đoàn về việc quản lý, sử dụng thiết bị điện tử trong đơn vị' }}; Đại đội báo cáo tổng hợp đăng ký sử dụng điện thoại trong ngày của quân nhân như sau:
   </p>
 
   <div class="section-title">I. Số liệu tổng hợp toàn đại đội</div>
@@ -328,18 +328,19 @@
   </table>
 
   <p class="closing-p">
-    Ban Chỉ huy Đại đội 11 báo cáo Ban Chỉ huy Tiểu đoàn theo dõi, tổng hợp./.
+    Ban Chỉ huy {{ thong_tin_don_vi.ten_don_vi if thong_tin_don_vi else 'Đại đội 11' }} báo cáo Ban Chỉ huy {{ thong_tin_don_vi.don_vi_cap_tren if thong_tin_don_vi else 'Tiểu đoàn 3' }} theo dõi, tổng hợp./.
   </p>
 
   <table class="sig-table">
     <tr>
       <td class="sig-left">
         <div class="noi-nhan-title">Nơi nhận:</div>
-        <div>- CH/d (để theo dõi);</div>
-        <div>- Lưu: c.</div>
+        {% for ln in (thong_tin_don_vi.noi_nhan if thong_tin_don_vi and thong_tin_don_vi.noi_nhan else '- CH/d (để theo dõi);\n- Lưu: c.').split('\n') %}
+          <div>{{ ln }}</div>
+        {% endfor %}
       </td>
       <td class="sig-right">
-        <div class="chuc-vu">CHỈ HUY ĐẠI ĐỘI</div>
+        <div class="chuc-vu">{{ thong_tin_don_vi.chuc_danh_chi_huy if thong_tin_don_vi and thong_tin_don_vi.chuc_danh_chi_huy else 'CHỈ HUY ĐẠI ĐỘI' }}</div>
         <div class="sig-space"></div>
       </td>
     </tr>

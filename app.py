@@ -39,6 +39,23 @@ def tao_ung_dung():
             phan_hoi.headers["Expires"] = "0"
         return phan_hoi
 
+    @app.context_processor
+    def tiem_thong_tin_don_vi():
+        from models.cau_hinh_model import lay_thong_tin_don_vi
+        try:
+            return {"thong_tin_don_vi": lay_thong_tin_don_vi()}
+        except Exception:
+            return {
+                "thong_tin_don_vi": {
+                    "don_vi_cap_tren": "TIỂU ĐOÀN 3",
+                    "ten_don_vi": "ĐẠI ĐỘI 11",
+                    "dia_diem": "Đà Nẵng",
+                    "can_cu_quy_dinh": "Quy định số 763/QyĐ-SĐ ngày 12/3/2026 của Sư đoàn về việc quản lý, sử dụng thiết bị điện tử trong đơn vị",
+                    "chuc_danh_chi_huy": "CHỈ HUY ĐẠI ĐỘI",
+                    "noi_nhan": "- CH/d (để theo dõi);\n- Lưu: c."
+                }
+            }
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(giao_nhan_bp)

@@ -10,7 +10,9 @@ from models.cau_hinh_model import (
     lay_danh_sach_ngay_dac_biet,
     them_ngay_dac_biet,
     sua_ngay_dac_biet,
-    xoa_ngay_dac_biet
+    xoa_ngay_dac_biet,
+    lay_thong_tin_don_vi,
+    cap_nhat_thong_tin_don_vi
 )
 from models.phan_quyen_model import (
     lay_tat_ca_tai_khoan,
@@ -177,6 +179,8 @@ def phan_quyen():
     don_vi_list = lay_danh_sach_don_vi()
     tu_list = lay_danh_sach_tu()
 
+    thong_tin_don_vi = lay_thong_tin_don_vi()
+
     return render_template(
         "cau_hinh/phan_quyen.html",
         tai_khoan_list=tai_khoan_list,
@@ -184,8 +188,34 @@ def phan_quyen():
         quyen_list=quyen_list,
         quan_nhan_list=quan_nhan_list,
         don_vi_list=don_vi_list,
-        tu_list=tu_list
+        tu_list=tu_list,
+        thong_tin_don_vi=thong_tin_don_vi
     )
+
+@cau_hinh_bp.route("/cau-hinh/thong-tin-don-vi", methods=["POST"])
+@yeu_cau_quyen("QUANTRI.TAIKHOAN")
+def cap_nhat_tt_don_vi():
+    don_vi_cap_tren = request.form.get("don_vi_cap_tren", "").strip() or "TIỂU ĐOÀN 3"
+    ten_don_vi = request.form.get("ten_don_vi", "").strip() or "ĐẠI ĐỘI 11"
+    dia_diem = request.form.get("dia_diem", "").strip() or "Đà Nẵng"
+    can_cu_quy_dinh = request.form.get("can_cu_quy_dinh", "").strip() or "Quy định số 763/QyĐ-SĐ ngày 12/3/2026 của Sư đoàn về việc quản lý, sử dụng thiết bị điện tử trong đơn vị"
+    chuc_danh_chi_huy = request.form.get("chuc_danh_chi_huy", "").strip() or "CHỈ HUY ĐẠI ĐỘI"
+    noi_nhan = request.form.get("noi_nhan", "").strip() or "- CH/d (để theo dõi);\n- Lưu: c."
+
+    try:
+        cap_nhat_thong_tin_don_vi({
+            "don_vi_cap_tren": don_vi_cap_tren,
+            "ten_don_vi": ten_don_vi,
+            "dia_diem": dia_diem,
+            "can_cu_quy_dinh": can_cu_quy_dinh,
+            "chuc_danh_chi_huy": chuc_danh_chi_huy,
+            "noi_nhan": noi_nhan
+        })
+        flash("Đã cập nhật thông tin đơn vị và tiêu đề biểu mẫu báo cáo thành công.", "thanh_cong")
+    except Exception as e:
+        flash(f"Lỗi cập nhật thông tin đơn vị: {str(e)}", "nguy_hiem")
+
+    return redirect(url_for("cau_hinh.phan_quyen"))
 
 @cau_hinh_bp.route("/tai-khoan/them", methods=["POST"])
 @yeu_cau_quyen("QUANTRI.TAIKHOAN")

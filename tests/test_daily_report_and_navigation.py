@@ -60,7 +60,7 @@ class KiemThuBaoCaoNgayVaDieuHuong(BaseTestCase):
             self.assertIn("Quy định số 763/QyĐ-SĐ", html_a4)
             self.assertIn("I. Số liệu tổng hợp toàn đại đội", html_a4)
             self.assertIn("II. Thống kê chi tiết theo đơn vị trực thuộc", html_a4)
-            self.assertIn("Ban Chỉ huy Đại đội 11 báo cáo Ban Chỉ huy Tiểu đoàn theo dõi, tổng hợp./.", html_a4)
+            self.assertIn("theo dõi, tổng hợp./.", html_a4)
             self.assertIn("CHỈ HUY ĐẠI ĐỘI", html_a4)
             self.assertIn("Nơi nhận:", html_a4)
             self.assertIn("Đà Nẵng", html_a4)
@@ -105,3 +105,46 @@ class KiemThuBaoCaoNgayVaDieuHuong(BaseTestCase):
             self.assertNotIn('⇋ Bàn giao ca', html)
             self.assertNotIn('href="/ca-truc/ban-giao"', html)
             self.assertNotIn('Đã lấy sử dụng</a>', html)
+
+    def test_cau_hinh_thong_tin_don_vi_va_dong_bo_bao_cao(self):
+        with self.client:
+            self.login("admin", "admin123")
+            res_view = self.client.get("/tai-khoan-phan-quyen")
+            self.assertEqual(res_view.status_code, 200)
+            html_view = res_view.get_data(as_text=True)
+            self.assertIn("Thông tin đơn vị &amp; Tiêu đề biểu mẫu báo cáo (Overview)", html_view)
+            self.assertIn("name=\"don_vi_cap_tren\"", html_view)
+            self.assertIn("name=\"ten_don_vi\"", html_view)
+            self.assertIn("name=\"dia_diem\"", html_view)
+
+            res_post = self.client.post("/cau-hinh/thong-tin-don-vi", data={
+                "don_vi_cap_tren": "TRUNG ĐOÀN 143",
+                "ten_don_vi": "ĐẠI ĐỘI 2",
+                "dia_diem": "Quảng Nam",
+                "can_cu_quy_dinh": "Quy chế nội bộ 2026",
+                "chuc_danh_chi_huy": "ĐẠI ĐỘI TRƯỞNG",
+                "noi_nhan": "- Chỉ huy Trung đoàn\n- Ban Tác chiến"
+            }, follow_redirects=True)
+            self.assertEqual(res_post.status_code, 200)
+            html_after = res_post.get_data(as_text=True)
+            self.assertIn("TRUNG ĐOÀN 143", html_after)
+            self.assertIn("ĐẠI ĐỘI 2", html_after)
+            self.assertIn("Quảng Nam", html_after)
+
+            res_a4 = self.client.get("/bao-cao/in-a4")
+            self.assertEqual(res_a4.status_code, 200)
+            html_a4 = res_a4.get_data(as_text=True)
+            self.assertIn("TRUNG ĐOÀN 143", html_a4)
+            self.assertIn("ĐẠI ĐỘI 2", html_a4)
+            self.assertIn("Quảng Nam", html_a4)
+            self.assertIn("ĐẠI ĐỘI TRƯỞNG", html_a4)
+            self.assertIn("Chỉ huy Trung đoàn", html_a4)
+
+            self.client.post("/cau-hinh/thong-tin-don-vi", data={
+                "don_vi_cap_tren": "TIỂU ĐOÀN 3",
+                "ten_don_vi": "ĐẠI ĐỘI 11",
+                "dia_diem": "Đà Nẵng",
+                "can_cu_quy_dinh": "Quy định số 763/QyĐ-SĐ ngày 12/3/2026 của Sư đoàn về việc quản lý, sử dụng thiết bị điện tử trong đơn vị",
+                "chuc_danh_chi_huy": "CHỈ HUY ĐẠI ĐỘI",
+                "noi_nhan": "- CH/d (để theo dõi);\n- Lưu: c."
+            }, follow_redirects=True)

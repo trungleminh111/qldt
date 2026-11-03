@@ -121,7 +121,7 @@
         <b>CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM</b>
         <b>Độc lập - Tự do - Hạnh phúc</b>
         <div class="line" style="width: 140px; height: 0; border: none; border-top: 1.5px solid #000000; margin: 4px auto 0;"></div>
-        <p style="font-style: italic; font-size: 10pt; margin-top: 5px;">Đà Nẵng, ngày {{ ban_giao.thoi_gian_ban_giao[:10] }}</p>
+        <p style="font-style: italic; font-size: 10pt; margin-top: 5px;">{{ thong_tin_don_vi.dia_diem if thong_tin_don_vi else 'Đà Nẵng' }}, ngày {{ ban_giao.thoi_gian_ban_giao[:10] }}</p>
       </div>
     </div>
 
